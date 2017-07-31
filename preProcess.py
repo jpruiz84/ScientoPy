@@ -53,10 +53,6 @@ print("\nSources statics before removing duplications:")
 globalVar.logFile.write("\nSources statics beffore removing duplications:")
 paperUtils.sourcesStatics(paperDict)
 
-paperDict = sorted(paperDict, key=lambda x: x["authors"])
-paperDict = sorted(paperDict, key=lambda x: x["year"])
-paperDict = sorted(paperDict, key=lambda x: x["dataBase"], reverse=True)
-
 # Removing duplicates
 paperDict = paperUtils.removeDuplicates(paperDict)
 

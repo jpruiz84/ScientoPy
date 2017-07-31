@@ -189,81 +189,58 @@ def removeDuplicates(paperDict):
   removedPapersWoS = 0
   originalPapersCount = len(paperDict)
   noAuthors = 0
+
+  # Remove part of the title inside parentisis or square brakets
+  # Some journals put this the original language tile in the brakets
+  # Remove whitespace at the end of the tile
+  for paper in paperDict:
+    paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["title"].upper()).rstrip()
   
-  print("Sorting documents, WoS first, then Scopus")
   paperDict = sorted(paperDict, key=lambda x: x["dataBase"], reverse=True)
-  
+  paperDict = sorted(paperDict, key=lambda x: x["titleB"])
+ 
   print("Removing duplicates...")
   print len(paperDict)
 
   # Run on paper list
   for i in range(0, len(paperDict)):
 
-    if i >= len(paperDict):
-      continue
-    
-    # Comparte this paper on a second run
-    for j in range(0, len(paperDict)):
+
+    match = True
+    while(match):
       
-      if i == j:
+      if i >= (len(paperDict) - 1):
+        match = False
         continue
 
-      if j >= len(paperDict):
-        continue
-        
-      if i >= len(paperDict):
-        continue
-      
-      # Compare title and first author last name
-      
-      # Remove part of the title inside parentisis or square brakets
-      # Some journals put this the original language tile in the brakets
-      # Remove whitespace at the end of the tile
-      
-      try:
-        match = paperDict[i]["authors"][0].upper() == paperDict[j]["authors"][0].upper()
-        if not match:
-          continue
-      except:
-        noAuthors += 1
-
-      match = paperDict[i]["authors"].split(" ")[0].upper() == paperDict[j]["authors"].split(" ")[0].upper()
-      if not match:
-        continue
-      
-      titleI = re.sub("[\(\[].*?[\)\]]", "", paperDict[i]["title"].upper()).rstrip()
-      titleJ = re.sub("[\(\[].*?[\)\]]", "", paperDict[j]["title"].upper()).rstrip()
-      match &=  titleI == titleJ
+      match = paperDict[i]["authors"].split(" ")[0].upper() == paperDict[i+1]["authors"].split(" ")[0].upper()
+      match &=  paperDict[i]["titleB"] == paperDict[i+1]["titleB"]
 
       
       # If the criteria match
       if(match == True):
-        print("\nPaper %s duplicated with %s" %  (i, j))
+        print("\nPaper %s duplicated with %s" %  (i, i+1))
         
         print("Dup A: %s, %s" % (paperDict[i]["title"], paperDict[i]["year"]))
         print("Autrhos, database: %s, %s" % 
         (paperDict[i]["authors"], paperDict[i]["dataBase"]))
         
-        print("Dup B: %s, %s" % (paperDict[j]["title"], paperDict[j]["year"]))
+        print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
         print("Authors, database: %s, %s" % 
-        (paperDict[j]["authors"], paperDict[j]["dataBase"]))
+        (paperDict[i+1]["authors"], paperDict[i+1]["dataBase"]))
         
-        if paperDict[j]["dataBase"] == "WoS":
+        if paperDict[i+1]["dataBase"] == "WoS":
           removedPapersWoS += 1
 
-        if paperDict[j]["dataBase"] == "Scopus":
+        if paperDict[i+1]["dataBase"] == "Scopus":
           removedPapersScopus += 1
           
         # Remove paper j
-        print("Removing: %s" % paperDict[j]["dataBase"])
-        paperDict[i]["duplicatedIn"] = paperDict[j]["eid"]
-        paperDict.remove(paperDict[j])
+        print("Removing: %s" % paperDict[i+1]["dataBase"])
+        paperDict[i]["duplicatedIn"] = paperDict[i+1]["eid"]
+        paperDict.remove(paperDict[i+1])
         duplicatedPapersCount += 1
-        j -= 1
         continue
-
-        
-        
         
     print("\r{0:.0f}%".format(float(i)/float(len(paperDict)) * 100)),
         
@@ -292,7 +269,7 @@ def sourcesStatics(paperDict):
   
   statics["Scopus"]["Article"] = 0
   statics["Scopus"]["Conference Paper"] = 0
-  statics["Scopus"]["Proceddings Paper"] = 0
+  statics["Scopus"]["Proceedings Paper"] = 0
   statics["Scopus"]["Review"] = 0
   statics["Scopus"]["Total"] = 0
   
@@ -307,6 +284,7 @@ def sourcesStatics(paperDict):
   for paper in paperDict:
     try:
       statics[paper["dataBase"]][paper["documentType"].split("; ")[0]] += 1
+      
     except:
       noDocumentTypeCount += 1
       
