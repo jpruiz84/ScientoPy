@@ -147,6 +147,6 @@ paperSave.saveTopResults(topicResults, args.criteria)
 paperSave.saveResults(papersDictOut, 
 globalVar.RESULTS_FOLDER + globalVar.OUTPUT_FILE_NAME)
 
-paperSave.saveExtendedResults(topicResults, papersDict, args.criteria)
+paperSave.saveExtendedResults(topicResults, args.criteria)
 
 

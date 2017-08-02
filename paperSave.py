@@ -81,7 +81,7 @@ def saveTopResults(resultsDict, criteriaIn):
   print("\nSaved top results on: %s" % fileName)
   
   
-def saveExtendedResults(resultsDict, papersDict, criteriaIn):
+def saveExtendedResults(resultsDict, criteriaIn):
   
   # Upper first character
   criteria = criteriaIn[0].upper() + criteriaIn[1:]
@@ -108,26 +108,18 @@ def saveExtendedResults(resultsDict, papersDict, criteriaIn):
     count += 1
     writer.writerow(dictWriter)
     
-    # Find papers within the arguments
-    # run on papersDict
-    noIncludedInRange = 0
-    for paper in papersDict:
-      if int(paper["year"]) not in value["year"]:
-        continue
-      
-      # run on input arguments
-      for item in paper[criteriaIn].split("; "):
-        if value["name"].upper() == item.upper():
-          dictWriter = {}
-          dictWriter["Title"] = paper["title"]
-          dictWriter["Year"] = paper["year"]
-          dictWriter["Authors"] = paper["authors"]
-          dictWriter["Country"] = paper["country"]
-          dictWriter["Author keywords"] = paper["authorKeywords"].upper()
-          dictWriter["Document type"] = paper["documentType"]
-          dictWriter["Cited by"] = paper["citedBy"]
-          dictWriter["EID"] = paper["eid"]
-          writer.writerow(dictWriter)
+    
+    for paper in value["papers"]:
+      dictWriter = {}
+      dictWriter["Title"] = paper["title"]
+      dictWriter["Year"] = paper["year"]
+      dictWriter["Authors"] = paper["authors"]
+      dictWriter["Country"] = paper["country"]
+      dictWriter["Author keywords"] = paper["authorKeywords"].upper()
+      dictWriter["Document type"] = paper["documentType"]
+      dictWriter["Cited by"] = paper["citedBy"]
+      dictWriter["EID"] = paper["eid"]
+      writer.writerow(dictWriter)
 
   ofile.close()
   

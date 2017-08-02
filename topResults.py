@@ -136,6 +136,7 @@ for topic in topTopcis:
   topResults[topic[0]]["count"] = [0] * len(yearArray)
   topResults[topic[0]]["total"] = 0
   topResults[topic[0]]["name"] = 0
+  topResults[topic[0]]["papers"] = []
 
 
 # Find papers within the arguments
@@ -156,6 +157,7 @@ for paper in papersDict:
             topResults[item.upper()]["total"] += int(paper["citedBy"])
           
           topResults[item.upper()]["name"] = item
+          topResults[item.upper()]["papers"].append(paper)
         except:
           noIncludedInRange += 1
           #print("Paper on year: %s" % paper.year)
@@ -212,5 +214,5 @@ if args.noPlot:
     plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot)
 
 paperSave.saveTopResults(topResults, args.criteria)
-paperSave.saveExtendedResults(topResults, papersDict, args.criteria)
+paperSave.saveExtendedResults(topResults, args.criteria)
 
