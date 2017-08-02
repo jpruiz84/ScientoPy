@@ -21,7 +21,7 @@ help="Search criteria, ex: ")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top items listed")
 
-parser.add_argument("--start", type=int, default=0,  help="To filter the \
+parser.add_argument("-s", "--start", type=int, default=0,  help="To filter the \
 first element, ex to filter the first 2 elements on the list use -s 2")
 
 parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
@@ -33,13 +33,17 @@ help="To present the results in percentage per year", action="store_true")
 parser.add_argument("--yLog", 
 help="Plot with Y axes on log scale", action="store_true")
 
-parser.add_argument("-s", "--savePlot", default="",  help="Save plot to a file")
+parser.add_argument("--savePlot", default="",  help="Save plot to a file")
 
 parser.add_argument("-r", "--lastResults",
 help="Analyze based on the last results", action="store_false")
 
 parser.add_argument("--noPlot",
 help="Analyze based on the last results", action="store_false")
+
+parser.add_argument("--useCitedBy",
+help="Analyze top resutls based on times cited", action="store_true")
+
 
 
 args = parser.parse_args()
@@ -87,15 +91,22 @@ for paper in papersDict:
   for item in paper[args.criteria].split("; "):
     if item == "":
       continue
-    
-    # filter not included years
-    if int(paper["year"]) not in yearArray:
-      continue
-    if item.upper() in topicList:
-      topicList[item.upper()] += 1 
-    else:
-      topicList[item.upper()] = 1 
-
+    try:
+      # filter not included years
+      if int(paper["year"]) not in yearArray:
+        continue
+      if item.upper() in topicList:
+        if not args.useCitedBy:
+          topicList[item.upper()] += 1 
+        else:
+          topicList[item.upper()] += int(paper["citedBy"])
+      else:
+        if not args.useCitedBy:
+          topicList[item.upper()] = 1 
+        else:
+          topicList[item.upper()] = int(paper["citedBy"])
+    except:
+      noWithCitedBy = 1
 
 topTopcis = sorted(topicList.iteritems(), 
 key=lambda x:-x[1])[int(args.start):int(args.length)]
@@ -137,8 +148,13 @@ for paper in papersDict:
       if topic[0].upper() == item.upper():
         try:
           index = topResults[item.upper()]["year"].index(int(paper["year"]))
-          topResults[item.upper()]["count"][index] += 1
-          topResults[item.upper()]["total"] += 1
+          if not args.useCitedBy:
+            topResults[item.upper()]["count"][index] += 1
+            topResults[item.upper()]["total"] += 1
+          else:
+            topResults[item.upper()]["count"][index] += int(paper["citedBy"])
+            topResults[item.upper()]["total"] += int(paper["citedBy"])
+          
           topResults[item.upper()]["name"] = item
         except:
           noIncludedInRange += 1

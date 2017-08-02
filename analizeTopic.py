@@ -22,7 +22,7 @@ parser.add_argument("-t", "--topics", help='Topics to analize according to crite
 parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
 parser.add_argument("--endYear", type=int, default=2016,  help="End year year to limit the search")
 
-parser.add_argument("-s", "--savePlot", default="",  help="Save plot to a file")
+parser.add_argument("--savePlot", default="",  help="Save plot to a file")
 
 parser.add_argument("--pYear", 
 help="To present the results in percentage per year", action="store_true")
@@ -80,6 +80,7 @@ for topics in topicList:
   topicResults[topics[0].upper()]["count"] = [0] * len(yearArray)
   topicResults[topics[0].upper()]["total"] = 0
   topicResults[topics[0].upper()]["name"] = topics[0]
+  topicResults[topics[0].upper()]["papers"] = []
   
 #print(topicResults)
 
@@ -97,6 +98,7 @@ for paper in papersDict:
             topicResults[topics[0].upper()]["count"][index] += 1
             topicResults[topics[0].upper()]["total"] += 1
             topicResults[topics[0].upper()]["name"] = item
+            topicResults[topics[0].upper()]["papers"].append(paper)
             papersDictOut.append(paper)
           except:
             noIncludedInRange += 1
@@ -144,5 +146,7 @@ else:
 paperSave.saveTopResults(topicResults, args.criteria)
 paperSave.saveResults(papersDictOut, 
 globalVar.RESULTS_FOLDER + globalVar.OUTPUT_FILE_NAME)
+
+paperSave.saveExtendedResults(topicResults, papersDict, args.criteria)
 
 

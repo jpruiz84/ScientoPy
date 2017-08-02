@@ -5,9 +5,9 @@ import globalVar
 import os
 
 
-DATAIN_FOLDER = "./dataInTest/"
+#DATAIN_FOLDER = "./dataInTest/"
 #DATAIN_FOLDER = "./dataInVal/"
-#DATAIN_FOLDER = "./dataIn/"
+DATAIN_FOLDER = "./dataIn/"
 #DATAIN_FOLDER = "./dataInA/"
 
 
