@@ -45,7 +45,7 @@ for x in topicsFirst:
 # Remove input start and end spaces 
 for item1 in topicList:
   for item2 in item1:
-    item2 = item1.strip()
+    item2 = item2.strip()
 
 INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
 
