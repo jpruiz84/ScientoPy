@@ -30,6 +30,10 @@ help="To present the results in percentage per year", action="store_true")
 parser.add_argument("--yLog", 
 help="Plot with Y axes on log scale", action="store_true")
 
+parser.add_argument("--noPlot",
+help="Analyze based on the last results", action="store_false")
+
+
 
 args = parser.parse_args()
 topicsFirst = args.topics.split(";")
@@ -37,7 +41,11 @@ topicsFirst = args.topics.split(";")
 topicList = []
 for x in topicsFirst:
   topicList.append(x.split(","))
-
+  
+# Remove input start and end spaces 
+for item1 in topicList:
+  for item2 in item1:
+    item2 = item1.strip()
 
 INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
 
@@ -114,29 +122,38 @@ if args.pYear:
       if value != 0:
         topicResults[topics[0].upper()]["count"][index] /= (float(value)/100.0)
 
+
 print("\nTop list:")
 count = 0
-legendArray=[]
 for topics in topicList:
-  legendArray.append(topics[0])
   print("%s. %s: %s" % (count + 1, 
   str(topics).translate(None, "'[]'"), topicResults[topics[0].upper()]["total"]))
-    
-  plt.plot(topicResults[topics[0].upper()]["year"], topicResults[topics[0].upper()]["count"], 
-  linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, 
-  zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
-  
   count += 1
-  
-plt.legend(legendArray, loc = 2)  
-plt.xlabel("Publication year")
-plt.ylabel("Number of documents")
+
+
+if args.noPlot:
+  count = 0
+  legendArray=[]
+  for topics in topicList:
+    legendArray.append(topics[0])
+      
+    plt.plot(topicResults[topics[0].upper()]["year"], topicResults[topics[0].upper()]["count"], 
+    linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, 
+    zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
+    
+    count += 1
+    
+  plt.legend(legendArray, loc = 2)  
+  plt.xlabel("Publication year")
+  plt.ylabel("Number of documents")
 
 if args.yLog:
   plt.yscale('log')
 
 if args.pYear:
   plt.ylabel("% of documents per year")
+
+plt.tight_layout()
 
 if args.savePlot == "":
   plt.show()

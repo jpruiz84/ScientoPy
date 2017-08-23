@@ -89,7 +89,7 @@ def saveExtendedResults(resultsDict, criteriaIn):
   fileName = globalVar.RESULTS_FOLDER + criteria + "_extended.csv"
   ofile = open(fileName, 'w')
   
-  fieldnames = ["Pos.", "Topic " + criteria, "Total", "Title", "Year", "Authors", "Author keywords", "Country", "Document type", "Cited by", "EID"]
+  fieldnames = ["Pos.", "Topic " + criteria, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors", "Author keywords", "Country", "Document type"]
   
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -119,6 +119,7 @@ def saveExtendedResults(resultsDict, criteriaIn):
       dictWriter["Document type"] = paper["documentType"]
       dictWriter["Cited by"] = paper["citedBy"]
       dictWriter["EID"] = paper["eid"]
+      dictWriter["EID2"] = paper["duplicatedIn"]
       writer.writerow(dictWriter)
 
   ofile.close()

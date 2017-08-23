@@ -65,6 +65,8 @@ print("Reading file: %s" % (INPUT_FILE))
 paperUtils.analyzeFileDict(ifile, papersDict)
 ifile.close()
 
+#paperDict = sorted(papersDict, key=lambda x: x["citedBy"])
+
 print("Scopus papers: %s" % globalVar.papersScopus)
 print("WoS papers: %s" % globalVar.papersWoS)
 print("Omited papers: %s" % globalVar.omitedPapers)
@@ -207,6 +209,8 @@ if args.noPlot:
     
   if args.yLog:
     plt.yscale('log')
+    
+  plt.tight_layout()
     
   if args.savePlot == "":
     plt.show()

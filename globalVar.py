@@ -8,7 +8,7 @@ RESULTS_FOLDER = "results/"
 INCLUDED_TYPES = ["Conference Paper", "Article", 
 "Review", "Proceedings Paper"]
 TOP_TREND_SIZE = 200
-AVERAGE_RATE_YEARS = 3
+AVERAGE_RATE_YEARS = 2
 
 COLORS = ["#ff0000", "#009900", "#0000ff", "#ee7700", "#8b4513", "#8a2be2", "#000000", "#00bfff", "#b8860b", "#fa8072", "#696969",
 "#ff0000", "#009900", "#0000ff", "#ee7700", "#8b4513", "#8a2be2", "#000000", "#00bfff", "#b8860b", "#fa8072", "#696969",

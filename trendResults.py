@@ -10,6 +10,7 @@ import sys
 import matplotlib.pyplot as plt
 import math
 import pprint
+import numpy as np
 
 
 import argparse
@@ -33,12 +34,16 @@ help="To present the results in percentage per year", action="store_true")
 parser.add_argument("--neg", 
 help="Get the top documents with the worst growth rate", action="store_true")
 
+parser.add_argument("-t", "--topics", help='Topics to analize according to critera, ex: -t "internet of things,iot;bluetooth" ')
+
+parser.add_argument("--savePlot", default="",  help="Save plot to a file")
+
 args = parser.parse_args()
 
 INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
 
 # Program start ********************************************************
- 
+
 # Start paper list empty
 papersDict = []
 
@@ -167,41 +172,51 @@ if args.pYear:
       if value != 0:
         dataDic[topic[0].upper()]["count"][index] /= (float(value)/100.0)
 
+agrArray = []
+legendArray = []
+objects = []
 
-legendArray=[]
-count = 0
-for i in range(0,args.length):
-   
-  plt.plot(dataDic[topTrends[i][0]]["year"], dataDic[topTrends[i][0]]["count"]
-  linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, 
-  zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
+if args.topics:
+  argTopicList = args.topics.split(";")
+  
+  # Remove input start and end spaces 
+  for item in argTopicList:
+    item = item.strip()
+  
+  print argTopicList
+  
+  for itemTopic in topTrends:
+    for argTopic in argTopicList:
+      if itemTopic[1]["name"].upper() == argTopic.upper():
+        agrArray.append(itemTopic[1]["averageRate"])
+        objects.append(itemTopic[1]["name"])
 
-  legendArray.append(dataDic[topTrends[i][0]]["name"])
-  
-  count += 1
-  
-  
-'''
-legendArray=[]
-for topic in topTrends:
-  #print("Key: %s, total: %s" % (topic[0].upper(), dataDic[topic[0].upper()]["total"]))
-  #for j in range (0, len(dataDic[topic[0].upper()]["year"])):
-  #  print("\t%s = %s" % ((dataDic[topic[0].upper()]["year"][j])
-  #  , dataDic[topic[0].upper()]["count"][j]))
+else:
+  for i in range(0,args.length):
+    agrArray.append(topTrends[i][1]["averageRate"])
+    objects.append(topTrends[i][1]["name"])
+
     
-
-  plt.plot(topic[1]["year"], topic[1]["rate"], linewidth=2.0)
+y_pos = np.arange(len(objects))
+y_pos = y_pos[::-1] 
   
-  legendArray.append(topic[1]["name"])
-'''
-  
-plt.legend(legendArray, loc = 0)  
-plt.xlabel("Publication year")
-plt.ylabel("Number of documents")
+plt.barh(y_pos, agrArray, height=0.7, align='center', color = globalVar.COLORS)
+plt.yticks(y_pos, objects)
+plt.xlabel('Average growth rate (publications/year)')
+#plt.ylabel("Number of documents")
 if args.pYear:
   plt.ylabel("% of documents per year")
 
-plt.show()
+ax = plt.axes()
+ax.set_xlim(xmin=0, xmax=max(agrArray)*1.1)
+plt.grid(True)
+ax.set_axisbelow(True)
 
+plt.tight_layout()
+
+if args.savePlot == "":
+  plt.show()
+else:
+  plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot)
 
 
