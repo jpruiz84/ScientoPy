@@ -54,7 +54,7 @@ def saveTopResults(resultsDict, criteriaIn):
   fileName = globalVar.RESULTS_FOLDER + criteria + ".csv"
   ofile = open(fileName, 'w')
   
-  fieldnames = ["Pos.", criteria, "Total"] + resultsDict[resultsDict.keys()[0]]["year"]
+  fieldnames = ["Pos.", criteria, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
   
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -69,6 +69,7 @@ def saveTopResults(resultsDict, criteriaIn):
     dictWriter["Pos."] = str(count)
     dictWriter[criteria] = value["name"]
     dictWriter["Total"] = value["total"]
+    dictWriter["hIndex"] = value["hIndex"]
     for yearItem in value["year"]:
       index = value["year"].index(yearItem)
       dictWriter[yearItem] = value["count"][index]
@@ -107,9 +108,12 @@ def saveExtendedResults(resultsDict, criteriaIn):
 
     count += 1
     writer.writerow(dictWriter)
-    
-    
-    for paper in value["papers"]:
+
+    # Sort papers by cited by count
+    papersIn = value["papers"]
+    papersIn = sorted(papersIn, key=lambda x: int(x["citedBy"]), reverse=True)
+
+    for paper in papersIn:
       dictWriter = {}
       dictWriter["Title"] = paper["title"]
       dictWriter["Year"] = paper["year"]

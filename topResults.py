@@ -39,15 +39,12 @@ parser.add_argument("-r", "--lastResults",
 help="Analyze based on the last results", action="store_false")
 
 parser.add_argument("--noPlot",
-help="Analyze based on the last results", action="store_false")
+help="Do not plot the resutls", action="store_false")
 
 parser.add_argument("--useCitedBy",
-help="Analyze top resutls based on times cited", action="store_true")
-
-
+help="Analyze top results based on times cited", action="store_true")
 
 args = parser.parse_args()
-
 
 if args.lastResults:
   INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
@@ -131,14 +128,15 @@ if args.start > 0:
 
 # Create results data dictionary
 topResults = {}
-
 for topic in topTopcis:
-  topResults[topic[0]] = {}
-  topResults[topic[0]]["year"] = yearArray
-  topResults[topic[0]]["count"] = [0] * len(yearArray)
-  topResults[topic[0]]["total"] = 0
-  topResults[topic[0]]["name"] = 0
-  topResults[topic[0]]["papers"] = []
+  topicName = topic[0]
+  topResults[topicName] = {}
+  topResults[topicName]["year"] = yearArray
+  topResults[topicName]["count"] = [0] * len(yearArray)
+  topResults[topicName]["total"] = 0
+  topResults[topicName]["name"] = 0
+  topResults[topicName]["papers"] = []
+  topResults[topicName]["hIndex"] = 0
 
 
 # Find papers within the arguments
@@ -166,7 +164,7 @@ for paper in papersDict:
 
 #print(topResults)
 
-
+# Percentage per year
 if args.pYear:
   for topic in topTopcis:
     for year, value in yearPapers.iteritems():
@@ -175,12 +173,34 @@ if args.pYear:
         topResults[topic[0].upper()]["count"][index] /= (float(value)/100.0)
 
 
+# h index **********************
+for topic in topTopcis:
+  topicName = topic[0]
+  #print("\n" + topicName)
 
+  # Sort papers by cited by count
+  papersIn = topResults[topicName]["papers"]
+  papersIn = sorted(papersIn, key=lambda x: int(x["citedBy"]), reverse = True)
+
+  count = 1
+  for paper in papersIn:
+    #print(str(count) + ". " + paper["citedBy"])
+    if int(paper["citedBy"]) >= count:
+      hIndex = count
+    count += 1
+
+  #print("hIndex: " + str(hIndex))
+  topResults[topicName]["hIndex"] = hIndex
+
+
+# Print top topics
 print("\nTop topics:")
+print("Pos. " + args.criteria + ", Total, h-index")
 count = 0
 for topic in topTopcis:
-  print("%s. %s: %s" % (count + 1,
-  topResults[topic[0].upper()]["name"], topResults[topic[0].upper()]["total"]))
+  print("%s. %s: %s, %s" % (count + 1,
+  topResults[topic[0].upper()]["name"], topResults[topic[0].upper()]["total"],
+                            str(topResults[topic[0].upper()]["hIndex"])))
   count += 1
 
 

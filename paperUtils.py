@@ -90,7 +90,11 @@ def analyzeFileDict(ifile, papersDict):
         
           
         colnum += 1
-      
+
+      # If cited by is emtpy add 0
+      if paperIn["citedBy"] == "":
+        paperIn["citedBy"] = "0"
+
       # Remove dots from authors
       paperIn["authors"] = paperIn["authors"].replace(".", "")
       
@@ -178,6 +182,7 @@ def printPaper(paper):
     print("- " + af)
   print('Country: %s' % (paper["country"]))
   print('Document type: %s' % (paper["documentType"]))
+  print('Cited by: %s' % (paper["citedBy"]))
   print('\n')
   
   
@@ -195,7 +200,8 @@ def removeDuplicates(paperDict):
   # Remove whitespace at the end of the tile
   for paper in paperDict:
     paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["title"].upper()).rstrip()
-  
+
+  # Short by database, to put WoS first over Scopus, reverse True
   paperDict = sorted(paperDict, key=lambda x: x["dataBase"], reverse=True)
   paperDict = sorted(paperDict, key=lambda x: x["titleB"])
  
@@ -222,12 +228,12 @@ def removeDuplicates(paperDict):
         print("\nPaper %s duplicated with %s" %  (i, i+1))
         
         print("Dup A: %s, %s" % (paperDict[i]["title"], paperDict[i]["year"]))
-        print("Autrhos, database: %s, %s" % 
-        (paperDict[i]["authors"], paperDict[i]["dataBase"]))
+        print("Authors: %s, Database: %s, Cited by: %s" %
+        (paperDict[i]["authors"], paperDict[i]["dataBase"], paperDict[i]["citedBy"]))
         
         print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
-        print("Authors, database: %s, %s" % 
-        (paperDict[i+1]["authors"], paperDict[i+1]["dataBase"]))
+        print("Authors: %s, Database: %s, Cited by: %s" %
+        (paperDict[i+1]["authors"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
         
         if paperDict[i+1]["dataBase"] == "WoS":
           removedPapersWoS += 1
@@ -238,6 +244,12 @@ def removeDuplicates(paperDict):
         # Remove paper j
         print("Removing: %s" % paperDict[i+1]["dataBase"])
         paperDict[i]["duplicatedIn"] = paperDict[i+1]["eid"]
+
+        # If the cited by count from the paper to remove is bigger than the cited by count for
+        # the paper to keep, set the cited by count with the bigger one
+        if int(paperDict[i + 1]["citedBy"]) > int(paperDict[i]["citedBy"]):
+          paperDict[i]["citedBy"] = paperDict[i + 1]["citedBy"]
+
         paperDict.remove(paperDict[i+1])
         duplicatedPapersCount += 1
         continue
@@ -299,4 +311,5 @@ def sourcesStatics(paperDict):
 
 
   
+
 
