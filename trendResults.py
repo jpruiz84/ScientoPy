@@ -28,7 +28,7 @@ first element, ex to filter the first 2 elements on the list use -s 2")
 parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
 parser.add_argument("--endYear", type=int, default=2016,  help="End year year to limit the search")
 
-parser.add_argument("--pYear", 
+parser.add_argument("--pYear",
 help="To present the results in percentage per year", action="store_true")
 
 parser.add_argument("--neg", 
@@ -116,7 +116,7 @@ for topic in topTopcis:
   dataDic[topic[0]]["year"] = yearArray
   dataDic[topic[0]]["count"] = [0] * len(yearArray)
   dataDic[topic[0]]["rate"] = [0] * len(yearArray)
-  dataDic[topic[0]]["averageRate"] = 0
+  dataDic[topic[0]]["averageRate"] = [0] * globalVar.TREND_PERIODS
   dataDic[topic[0]]["total"] = 0
   dataDic[topic[0]]["name"] = 0
 
@@ -143,20 +143,25 @@ for paper in papersDict:
 # Get the rate per year, and averageRate
 for key, data in dataDic.iteritems():
   pastCount = 0
-  data["averageRate"] = 0
+  data["averageRate"] = [0] * globalVar.TREND_PERIODS
+
+  # Calculate rates
   for i in range(0,len(data["year"])):
     data["rate"][i] = data["count"][i] - pastCount
     pastCount = data["count"][i]
-    
-    if i > (len(data["year"]) - (globalVar.AVERAGE_RATE_YEARS + 1)):
-      data["averageRate"] += data["rate"][i]
-  data["averageRate"] /= globalVar.AVERAGE_RATE_YEARS
-    
+
+  # Calculate average rates
+  for i in range(0,globalVar.TREND_PERIODS):
+    pEnd = len(data["rate"]) - i*2
+    pStart = len(data["rate"]) - i*2 - 2
+
+    data["averageRate"][i] = np.mean(data["rate"][pStart:pEnd])
+
 # Get the top trends
 if args.neg:
-  topTrends = sorted(dataDic.iteritems(), key=lambda (k,v): (v["averageRate"],k))
+  topTrends = sorted(dataDic.iteritems(), key=lambda (k,v): (v["averageRate"][0],k))
 else:
-  topTrends = sorted(dataDic.iteritems(), key=lambda (k,v): (-v["averageRate"],k))
+  topTrends = sorted(dataDic.iteritems(), key=lambda (k,v): (-v["averageRate"][0],k))
   
 count = 1
 print("\nTop average rate")
@@ -196,21 +201,38 @@ else:
     agrArray.append(topTrends[i][1]["averageRate"])
     objects.append(topTrends[i][1]["name"])
 
-    
+
+# To set the plot labels
+labels = []
+for i in range(0, globalVar.TREND_PERIODS):
+  pEnd = len(yearArray) - i*2
+  pStart = len(yearArray) - i*2 - 2
+  labelString = str(yearArray[pStart]) + " to " +  str(yearArray[pEnd-1])
+  labels.append(labelString)
+
+print labels
+# Plot
 y_pos = np.arange(len(objects))
-y_pos = y_pos[::-1] 
-  
-plt.barh(y_pos, agrArray, height=0.7, align='center', color = globalVar.COLORS)
-plt.yticks(y_pos, objects)
+y_pos = y_pos[::-1]
+width = 0.27       # the width of the bars
+
+for i in range(0,globalVar.TREND_PERIODS):
+  plt.barh(y_pos + width*i, [row[i] for row in agrArray], height=width, align='center', label = labels[i], color = globalVar.COLORS[i])
+
+plt.yticks(y_pos + width*globalVar.TREND_PERIODS/3, objects)
 plt.xlabel('Average growth rate (publications/year)')
 #plt.ylabel("Number of documents")
 if args.pYear:
   plt.ylabel("% of documents per year")
 
 ax = plt.axes()
-ax.set_xlim(xmin=0, xmax=max(agrArray)*1.1)
+ax.set_xlim(xmin=0, xmax=max(map(max,agrArray))*1.1)
 plt.grid(True)
 ax.set_axisbelow(True)
+
+# Reverse the order of the legends
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles[::-1], labels[::-1], loc='lower right')
 
 plt.tight_layout()
 

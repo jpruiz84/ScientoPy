@@ -41,7 +41,9 @@ python topResults.py subject --startYear 2006 -l 7 --savePlot "subject.eps"
 python analizeTopic.py dataBase -t "Scopus;WoS" --savePlot "dataBase_postFilter.eps"
 
 # Buzzwords:
-python trendResults.py authorKeywords -t "Cloud computing;Security;Big Data;Wireless sensor networks;Privacy;Industry 4.0;Fog computing;SDN" --savePlot "trending.eps"
+python trendResults.py authorKeywords --trendYears 5 -t "Cloud computing;Security;Big Data;Wireless sensor networks;Privacy;Industry 4.0;Fog computing;SDN" --savePlot "trending_5years.eps"
+python trendResults.py authorKeywords --trendYears 3 -t "Cloud computing;Security;Big Data;Wireless sensor networks;Privacy;Industry 4.0;Fog computing;SDN" --savePlot "trending_3years.eps"
+python trendResults.py authorKeywords --trendYears 2 -t "Cloud computing;Security;Big Data;Wireless sensor networks;Privacy;Industry 4.0;Fog computing;SDN" --savePlot "trending_2years.eps"
 
 
 
