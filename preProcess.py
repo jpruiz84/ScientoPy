@@ -3,12 +3,23 @@ import paperUtils
 import paperSave
 import globalVar
 import os
+import argparse
+parser = argparse.ArgumentParser()
+
+
+parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
+parser.add_argument("--endYear", type=int, default=2016,  help="End year year to limit the search")
+
+args = parser.parse_args()
+
 
 
 #DATAIN_FOLDER = "./dataInTest/"
 #DATAIN_FOLDER = "./dataInVal/"
 DATAIN_FOLDER = "./dataIn/"
 #DATAIN_FOLDER = "./dataInA/"
+
+
 
 
 # Program start ********************************************************
@@ -31,6 +42,17 @@ for file in os.listdir(DATAIN_FOLDER):
     print("Reading file: %s" % (DATAIN_FOLDER + file))
     ifile = open(DATAIN_FOLDER + file, "rb")
     paperUtils.analyzeFileDict(ifile, paperDict)
+
+# Removed paper out of the including period time
+countOutTimeRemoved = 0
+for paper in paperDict:
+  if (int(paper["year"]) < args.startYear) or \
+  (int(paper["year"]) > args.endYear):
+    paperDict.remove(paper)
+    #paperUtils.printPaper(paper)
+    countOutTimeRemoved += 1
+
+print("countOutTimeRemoved: " + str(countOutTimeRemoved))
 
 
 globalVar.logFile = open(
@@ -55,6 +77,9 @@ paperUtils.sourcesStatics(paperDict)
 
 # Removing duplicates
 paperDict = paperUtils.removeDuplicates(paperDict)
+
+
+    
 
 
 print("\nSources statistics after removing duplications:")

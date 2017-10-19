@@ -158,7 +158,8 @@ plt.tight_layout()
 if args.savePlot == "":
   plt.show()
 else:
-  plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot)
+  plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot,
+  bbox_inches = 'tight', pad_inches = 0.01)
   
 paperSave.saveTopResults(topicResults, args.criteria)
 paperSave.saveResults(papersDictOut, 
