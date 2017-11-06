@@ -183,6 +183,7 @@ for topic in topTopcis:
   papersIn = sorted(papersIn, key=lambda x: int(x["citedBy"]), reverse = True)
 
   count = 1
+  hIndex = 0
   for paper in papersIn:
     #print(str(count) + ". " + paper["citedBy"])
     if int(paper["citedBy"]) >= count:

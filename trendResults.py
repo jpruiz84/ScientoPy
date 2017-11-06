@@ -207,7 +207,7 @@ labels = []
 for i in range(0, globalVar.TREND_PERIODS):
   pEnd = len(yearArray) - i*2
   pStart = len(yearArray) - i*2 - 2
-  labelString = str(yearArray[pStart]) + " to " +  str(yearArray[pEnd-1])
+  labelString = str(yearArray[pStart]) + " - " +  str(yearArray[pEnd-1])
   labels.append(labelString)
 
 print labels
@@ -232,7 +232,9 @@ ax.set_axisbelow(True)
 
 # Reverse the order of the legends
 handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles[::-1], labels[::-1], loc='lower right')
+ax.legend(handles[::-1], labels[::-1], title="Time periods", loc='lower right')
+ax.get_legend().get_title().set_fontsize('14')
+
 
 plt.tight_layout()
 
