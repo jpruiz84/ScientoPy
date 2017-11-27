@@ -10,11 +10,11 @@ import re
 
 
 import argparse
-parser = argparse.ArgumentParser(description="Analyze the topics inside a criteria")
+parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
-parser.add_argument("criteria", choices=["authors", "source",  "subject",
+parser.add_argument("criterion", choices=["authors", "source",  "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
-help="Select the criteria to analyze the topics")
+help="Select the criterion to analyze the topics")
 
 parser.add_argument("-t", "--topics", help='Topics to analyze according to critera, '
                                            'ex: authorKeywords -t "internet of things,iot;bluetooth" ')
@@ -97,7 +97,7 @@ for topics in topicList:
 noIncludedInRange = 0
 for paper in papersDict:
   # run on input arguments
-  for item in paper[args.criteria].upper().split("; "):
+  for item in paper[args.criterion].upper().split("; "):
     for topics in topicList:
       for topic in topics:
         if topic.upper() == item.upper(): 
@@ -181,8 +181,8 @@ else:
   plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
   bbox_inches = 'tight', pad_inches = 0.01)
   
-paperSave.saveTopResults(topicResults, args.criteria)
+paperSave.saveTopResults(topicResults, args.criterion)
 paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
-paperSave.saveExtendedResults(topicResults, args.criteria)
+paperSave.saveExtendedResults(topicResults, args.criterion)
 
 

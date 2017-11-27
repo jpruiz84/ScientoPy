@@ -267,7 +267,7 @@ def removeDuplicates(paperDict, logWriter):
       match &=  paperDict[i]["titleB"] == paperDict[i+1]["titleB"]
 
       
-      # If the criteria match
+      # If the criterion match
       if(match == True):
         print("\nPaper %s duplicated with %s" %  (i, i+1))
         

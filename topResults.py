@@ -84,7 +84,7 @@ for paper in papersDict:
   if int(paper["year"]) in yearPapers.keys():
     yearPapers[int(paper["year"])] += 1 
     
-  for item in paper[args.criteria].split("; "):
+  for item in paper[args.criterion].split("; "):
     if item == "":
       continue
     try:
@@ -141,7 +141,7 @@ for topic in topTopcis:
 noIncludedInRange = 0
 for paper in papersDict:
   # run on input arguments
-  for item in paper[args.criteria].split("; "):
+  for item in paper[args.criterion].split("; "):
     for topic in topTopcis:
       if topic[0].upper() == item.upper():
         try:
@@ -193,7 +193,7 @@ for topic in topTopcis:
 
 # Print top topics
 print("\nTop topics:")
-print("Pos. " + args.criteria + ", Total, h-index")
+print("Pos. " + args.criterion + ", Total, h-index")
 count = 0
 for topic in topTopcis:
   print("%s. %s: %s, %s" % (count + 1,
@@ -236,6 +236,6 @@ if args.noPlot:
     plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
     bbox_inches = 'tight', pad_inches = 0.01)
 
-paperSave.saveTopResults(topResults, args.criteria)
-paperSave.saveExtendedResults(topResults, args.criteria)
+paperSave.saveTopResults(topResults, args.criterion)
+paperSave.saveExtendedResults(topResults, args.criterion)
 

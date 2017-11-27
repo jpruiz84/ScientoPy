@@ -3,7 +3,7 @@ DEFAULT_END_YEAR = 2017
 
 
 PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
-OUTPUT_FILE_NAME = "papersPreprocessed.txt"
+OUTPUT_FILE_NAME = "papersPreprocessed.csv"
 DATA_OUT_FOLDER = "dataPre"
 GRAPHS_OUT_FOLDER = "graphs"
 

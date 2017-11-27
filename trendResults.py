@@ -14,11 +14,11 @@ import numpy as np
 
 
 import argparse
-parser = argparse.ArgumentParser(description="Find the top trending topics in a criteria.")
+parser = argparse.ArgumentParser(description="Find the top trending topics in a criterion.")
 
-parser.add_argument("criteria", choices=["authors", "source", "subject",
+parser.add_argument("criterion", choices=["authors", "source", "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
-help="Search criteria, ex: ")
+help="Search criterion, ex: ")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top items listed, default 10")
 
@@ -74,7 +74,7 @@ for paper in papersDict:
   if int(paper["year"]) in yearPapers.keys():
     yearPapers[int(paper["year"])] += 1 
     
-  for item in paper[args.criteria].split("; "):
+  for item in paper[args.criterion].split("; "):
     if item == "":
       continue
     
@@ -125,7 +125,7 @@ for topic in topTopcis:
 noIncludedInRange = 0
 for paper in papersDict:
   # run on input arguments
-  for item in paper[args.criteria].split("; "):
+  for item in paper[args.criterion].split("; "):
     for topic in topTopcis:
       if topic[0].upper() == item.upper():
         try:

@@ -47,15 +47,15 @@ def saveResults(paperDict, outFileName):
 
   ofile.close()
   
-def saveTopResults(resultsDict, criteriaIn):
+def saveTopResults(resultsDict, criterionIn):
   
   # Upper first character
-  criteria = criteriaIn[0].upper() + criteriaIn[1:]
+  criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criteria + ".csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".csv")
   ofile = open(fileName, 'w')
   
-  fieldnames = ["Pos.", criteria, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
+  fieldnames = ["Pos.", criterion, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
   
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -68,7 +68,7 @@ def saveTopResults(resultsDict, criteriaIn):
     value = item[1]
     dictWriter = {}
     dictWriter["Pos."] = str(count)
-    dictWriter[criteria] = value["name"]
+    dictWriter[criterion] = value["name"]
     dictWriter["Total"] = value["total"]
     dictWriter["hIndex"] = value["hIndex"]
     for yearItem in value["year"]:
@@ -83,15 +83,15 @@ def saveTopResults(resultsDict, criteriaIn):
   print("\nSaved top results on: %s" % fileName)
   
   
-def saveExtendedResults(resultsDict, criteriaIn):
+def saveExtendedResults(resultsDict, criterionIn):
   
   # Upper first character
-  criteria = criteriaIn[0].upper() + criteriaIn[1:]
+  criterion = criterionIn[0].upper() + criterionIn[1:]
   
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criteria + "_extended.csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.csv")
   ofile = open(fileName, 'w')
   
-  fieldnames = ["Pos.", "Topic " + criteria, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors", "Author keywords", "Country", "Document type"]
+  fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors", "Author keywords", "Country", "Document type"]
   
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -104,7 +104,7 @@ def saveExtendedResults(resultsDict, criteriaIn):
     value = itemR[1]
     dictWriter = {}
     dictWriter["Pos."] = str(count)
-    dictWriter["Topic " + criteria] = value["name"]
+    dictWriter["Topic " + criterion] = value["name"]
     dictWriter["Total"] = value["total"]
 
     count += 1
