@@ -43,7 +43,15 @@ topicsFirst = args.topics.split(";")
 topicList = []
 for x in topicsFirst:
   topicList.append(x.split(","))
-  
+
+# Remove begining space from topics
+for topic in topicList:
+  for idx,item in enumerate(topic):
+    topic[idx] = item.strip()
+
+
+print topicList
+
 # Remove input start and end spaces 
 for item1 in topicList:
   for item2 in item1:
