@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Analyze the documents by the different criteria, "
+parser = argparse.ArgumentParser(description="Analyze the documents by the different criterion, "
                                              "to extract the top topics")
 
-parser.add_argument("criteria", choices=["authors", "source", "subject",
+parser.add_argument("criterion", choices=["authors", "source", "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
-help="Select the criteria to find the top topics")
+help="Select the criterion to find the top topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
 
