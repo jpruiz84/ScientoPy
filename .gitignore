@@ -1,10 +1,15 @@
-# Ignore everything
-*
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# But not these files...
-!.gitignore
-!*.sh
-!*.py
 
-# ...even if they are in subdirectories
-!*/
+# Folders
+results/*
+graphs/*
+dataIn/*
+dataPre/*
+
+
+# Others
+*.log

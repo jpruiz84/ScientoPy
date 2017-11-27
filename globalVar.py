@@ -1,6 +1,6 @@
-PREPROCESS_LOG_FILE = "preProcessLog.txt"
-OUTPUT_FILE_NAME = "papersOutput.txt"
-DATA_OUT_FOLDER = "dataOut/"
+PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
+OUTPUT_FILE_NAME = "papersPreprocessed.txt"
+DATA_OUT_FOLDER = "dataPre/"
 GRAPHS_OUT_FOLDER = "graphs/"
 
 RESULTS_FOLDER = "results/"
