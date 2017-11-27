@@ -37,6 +37,13 @@ help="Do not plot the results, use for large amount of topics", action="store_fa
 
 args = parser.parse_args()
 
+
+# Create output folders if not exist
+if not os.path.exists(globalVar.GRAPHS_OUT_FOLDER):
+    os.makedirs(globalVar.GRAPHS_OUT_FOLDER)
+if not os.path.exists(globalVar.RESULTS_FOLDER):
+    os.makedirs(globalVar.RESULTS_FOLDER)
+
 # Divide the topics by ;
 topicsFirst = args.topics.split(";")
 

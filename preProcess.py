@@ -24,6 +24,10 @@ args = parser.parse_args()
 
 
 # Program start ********************************************************
+
+# Create output folders if not exist
+if not os.path.exists(globalVar.DATA_OUT_FOLDER):
+    os.makedirs(globalVar.DATA_OUT_FOLDER)
  
 # Init variables
 paperDict = []

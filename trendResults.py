@@ -41,6 +41,13 @@ parser.add_argument("--savePlot", default="",  help="Save plot to a file")
 args = parser.parse_args()
 
 # Program start ********************************************************
+
+# Create output folders if not exist
+if not os.path.exists(globalVar.GRAPHS_OUT_FOLDER):
+    os.makedirs(globalVar.GRAPHS_OUT_FOLDER)
+if not os.path.exists(globalVar.RESULTS_FOLDER):
+    os.makedirs(globalVar.RESULTS_FOLDER)
+
 # Input file
 INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
