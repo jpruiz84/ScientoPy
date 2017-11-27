@@ -1,9 +1,15 @@
+DEFAULT_START_YEAR = 2000
+DEFAULT_END_YEAR = 2017
+
+
 PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
 OUTPUT_FILE_NAME = "papersPreprocessed.txt"
-DATA_OUT_FOLDER = "dataPre/"
-GRAPHS_OUT_FOLDER = "graphs/"
+DATA_OUT_FOLDER = "dataPre"
+GRAPHS_OUT_FOLDER = "graphs"
 
-RESULTS_FOLDER = "results/"
+DEFUALT_DATA_IN_FOLDER = "dataIn"
+
+RESULTS_FOLDER = "results"
 
 INCLUDED_TYPES = ["Conference Paper", "Article", 
 "Review", "Proceedings Paper"]

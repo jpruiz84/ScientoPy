@@ -10,19 +10,19 @@ import re
 
 
 import argparse
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Analyze the topics inside a criteria")
 
 parser.add_argument("criteria", choices=["authors", "source",  "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
-help="Search criteria, ex: ")
+help="Select the criteria to analyze the topics")
 
-parser.add_argument("-t", "--topics", help='Topics to analize according to critera, ex: -t "internet of things,iot;bluetooth" ')
+parser.add_argument("-t", "--topics", help='Topics to analyze according to critera, '
+                                           'ex: authorKeywords -t "internet of things,iot;bluetooth" ')
 
+parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
+parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
 
-parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
-parser.add_argument("--endYear", type=int, default=2016,  help="End year year to limit the search")
-
-parser.add_argument("--savePlot", default="",  help="Save plot to a file")
+parser.add_argument("--savePlot", default="",  help='Save plot to a file, ex: --savePlot "topKeywords.eps"')
 
 parser.add_argument("--pYear", 
 help="To present the results in percentage per year", action="store_true")
@@ -31,11 +31,13 @@ parser.add_argument("--yLog",
 help="Plot with Y axes on log scale", action="store_true")
 
 parser.add_argument("--noPlot",
-help="Analyze based on the last results", action="store_false")
+help="Do not plot the results, use for large amount of topics", action="store_false")
 
-
+# Program start ********************************************************
 
 args = parser.parse_args()
+
+# Divide the topics by ;
 topicsFirst = args.topics.split(";")
 
 topicList = []
@@ -47,15 +49,14 @@ for item1 in topicList:
   for item2 in item1:
     item2 = item2.strip()
 
-INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
+INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
-# Program start ********************************************************
- 
- # Start paper list empty
+
+# Start paper list empty
 papersDict = []
 papersDictOut = []
 
-# Open the storaged database and add to papersDict 
+# Open the storage database and add to papersDict
 ifile = open(INPUT_FILE, "rb")
 print("Reading file: %s" % (INPUT_FILE))
 paperUtils.analyzeFileDict(ifile, papersDict)
@@ -66,15 +67,13 @@ print("WoS papers: %s" % globalVar.papersWoS)
 print("Omited papers: %s" % globalVar.omitedPapers)
 print("Total papers: %s" % len(papersDict))
 
-
 # Create a yearArray
 yearArray = range(args.startYear, args.endYear + 1)
-
-
 yearPapers = {}
 for i in range(args.startYear, args.endYear + 1):
   yearPapers[i] = 0
   
+# Find the number of total papers per year
 for paper in papersDict:
   if int(paper["year"]) in yearPapers.keys():
     yearPapers[int(paper["year"])] += 1 
@@ -89,6 +88,7 @@ for topics in topicList:
   topicResults[topics[0].upper()]["total"] = 0
   topicResults[topics[0].upper()]["name"] = topics[0]
   topicResults[topics[0].upper()]["papers"] = []
+  topicResults[topics[0].upper()]["hIndex"] = []
   
 #print(topicResults)
 
@@ -123,6 +123,26 @@ if args.pYear:
         topicResults[topics[0].upper()]["count"][index] /= (float(value)/100.0)
 
 
+# h index **********************
+for topic in topicList:
+  topicName = topic[0].upper()
+  #print("\n" + topicName)
+
+  # Sort papers by cited by count
+  papersIn = topicResults[topicName]["papers"]
+  papersIn = sorted(papersIn, key=lambda x: int(x["citedBy"]), reverse = True)
+
+  count = 1
+  hIndex = 0
+  for paper in papersIn:
+    #print(str(count) + ". " + paper["citedBy"])
+    if int(paper["citedBy"]) >= count:
+      hIndex = count
+    count += 1
+
+  #print("hIndex: " + str(hIndex))
+    topicResults[topicName]["hIndex"] = hIndex
+
 print("\nTop list:")
 count = 0
 for topics in topicList:
@@ -130,7 +150,7 @@ for topics in topicList:
   str(topics).translate(None, "'[]'"), topicResults[topics[0].upper()]["total"]))
   count += 1
 
-
+# Plot
 if args.noPlot:
   count = 0
   legendArray=[]
@@ -158,13 +178,11 @@ plt.tight_layout()
 if args.savePlot == "":
   plt.show()
 else:
-  plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot,
+  plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
   bbox_inches = 'tight', pad_inches = 0.01)
   
 paperSave.saveTopResults(topicResults, args.criteria)
-paperSave.saveResults(papersDictOut, 
-globalVar.RESULTS_FOLDER + globalVar.OUTPUT_FILE_NAME)
-
+paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
 paperSave.saveExtendedResults(topicResults, args.criteria)
 
 

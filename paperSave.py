@@ -1,5 +1,6 @@
 import csv
 import globalVar
+import os
 
 def saveResults(paperDict, outFileName):
 
@@ -50,8 +51,8 @@ def saveTopResults(resultsDict, criteriaIn):
   
   # Upper first character
   criteria = criteriaIn[0].upper() + criteriaIn[1:]
-  
-  fileName = globalVar.RESULTS_FOLDER + criteria + ".csv"
+
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criteria + ".csv")
   ofile = open(fileName, 'w')
   
   fieldnames = ["Pos.", criteria, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
@@ -87,7 +88,7 @@ def saveExtendedResults(resultsDict, criteriaIn):
   # Upper first character
   criteria = criteriaIn[0].upper() + criteriaIn[1:]
   
-  fileName = globalVar.RESULTS_FOLDER + criteria + "_extended.csv"
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criteria + "_extended.csv")
   ofile = open(fileName, 'w')
   
   fieldnames = ["Pos.", "Topic " + criteria, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors", "Author keywords", "Country", "Document type"]

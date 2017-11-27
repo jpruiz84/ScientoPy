@@ -1,31 +1,29 @@
 #!/usr/bin/env python
 # PYTHON_ARGCOMPLETE_OK
 
-import csv
 import paperUtils
 import paperSave
 import globalVar
 import os
-import sys
 import matplotlib.pyplot as plt
-import math
-import pprint
 
 
 import argparse
-parser = argparse.ArgumentParser()
+
+parser = argparse.ArgumentParser(description="Analyze the documents by the different criteria, "
+                                             "to extract the top topics")
 
 parser.add_argument("criteria", choices=["authors", "source", "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
-help="Search criteria, ex: ")
+help="Select the criteria to find the top topics")
 
-parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top items listed")
+parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
 
 parser.add_argument("-s", "--start", type=int, default=0,  help="To filter the \
-first element, ex to filter the first 2 elements on the list use -s 2")
+first elements, ex to filter the first 2 elements on the list use -s 2")
 
-parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
-parser.add_argument("--endYear", type=int, default=2016,  help="End year year to limit the search")
+parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
+parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
 
 parser.add_argument("--pYear", 
 help="To present the results in percentage per year", action="store_true")
@@ -35,28 +33,30 @@ help="Plot with Y axes on log scale", action="store_true")
 
 parser.add_argument("--savePlot", default="",  help="Save plot to a file")
 
-parser.add_argument("-r", "--lastResults",
-help="Analyze based on the last results", action="store_false")
+parser.add_argument("-r", "--previousResults",
+help="Analyze based on the previous results", action="store_false")
 
 parser.add_argument("--noPlot",
-help="Do not plot the resutls", action="store_false")
+help="Do not plot the results, use for large amount of topics", action="store_false")
 
 parser.add_argument("--useCitedBy",
-help="Analyze top results based on times cited", action="store_true")
+help="Short the top results based on times cited", action="store_true")
 
 args = parser.parse_args()
 
-if args.lastResults:
-  INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
-else:
-  INPUT_FILE = globalVar.RESULTS_FOLDER + "papersOutput.txt"
 
 # Program start ********************************************************
- 
+
+# Select the input file
+if args.previousResults:
+  INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+else:
+  INPUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
+
 # Start paper list empty
 papersDict = []
 
-# Open the storaged database and add to papersDict 
+# Open the storage database and add to papersDict
 ifile = open(INPUT_FILE, "rb")
 print("Reading file: %s" % (INPUT_FILE))
 paperUtils.analyzeFileDict(ifile, papersDict)
@@ -69,11 +69,8 @@ print("WoS papers: %s" % globalVar.papersWoS)
 print("Omited papers: %s" % globalVar.omitedPapers)
 print("Total papers: %s" % len(papersDict))
 
-
 # Create a yearArray
 yearArray = range(args.startYear, args.endYear + 1)
-
-
 yearPapers = {}
 for i in range(args.startYear, args.endYear + 1):
   yearPapers[i] = 0
@@ -204,7 +201,7 @@ for topic in topTopcis:
                             str(topResults[topic[0].upper()]["hIndex"])))
   count += 1
 
-
+# Plot
 if args.noPlot:
   count = 0
   legendArray=[]
@@ -236,7 +233,7 @@ if args.noPlot:
   if args.savePlot == "":
     plt.show()
   else:
-    plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot,
+    plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
     bbox_inches = 'tight', pad_inches = 0.01)
 
 paperSave.saveTopResults(topResults, args.criteria)

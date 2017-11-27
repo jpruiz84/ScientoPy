@@ -231,7 +231,7 @@ def printPaper(paper):
   
 
   
-def removeDuplicates(paperDict):
+def removeDuplicates(paperDict, logWriter):
   duplicatedPapersCount = 0
   removedPapersScopus = 0
   removedPapersWoS = 0
@@ -312,53 +312,54 @@ def removeDuplicates(paperDict):
   if(duplicatedPapersCount != 0):
     print("Duplicated documents with different cited by: %s, %s %%\n" % (duplicatedWithDifferentCitedBy,
           100*duplicatedWithDifferentCitedBy/duplicatedPapersCount))
-  
-  
-  globalVar.logFile.write("\nDuplicated papers found: %s\n" % duplicatedPapersCount)
-  globalVar.logFile.write("Original papers count: %s\n" % originalPapersCount)
-  globalVar.logFile.write("Actual papers count: %s\n" % len(paperDict))
-  globalVar.logFile.write("Removed papers WoS: %s\n" % removedPapersWoS)
-  globalVar.logFile.write("Removed papers Scopus: %s\n" % removedPapersScopus)
+
+  logWriter.writerow({'Info': ''})
+  logWriter.writerow({'Info': '***** Duplication removal statics *****'})
+  logWriter.writerow({'Info': 'Duplicated papers found', 'Number': str(duplicatedPapersCount)})
+  logWriter.writerow({'Info': 'Original papers count', 'Number': str(originalPapersCount)})
+  logWriter.writerow({'Info': 'Actual papers count', 'Number': str(len(paperDict))})
+  logWriter.writerow({'Info': 'Removed papers WoS', 'Number': str(removedPapersWoS)})
+  logWriter.writerow({'Info': 'Removed papers Scopus', 'Number': str(removedPapersScopus)})
+
   if(duplicatedPapersCount != 0):
-    globalVar.logFile.write("Duplicated documents with different cited by: %s, %s %%\n" % (duplicatedWithDifferentCitedBy,
-          100*duplicatedWithDifferentCitedBy/duplicatedPapersCount))
-  
+    logWriter.writerow({'Info': 'Duplicated documents with different cited by', 'Number': str(duplicatedWithDifferentCitedBy)})
+
   return paperDict
 
 
-  
-def sourcesStatics(paperDict):
+def sourcesStatics(paperDict, logWriter):
   statics = {}
-  
-  statics["Scopus"] = {}
-  statics["WoS"] = {}
-  
+
+  statics["Scopus"]={}
   statics["Scopus"]["Article"] = 0
   statics["Scopus"]["Conference Paper"] = 0
   statics["Scopus"]["Proceedings Paper"] = 0
   statics["Scopus"]["Review"] = 0
   statics["Scopus"]["Total"] = 0
-  
+  statics["Scopus"]["Source"] = "Scopus"
+
+  statics["WoS"] = {}
   statics["WoS"]["Article"] = 0
   statics["WoS"]["Conference Paper"] = 0
   statics["WoS"]["Proceedings Paper"] = 0
   statics["WoS"]["Review"] = 0
   statics["WoS"]["Total"] = 0
-  
+  statics["WoS"]["Source"] = "WoS"
+
   noDocumentTypeCount = 0
-  
+
   for paper in paperDict:
     try:
       statics[paper["dataBase"]][paper["documentType"].split("; ")[0]] += 1
-      
+
     except:
       noDocumentTypeCount += 1
-      
+
     statics[paper["dataBase"]]["Total"] += 1
 
-  print(json.dumps(statics, indent = 2))
-  globalVar.logFile.write(json.dumps(statics, indent = 2))
-  
+  logWriter.writerow(statics["Scopus"])
+  logWriter.writerow(statics["WoS"])
+
 
 
 

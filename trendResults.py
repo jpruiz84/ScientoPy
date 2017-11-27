@@ -14,19 +14,19 @@ import numpy as np
 
 
 import argparse
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Find the top trending topics in a criteria.")
 
 parser.add_argument("criteria", choices=["authors", "source", "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
 help="Search criteria, ex: ")
 
-parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top items listed")
+parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top items listed, default 10")
 
 parser.add_argument("-s", "--start", type=int, default=0,  help="To filter the \
 first element, ex to filter the first 2 elements on the list use -s 2")
 
-parser.add_argument("--startYear", type=int, default=2000,  help="Start year to limit the search")
-parser.add_argument("--endYear", type=int, default=2016,  help="End year year to limit the search")
+parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
+parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
 
 parser.add_argument("--pYear",
 help="To present the results in percentage per year", action="store_true")
@@ -40,9 +40,9 @@ parser.add_argument("--savePlot", default="",  help="Save plot to a file")
 
 args = parser.parse_args()
 
-INPUT_FILE = globalVar.DATA_OUT_FOLDER + "papersOutput.txt"
-
 # Program start ********************************************************
+# Input file
+INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
 # Start paper list empty
 papersDict = []
@@ -241,7 +241,7 @@ plt.tight_layout()
 if args.savePlot == "":
   plt.show()
 else:
-  plt.savefig(globalVar.GRAPHS_OUT_FOLDER + args.savePlot,
+  plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
   bbox_inches = 'tight', pad_inches = 0.01)
 
 
