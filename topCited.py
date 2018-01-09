@@ -16,7 +16,6 @@ import argparse
 parser = argparse.ArgumentParser(description="Get the top cited papers, by adding more value to"
                                              " newer ones by an exponential time scale curve")
 
-
 parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
 parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
 
@@ -33,7 +32,6 @@ parser.add_argument("--savePlot", default="",  help="Save plot to a file")
 parser.add_argument("--yearWeight", type=float, default = 1,
 help="Weight to add by year, in order to put more importance to newer papers, \n"
      " yearExpWeight = exp((year - startYear) * yearWeight), default 1")
-
 
 parser.add_argument("-r", "--previousResults",
 help="Analyze based on the previous results", action="store_false")
@@ -88,14 +86,7 @@ for paper in papersDict:
     yearCitations[int(paper["year"])] += int(paper["citedBy"])
 
 
-
-
-meanCitations = numpy.mean(zip(*sorted(yearCitations.items()))[1])
-
-print("Mean citations: %d" % meanCitations)
-
-
-# Find the normalization per year
+# Find the scale per year
 yearScale = {}
 yearScaled = {}
 for key in yearCitations:

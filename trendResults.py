@@ -14,7 +14,7 @@ import numpy as np
 
 
 import argparse
-parser = argparse.ArgumentParser(description="Find the top trending topics in a criterion.")
+parser = argparse.ArgumentParser(description="Find the top trending topics in a selected criterion.")
 
 parser.add_argument("criterion", choices=["authors", "source", "subject",
 "authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
@@ -28,10 +28,7 @@ first element, ex to filter the first 2 elements on the list use -s 2")
 parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
 parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
 
-parser.add_argument("--pYear",
-help="To present the results in percentage per year", action="store_true")
-
-parser.add_argument("--neg", 
+parser.add_argument("--neg",
 help="Get the top documents with the worst growth rate", action="store_true")
 
 parser.add_argument("-t", "--topics", help='Topics to analize according to critera, ex: -t "internet of things,iot;bluetooth" ')
@@ -177,13 +174,6 @@ for item in topTrends:
   count += 1
 
 
-if args.pYear:
-  for topic in topTopcis:
-    for year, value in yearPapers.iteritems():
-      index = dataDic[topic[0].upper()]["year"].index(year)
-      if value != 0:
-        dataDic[topic[0].upper()]["count"][index] /= (float(value)/100.0)
-
 agrArray = []
 legendArray = []
 objects = []
@@ -229,8 +219,6 @@ for i in range(0,globalVar.TREND_PERIODS):
 plt.yticks(y_pos + width*globalVar.TREND_PERIODS/3, objects)
 plt.xlabel('Average growth rate (publications/year)')
 #plt.ylabel("Number of documents")
-if args.pYear:
-  plt.ylabel("% of documents per year")
 
 ax = plt.axes()
 ax.set_xlim(xmin=0, xmax=max(map(max,agrArray))*1.1)
