@@ -41,3 +41,7 @@ logFile = 0
 papersScopus = 0
 papersWoS = 0
 omitedPapers = 0
+
+
+SAVE_RESULTS_ON = "SCOPUS_FIELDS"
+#SAVE_RESULTS_ON = "WOS_FIELDS"
