@@ -6,6 +6,7 @@
 \usepackage[utf8x]{inputenc}
 \usepackage[spanish]{babel}
 \usepackage{graphicx}% Include figure files
+\usepackage{blindtext} 
 
 \usepackage{fancyvrb,xcolor}
 \usepackage{upquote,textcomp}
@@ -18,13 +19,6 @@
 \headsep=2cm
 \textheight=23.8cm
 
-\makeatletter
-\renewcommand\section{\@startsection{section}{1}{-15pt}{20pt}{10pt}{\textsc}}
-\makeatother
-
-\makeatletter
-\renewcommand\subsection{\@startsection{subsection}{2}{0pt}{0pt}{0pt}{\textit}}
-\makeatother
 
 \usepackage{hyperref} % for urls
 
@@ -65,7 +59,11 @@
 \makeatother
 
 
+\title{ScientoPy - User Manual}
+
+
 \begin{document}
+
 % To fix ' no curve quotation mark
 \newcommand\upquote[1]{\textquotesingle#1\textquotesingle}
 
@@ -92,6 +90,7 @@
 \hspace{3cm} \= \hspace{5.3cm} \= \hspace{6cm} \kill
 \textbf{By}: \> Juan Pablo Ruiz Rosero			\> \texttt{jpabloruiz@unicauca.edu.co} \\
 \end{tabbing}
+
 
 \section{Installation}
 
@@ -143,16 +142,19 @@ This section describes how to download the proper dataset from Scopus and WoS. D
 
 \section{Running the ScientoPy scripts}
 
+This section describes the ScientoPy scripts to pre-process and process the bibliometric dataset. 
+
 \subsection{Pre-processing}
 
-First we need to pre-process the downloaded data. This pre process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset run this command inside ScientoPy folder: 
+First we need to pre-process the downloaded dataset. This pre-process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset run this command inside ScientoPy folder: 
 \begin{verbatim}
 python preProcess.py dataInExample
 \end{verbatim}
-On the folder \verb|ScientoPy/dataPre| you will find the following files: 
+
+Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files: 
 \begin{itemize}
-\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre process. This will used by the others scripts as the input data. 
-\item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents and others. 
+\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data. 
+\item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
 \end{itemize}
 
 To find more options of the pre-processing script you can run:
@@ -181,7 +183,7 @@ For example, to find the top author's keywords you can run this script:
 python topResults.py authorKeywords
 \end{verbatim}
 
-This will generate a list with the top 10 topics on the criterion author's keywords, with the number of documents per topic, and the h-index associated to each one. Also, this script will graph the evolution of each topic across the year, and will save the quantitative results on the folder \verb|ScientoPy/results|. 
+This will generate a list with the top 10 topics on the selected criterion (in this case authorKeywords), with the number of documents per topic, and the h-index associated to each one. Also, this script graphs the evolution of each topic per year, and saves the quantitative results on the folder \verb|ScientoPy/results|. 
 
 This script have more options like, save the plot on a file, or increase the number of topic results. For more information you can run:
 
@@ -189,9 +191,9 @@ This script have more options like, save the plot on a file, or increase the num
 python topResults.py -h
 \end{verbatim}
 
-\subsection{Analyze pre defined topics inside a criterion}
+\subsection{Analyze pre-defined topics inside a criterion}
 
-If you want to make an analysis of pre defined topics, such as the number of papers evolution of two countries, you should use the \verb|analizeTopic.py| script: 
+If you want to make an analysis of pre-defined topics, such as the two selected countries papers evolution, you can use the \verb|analizeTopic.py| script, with the option \verb|-t|, to specify the topics: 
 
 \begin{verbatim}
 python analizeTopic.py country -t "United States; Brazil"
@@ -209,5 +211,76 @@ This script have more options like, save the plot on a file, or others. For more
 python analizeTopic.py -h
 \end{verbatim}
 
+\subsection{Finding trending topics}
+
+This script find the top trending topics based on the higher average growth rate (AGR) over the others. The AGR is calculated on two years periods, using the following Equation \eqref{equation_AGR}:
+\begin{equation}
+AGR = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i - P_{i-1}}{(Y_e - Y_s)+1},  
+\label{equation_AGR}
+\end{equation}
+where:\\
+$AGR$ = Average growth rate;
+	
+	$Y_s$ = Start year;
+	
+	$Y_e$ = End year;
+	
+	$P_i$ = Number of publications on year $i.$
+\newline
+
+
+To find the top trending topics on author's keywords criterion, you can run the following script: 
+
+\begin{verbatim}
+python trendResults.py authorKeywords
+\end{verbatim}
+
+This script will find the top 200 topics, then it calculates the AGR for the last 3 periods of 2 years. Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 10 AGR topics with the corresponding value per period is graphed. 
+
+Also, you can find the AGR for selected topics inside a criterion, writing the topic on the argument \verb|-t|, like the following example: 
+
+\begin{verbatim}
+python trendResults.py authorKeywords -t "Cloud computing;Security;Big Data"
+\end{verbatim}
+
+This script have more options like, save the plot on a file, get the list from the lower last period AGR to the higher, or others. For more information you can run:
+
+\begin{verbatim}
+python trendResults.py -h
+\end{verbatim}
+
+
+\subsection{Finding trending documents}
+
+The trending documents are the new publications with more citations. To find these publications, this script scale the citations of each publication based on a Year Scale (YS). The YS put more weight to newer publications, by the following Equation \eqref{equation_YS}:
+\begin{equation}
+YS_i = e^{(i - Y_s)*Y_w}
+\label{equation_YS}
+\end{equation}
+where:\\
+$YS_i$ = Year scale for year $i$;
+$i$ = Year;
+$Y_s$ = Start year;
+$Y_w$ = Year weight, default 1;
+\newline
+
+The number of citations (citat) of each document is multiplicated by the corresponding $YS_i$, to get the Scaled citations (S. cita). The final publications list is sorted by this Scaled citations. The following script find the trending documents as described:
+
+\begin{verbatim}
+python topCited.py
+\end{verbatim}
+
+This script, graphs the all documents citations sum per year, this citations sum scaled (multiplied by the $YS_i$), and the scale per year ($YS_i$). If you want to put more weight to the citation than publication year, you can reduce the Year weight. On the other way, if you want to put more weight to the newer papers you can increase the year weight. The recommended values are between 0 to 5. For example, to get the most cited document of the last years you can run the script with a Year weight of 1.75:
+
+\begin{verbatim}
+python topCited.py --yearWeight 1.75
+\end{verbatim}
+
+
+The full document list results is saved in the file \verb|ScientoPy/results/topCitedPapers.csv|. This script have more options like, save the plot on a file, or others. For more information you can run:
+
+\begin{verbatim}
+python trendResults.py -h
+\end{verbatim}
 
 \end{document}  
