@@ -33,6 +33,10 @@ help="Plot with Y axes on log scale", action="store_true")
 parser.add_argument("--noPlot",
 help="Do not plot the results, use for large amount of topics", action="store_false")
 
+parser.add_argument("--parametric",
+help="Graph on Y the number of publications, and on X accomulative number of citatiosn", action="store_true")
+
+
 # Program start ********************************************************
 
 args = parser.parse_args()
@@ -97,17 +101,22 @@ for paper in papersDict:
 topicResults = {}
 
 for topics in topicList:
-  topicResults[topics[0].upper()] = {}
-  topicResults[topics[0].upper()]["year"] = yearArray
-  topicResults[topics[0].upper()]["count"] = [0] * len(yearArray)
-  topicResults[topics[0].upper()]["total"] = 0
-  topicResults[topics[0].upper()]["name"] = topics[0]
-  topicResults[topics[0].upper()]["papers"] = []
-  topicResults[topics[0].upper()]["hIndex"] = []
+  topicName = topics[0].upper()
+  topicResults[topicName] = {}
+  topicResults[topicName]["year"] = yearArray
+  topicResults[topicName]["PapersCount"] = [0] * len(yearArray)
+  topicResults[topicName]["PapersCountAccum"] = [0] * len(yearArray)
+  topicResults[topicName]["PapersTotal"] = 0
+  topicResults[topicName]["CitedByCount"] = [0] * len(yearArray)
+  topicResults[topicName]["CitedByCountAccum"] = [0] * len(yearArray)
+  topicResults[topicName]["CitedByTotal"] = 0
+  topicResults[topicName]["name"] = topics[0]
+  topicResults[topicName]["papers"] = []
+  topicResults[topicName]["hIndex"] = []
   
 #print(topicResults)
 
-# Find papers within the arguments
+# Find papers within the arguments, and get the PapersCount per year.
 # run on papersDict
 noIncludedInRange = 0
 for paper in papersDict:
@@ -118,8 +127,10 @@ for paper in papersDict:
         if topic.upper() == item.upper(): 
           try:
             index = topicResults[topics[0].upper()]["year"].index(int(paper["year"]))
-            topicResults[topics[0].upper()]["count"][index] += 1
-            topicResults[topics[0].upper()]["total"] += 1
+            topicResults[topics[0].upper()]["PapersCount"][index] += 1
+            topicResults[topics[0].upper()]["PapersTotal"] += 1
+            topicResults[topics[0].upper()]["CitedByCount"][index] += int(paper["citedBy"])
+            topicResults[topics[0].upper()]["CitedByTotal"] += int(paper["citedBy"])
             topicResults[topics[0].upper()]["name"] = item
             topicResults[topics[0].upper()]["papers"].append(paper)
             papersDictOut.append(paper)
@@ -130,12 +141,28 @@ for paper in papersDict:
 #print(topicResults)
 
 
+
+
+
+# Extract citedby accumulative
+for topic in topicList:
+  topicName = topic[0].upper()
+  citedAccumValue = 0
+  papersAccumValue = 0
+  for i in range(0,len(topicResults[topicName]["CitedByCountAccum"])):
+    citedAccumValue += topicResults[topicName]["CitedByCount"][i]
+    topicResults[topicName]["CitedByCountAccum"][i] = citedAccumValue
+
+    papersAccumValue += topicResults[topicName]["PapersCount"][i]
+    topicResults[topicName]["PapersCountAccum"][i] = papersAccumValue
+
+
 if args.pYear:
   for topics in topicList:
     for year, value in yearPapers.iteritems():
       index = topicResults[topics[0].upper()]["year"].index(year)
       if value != 0:
-        topicResults[topics[0].upper()]["count"][index] /= (float(value)/100.0)
+        topicResults[topics[0].upper()]["PapersCount"][index] /= (float(value)/100.0)
 
 
 # h index **********************
@@ -162,40 +189,73 @@ print("\nTop list:")
 count = 0
 for topics in topicList:
   print("%s. %s: %s" % (count + 1, 
-  str(topics).translate(None, "'[]'"), topicResults[topics[0].upper()]["total"]))
+  str(topics).translate(None, "'[]'"), topicResults[topics[0].upper()]["PapersTotal"]))
   count += 1
 
 # Plot
 if args.noPlot:
-  count = 0
-  legendArray=[]
-  for topics in topicList:
-    legendArray.append(topics[0])
-      
-    plt.plot(topicResults[topics[0].upper()]["year"], topicResults[topics[0].upper()]["count"], 
-    linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, 
-    zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
-    
-    count += 1
-    
-  plt.legend(legendArray, loc = 2)  
-  plt.xlabel("Publication year")
-  plt.ylabel("Number of documents")
 
-if args.yLog:
-  plt.yscale('log')
+  if args.parametric:
+    count = 0
+    legendArray = []
+    for topics in topicList:
+      legendArray.append(topics[0])
 
-if args.pYear:
-  plt.ylabel("% of documents per year")
+      plt.plot(topicResults[topics[0].upper()]["CitedByCountAccum"], topicResults[topics[0].upper()]["PapersCountAccum"],
+               linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
+               zorder=(len(topicList) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
 
-plt.tight_layout()
+      count += 1
 
-if args.savePlot == "":
-  plt.show()
-else:
-  plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
-  bbox_inches = 'tight', pad_inches = 0.01)
-  
+    plt.legend(legendArray, loc=2)
+    plt.ylabel("Publications count")
+    plt.xlabel("Cited by accumulative")
+
+    if args.yLog:
+      plt.yscale('log')
+
+    if args.pYear:
+      plt.ylabel("% of documents per year")
+
+    plt.tight_layout()
+
+    if args.savePlot == "":
+      plt.show()
+    else:
+      plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+                  bbox_inches='tight', pad_inches=0.01)
+
+  else:
+
+    count = 0
+    legendArray=[]
+    for topics in topicList:
+      legendArray.append(topics[0])
+
+      plt.plot(topicResults[topics[0].upper()]["year"], topicResults[topics[0].upper()]["PapersCount"],
+      linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
+      zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
+
+      count += 1
+
+    plt.legend(legendArray, loc = 2)
+    plt.xlabel("Publication year")
+    plt.ylabel("Number of documents")
+
+    if args.yLog:
+      plt.yscale('log')
+
+    if args.pYear:
+      plt.ylabel("% of documents per year")
+
+    plt.tight_layout()
+
+    if args.savePlot == "":
+      plt.show()
+    else:
+      plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+      bbox_inches = 'tight', pad_inches = 0.01)
+
 paperSave.saveTopResults(topicResults, args.criterion)
 paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
 paperSave.saveExtendedResults(topicResults, args.criterion)

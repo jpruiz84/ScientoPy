@@ -126,8 +126,8 @@ def saveTopResults(resultsDict, criterionIn):
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
   
-  sortedResults = sorted(resultsDict.iteritems(), key=lambda (k,v): (-v["total"],k))
-  
+  sortedResults = sorted(resultsDict.iteritems(), key=lambda (k,v): (-v["PapersTotal"],k))
+
   count = 1
   for item in sortedResults:
     key = item[0]
@@ -135,11 +135,11 @@ def saveTopResults(resultsDict, criterionIn):
     dictWriter = {}
     dictWriter["Pos."] = str(count)
     dictWriter[criterion] = value["name"]
-    dictWriter["Total"] = value["total"]
+    dictWriter["Total"] = value["PapersTotal"]
     dictWriter["hIndex"] = value["hIndex"]
     for yearItem in value["year"]:
       index = value["year"].index(yearItem)
-      dictWriter[yearItem] = value["count"][index]
+      dictWriter[yearItem] = value["PapersCount"][index]
   
     count += 1
     writer.writerow(dictWriter)
@@ -162,7 +162,7 @@ def saveExtendedResults(resultsDict, criterionIn):
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
   
-  sortedResults = sorted(resultsDict.iteritems(), key=lambda (k,v): (-v["total"],k))
+  sortedResults = sorted(resultsDict.iteritems(), key=lambda (k,v): (-v["PapersTotal"],k))
   
   count = 1
   for itemR in sortedResults:
@@ -171,7 +171,7 @@ def saveExtendedResults(resultsDict, criterionIn):
     dictWriter = {}
     dictWriter["Pos."] = str(count)
     dictWriter["Topic " + criterion] = value["name"]
-    dictWriter["Total"] = value["total"]
+    dictWriter["Total"] = value["PapersTotal"]
 
     count += 1
     writer.writerow(dictWriter)
