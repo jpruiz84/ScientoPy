@@ -44,17 +44,18 @@ def get_label_xy(tree, thresh, data, i):
 
 def labeled_scatter_plot(data, labels, plt_in):
 
+    # Get the max of each axis
     xMax = data[:, :2][:, 0].max()
     yMax = data[:, :2][:, 1].max()
     zMax = data[:, 2].max()
 
-    colorIndex = range(0,len(data))
-    plt_in.subplots_adjust(bottom = 0.1)
+    # Plot bubbles in scatter
     plt_in.scatter(
         #data[:, 0], data[:, 1], marker = 'o', c = data[:, 2], s = data[:, 3]*1500,
-        data[:, 0], data[:, 1], marker='o', c = BUBBLE_COLOR, s=(0.2*xMax*data[:, 2]/float(zMax)),
+        data[:, 0], data[:, 1], marker='o', c = BUBBLE_COLOR, s=1000*(data[:, 2]/float(zMax)),
         cmap = plt.get_cmap('Spectral'))
 
+    # Get xyData points scaled to 1
     xData = data[:, :2][:, 0]/float(xMax)
     yData = data[:, :2][:, 1]/float(yMax)
 
