@@ -1,17 +1,9 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-.idea
-.idea/*
+# Ignore everything
+*
 
+# But not these files...
+!.gitignore
+!*.py
+!*.sh
 
-# Folders
-results/*
-graphs/*
-dataIn/*
-dataPre/*
-
-
-# Others
-*.log
+!dataInExample\*
