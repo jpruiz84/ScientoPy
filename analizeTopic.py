@@ -260,7 +260,7 @@ for topic in topicList:
 print("\nTop topics:")
 print("Pos. " + args.criterion + ", Total, h-index")
 count = 0
-for topic in topTopcis:
+for topic in topicList:
   print("%s. %s: %s, %s" % (count + 1,
   topicResults[topic[0].upper()]["name"], topicResults[topic[0].upper()]["PapersTotal"],
                             str(topicResults[topic[0].upper()]["hIndex"])))
@@ -276,7 +276,7 @@ if args.noPlot:
     for topics in topicList:
       legendArray.append(topicResults[topics[0].upper()]["name"])
 
-      dataPlot.append([topicResults[topics[0].upper()]["CitedByTotal"],
+      dataPlot.append([topicResults[topics[0].upper()]["hIndex"],
                        topicResults[topics[0].upper()]["agr"],
                        topicResults[topics[0].upper()]["PapersTotal"]
                        ])
@@ -290,12 +290,10 @@ if args.noPlot:
     # Convert dataPlot to np array
     dataPlot = np.array(dataPlot)
 
-    print("dataPlot")
-    print dataPlot
     graphUtils.labeled_scatter_plot(dataPlot, legendArray, plt)
 
     plt.ylabel("Average growth rate (papers/year)")
-    plt.xlabel("Total cited by")
+    plt.xlabel("hIndex")
 
     if args.yLog:
       plt.yscale('log')
