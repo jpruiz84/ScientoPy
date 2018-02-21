@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
+from matplotlib.lines import Line2D
 
 
 import argparse
@@ -41,6 +42,10 @@ help="Graph on Y the number of publications, and on X accomulative number of cit
 
 parser.add_argument("--useCitedBy",
 help="Short the top results based on times cited", action="store_true")
+
+parser.add_argument("--agrWidth",
+help="Average growth rate window width in years",type=int, default=3)
+
 
 parser.add_argument("-r", "--previousResults",
 help="Analyze based on the previous results", action="store_false")
@@ -212,8 +217,8 @@ for topic in topicList:
     pastCount = topicResults[topicName]["PapersCount"][i]
 
   # Calculate AGR from rates
-  endYearIndex = len(topicResults[topicName]["PapersCount"])
-  startYearIndex = endYearIndex - 2
+  endYearIndex = len(topicResults[topicName]["PapersCount"]) - 1
+  startYearIndex = endYearIndex - args.agrWidth
   topicResults[topicName]["agr"] = np.mean(topicResults[topicName]["PapersCountRate"][startYearIndex:endYearIndex])
 
 # Extract citedby accumulative
@@ -276,9 +281,9 @@ if args.noPlot:
     for topics in topicList:
       legendArray.append(topicResults[topics[0].upper()]["name"])
 
-      dataPlot.append([topicResults[topics[0].upper()]["hIndex"],
-                       topicResults[topics[0].upper()]["agr"],
-                       topicResults[topics[0].upper()]["PapersTotal"]
+      dataPlot.append([topicResults[topics[0].upper()]["PapersTotal"],              # for axis X
+                       topicResults[topics[0].upper()]["agr"],                 # for axis Y
+                       topicResults[topics[0].upper()]["hIndex"]          # for axis Z
                        ])
 
       #plt.plot(topicResults[topics[0].upper()]["CitedByTotal"], topicResults[topics[0].upper()]["agr"],
@@ -290,24 +295,22 @@ if args.noPlot:
     # Convert dataPlot to np array
     dataPlot = np.array(dataPlot)
 
-    graphUtils.labeled_scatter_plot(dataPlot, legendArray, plt)
+    graphUtils.labeled_scatter_plot_colors(dataPlot, legendArray, plt)
 
-    plt.ylabel("Average growth rate (papers/year)")
-    plt.xlabel("hIndex")
+    # Plot the X dash line
+    ax = plt.subplot()
+    xmin, xmax = ax.get_xlim()
+    dashed_line = Line2D([0.0, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
+                         transform=ax.transData)
+    ax.lines.append(dashed_line)
+
+    plt.ylabel("Average growth rate, %d - %d (doc./year)" % (
+      yearArray[startYearIndex], yearArray[endYearIndex]))
+    plt.xlabel("Total documents ")
 
     if args.yLog:
       plt.yscale('log')
 
-    if args.pYear:
-      plt.ylabel("% of documents per year")
-
-    plt.tight_layout()
-
-    if args.savePlot == "":
-      plt.show()
-    else:
-      plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
-                  bbox_inches='tight', pad_inches=0.01)
 
   else:
 
@@ -332,13 +335,13 @@ if args.noPlot:
     if args.pYear:
       plt.ylabel("% of documents per year")
 
-    plt.tight_layout()
+  plt.tight_layout()
 
-    if args.savePlot == "":
-      plt.show()
-    else:
-      plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
-      bbox_inches = 'tight', pad_inches = 0.01)
+  if args.savePlot == "":
+    plt.show()
+  else:
+    plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+    bbox_inches = 'tight', pad_inches = 0.01)
 
 paperSave.saveTopResults(topicResults, args.criterion)
 paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))

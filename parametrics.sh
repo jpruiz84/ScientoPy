@@ -44,9 +44,13 @@ python analizeTopic.py dataBase -t "Scopus;WoS" --savePlot "dataBase_postFilter.
 python trendResults.py authorKeywords -t "Cloud computing;Security;Big Data;Wireless sensor networks;Privacy;Industry 4.0;Fog computing;SDN" --savePlot "trending.eps"
 
 
-# Parametric *************************
+python analizeTopic.py authorKeywords -t "Android,Android OS;Contiki,Contiki OS;Linux,Linux OS;iOS,iPhone Operating System,iPhone Operating System (iOS);Windows,Windows OS" --endYear 2016 --parametric --startYear 2014
+
 
 python analizeTopic.py authorKeywords -t "WSN,Wireless sensor network,Wireless sensor networks;RFID,RADIO FREQUENCY IDENTIFICATION;Cloud computing;Security;Big data;Privacy;Smart City;6LoWPAN;Sensors;Zigbee" --endYear 2016 --parametric --startYear 2014
 
-python analizeTopic.py authorKeywords -t "Cloud computing;Security;Big Data;Wireless sensor networks;Privacy;Industry 4.0;Fog computing;SDN" --endYear 2016 --parametric --startYear 2000
-python analizeTopic.py authorKeywords -t "Android,Android OS;Contiki,Contiki OS;Linux,Linux OS;iOS,iPhone Operating System,iPhone Operating System (iOS);Windows,Windows OS" --endYear 2016 --parametric
+python analizeTopic.py authorKeywords -t "RFID,RADIO FREQUENCY IDENTIFICATION;6LoWPAN;ZigBee;BLE,Bluetooth Low Energy;WiFi,Wi-Fi;5G;RPL" --endYear 2016 --parametric --startYear 2014
+
+
+
+
