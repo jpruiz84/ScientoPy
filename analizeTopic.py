@@ -44,7 +44,7 @@ parser.add_argument("--useCitedBy",
 help="Short the top results based on times cited", action="store_true")
 
 parser.add_argument("--agrWidth",
-help="Average growth rate window width in years",type=int, default=3)
+help="Average growth rate window width in years",type=int, default=2)
 
 
 parser.add_argument("-r", "--previousResults",
@@ -277,14 +277,11 @@ if args.noPlot:
 
   if args.parametric:
 
-    graphUtils.plot_parametric(plt, topicResults, topicList)
-
+    graphUtils.plot_parametric(plt, topicResults, topicList, yearArray[startYearIndex], yearArray[endYearIndex])
     if args.yLog:
       plt.yscale('log')
 
-
   else:
-
     count = 0
     legendArray=[]
     for topics in topicList:

@@ -2,6 +2,9 @@ import numpy as np
 from scipy.spatial import cKDTree
 import globalVar
 from matplotlib.lines import Line2D
+from matplotlib import gridspec
+from scipy import interpolate
+from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 
 LABEL_COLOR = "#dddddd"
 BUBBLE_COLOR = "#63d065"
@@ -165,8 +168,13 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
     plt_in.ylim(ymax=yMax * (-1.2))
 
 
-def plot_parametric(plt, topicResults, topicList):
-  ax = plt.subplot(1, 2, 2)
+def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
+  my_dpi = 80
+  plt.figure(figsize=(800 / my_dpi, 500 / my_dpi), dpi=my_dpi)
+
+  gs = gridspec.GridSpec(1, 2, width_ratios=[5, 3])
+
+  ax = plt.subplot(gs[1])
 
   xArray = []
   yArray = []
@@ -184,7 +192,7 @@ def plot_parametric(plt, topicResults, topicList):
     count += 1
 
   plt.xlabel("h-Index")
-  plt.ylabel("AGR")
+  plt.ylabel("Average growth rate, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
 
 
   # Calculate plot max and min
@@ -224,22 +232,40 @@ def plot_parametric(plt, topicResults, topicList):
 
 
 
-  plt.subplot(1, 2, 1)
+  ax0 = plt.subplot(gs[0])
 
   count = 0
   legendArray = []
   for topics in topicList:
     legendArray.append(topicResults[topics[0].upper()]["name"])
+    #zero_to_nan(topicResults[topics[0].upper()]["PapersCountAccum"])
 
-    zero_to_nan(topicResults[topics[0].upper()]["PapersCountAccum"])
+    x = topicResults[topics[0].upper()]["year"]
+    y = topicResults[topics[0].upper()]["PapersCountAccum"]
 
-    plt.plot(topicResults[topics[0].upper()]["year"], topicResults[topics[0].upper()]["PapersCountAccum"],
-             linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
+    xnew = np.linspace(min(x), max(x), 300)
+
+    s = Rbf(x, y, smooth=0.2)
+    ynew = s(xnew)
+
+    zero_to_nan(ynew)
+    zero_to_nan(y)
+
+    ax0.plot(xnew, ynew,
+    #ax0.plot(x, y,
+             linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
              zorder=(len(topicList) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
+
+
 
     count += 1
 
-  plt.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
+  [xmin, xmax] = ax0.get_xlim()
+  ax0.set_xlim([xmin, xmax + (xmax-xmin)*0.1])
+
+  ax0.ticklabel_format(useOffset=False)
+  ax0.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
+
   plt.xlabel("Publication year")
   plt.ylabel("Number of documents")
 
@@ -248,7 +274,7 @@ def plot_parametric(plt, topicResults, topicList):
 def zero_to_nan(values):
   firstZero = False
   for i in reversed(range(0, len(values))):
-    if values[i] == 0:
+    if values[i] < 0.25:
       if firstZero:
         values[i] = float('nan')
       firstZero = True
