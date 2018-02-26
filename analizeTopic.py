@@ -5,14 +5,14 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
-from matplotlib.lines import Line2D
+
 
 
 import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
 parser.add_argument("criterion", choices=["authors", "source",  "subject",
-"authorKeywords", "indexKeywords", "documentType", "dataBase", "country"], 
+"authorKeywords", "indexKeywords", "documentType", "dataBase", "country", "emailHost", "institution"],
 help="Select the criterion to analyze the topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
@@ -48,7 +48,7 @@ help="Average growth rate window width in years",type=int, default=3)
 
 
 parser.add_argument("-r", "--previousResults",
-help="Analyze based on the previous results", action="store_false")
+help="Analyze based on the previous results", action="store_true")
 
 
 
@@ -67,9 +67,9 @@ if not os.path.exists(globalVar.RESULTS_FOLDER):
 
 # Select the input file
 if args.previousResults:
-  INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
-else:
   INPUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
+else:
+  INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
 # Start paper list empty
 papersDict = []
@@ -175,7 +175,7 @@ for topics in topicList:
   topicResults[topicName]["CitedByTotal"] = 0
   topicResults[topicName]["name"] = topics[0]
   topicResults[topicName]["papers"] = []
-  topicResults[topicName]["hIndex"] = []
+  topicResults[topicName]["hIndex"] = 0
   topicResults[topicName]["agr"] = 0
 #print(topicResults)
 
@@ -221,7 +221,7 @@ for topic in topicList:
   startYearIndex = endYearIndex - args.agrWidth
   topicResults[topicName]["agr"] = np.mean(topicResults[topicName]["PapersCountRate"][startYearIndex:endYearIndex])
 
-# Extract citedby accumulative
+# Extract accumulative
 for topic in topicList:
   topicName = topic[0].upper()
   citedAccumValue = 0
@@ -263,50 +263,21 @@ for topic in topicList:
 
 # Print top topics
 print("\nTop topics:")
-print("Pos. " + args.criterion + ", Total, h-index")
+print("Pos. " + args.criterion + ", Total, AGR, h-index")
 count = 0
 for topic in topicList:
-  print("%s. %s: %s, %s" % (count + 1,
+  print("%s. %s:, %d, %.1f, %d" % (count + 1,
   topicResults[topic[0].upper()]["name"], topicResults[topic[0].upper()]["PapersTotal"],
-                            str(topicResults[topic[0].upper()]["hIndex"])))
+                                       topicResults[topic[0].upper()]["agr"],
+                            topicResults[topic[0].upper()]["hIndex"]))
   count += 1
 
 # Plot
 if args.noPlot:
 
   if args.parametric:
-    count = 0
-    legendArray = []
-    dataPlot = []
-    for topics in topicList:
-      legendArray.append(topicResults[topics[0].upper()]["name"])
 
-      dataPlot.append([topicResults[topics[0].upper()]["PapersTotal"],              # for axis X
-                       topicResults[topics[0].upper()]["agr"],                 # for axis Y
-                       topicResults[topics[0].upper()]["hIndex"]          # for axis Z
-                       ])
-
-      #plt.plot(topicResults[topics[0].upper()]["CitedByTotal"], topicResults[topics[0].upper()]["agr"],
-      #         linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
-      #         zorder=(len(topicList) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
-
-      count += 1
-
-    # Convert dataPlot to np array
-    dataPlot = np.array(dataPlot)
-
-    graphUtils.labeled_scatter_plot_colors(dataPlot, legendArray, plt)
-
-    # Plot the X dash line
-    ax = plt.subplot()
-    xmin, xmax = ax.get_xlim()
-    dashed_line = Line2D([0.0, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
-                         transform=ax.transData)
-    ax.lines.append(dashed_line)
-
-    plt.ylabel("Average growth rate, %d - %d (doc./year)" % (
-      yearArray[startYearIndex], yearArray[endYearIndex]))
-    plt.xlabel("Total documents ")
+    graphUtils.plot_parametric(plt, topicResults, topicList)
 
     if args.yLog:
       plt.yscale('log')
@@ -344,7 +315,11 @@ if args.noPlot:
     bbox_inches = 'tight', pad_inches = 0.01)
 
 paperSave.saveTopResults(topicResults, args.criterion)
-paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
 paperSave.saveExtendedResults(topicResults, args.criterion)
+
+# Only save results if that is result of a not previous result
+if not args.previousResults:
+  paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
+
 
 

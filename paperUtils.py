@@ -73,6 +73,9 @@ def analyzeFileDict(ifile, papersDict):
       paperIn["citedBy"] = ""
       paperIn["duplicatedIn"] = ""
 
+      paperIn["emailHost"] = ""
+      paperIn["institution"] = ""
+
       for col in row:
         if colnum >= len(header):
           break
@@ -112,76 +115,81 @@ def analyzeFileDict(ifile, papersDict):
         if headerCol == "EID": paperIn["eid"] = col
 
         # WoS fields
-        #if headerCol == "PT": paperIn[""] = col
-        if headerCol == "AU": paperIn["authors"] = col
-        #if headerCol == "BA": paperIn[""] = col
-        if headerCol == "BE": paperIn["editors"] = col
-        #if headerCol == "GP": paperIn[""] = col
-        #if headerCol == "AF": paperIn[""] = col   # Authors full name
-        #if headerCol == "BF": paperIn[""] = col
-        #if headerCol == "CA": paperIn[""] = col   # Group authors
-        if headerCol == "TI": paperIn["title"] = col
-        if headerCol == "SO": paperIn["sourceTitle"] = col
+        #if headerCol == "PT": paperIn[""] = col    # Publication Type (J=Journal; B=Book; S=Series; P=Patent)
+        if headerCol == "AU": paperIn["authors"] = col    # Authors
+        #if headerCol == "BA": paperIn[""] = col    # Book authors
+        if headerCol == "BE": paperIn["editors"] = col    # Editors
+        #if headerCol == "GP": paperIn[""] = col    # Book Group Author(s)
+        #if headerCol == "AF": paperIn[""] = col    # Authors full name
+        #if headerCol == "BF": paperIn[""] = col    # Book Authors Full Name
+        #if headerCol == "CA": paperIn[""] = col    # Group authors
+        if headerCol == "TI": paperIn["title"] = col    # Document Title
+        if headerCol == "SO": paperIn["sourceTitle"] = col    # Publication Name
         #if headerCol == "SE": paperIn[""] = col   # Book Series Title
         #if headerCol == "BS": paperIn[""] = col   # Book Series subtitle
-        if headerCol == "LA": paperIn["languageOfOriginalDocument"] = col
-        if headerCol == "DT": paperIn["documentType"] = col
-        #if headerCol == "CT": paperIn[""] = col   # Conference Title
-        #if headerCol == "CY": paperIn[""] = col   # Conference Date
-        #if headerCol == "CL": paperIn[""] = col   # Conference Location
-        #if headerCol == "SP": paperIn[""] = col    # conference Sponsor
-        #if headerCol == "HO": paperIn[""] = col
-        if headerCol == "DE": paperIn["authorKeywords"] = col
-        if headerCol == "ID": paperIn["indexKeywords"] = col
-        if headerCol == "AB": paperIn["abstract"] = col
-        if headerCol == "C1": paperIn["affiliations"] = col
-        #if headerCol == "RP": paperIn[""] = col
-        if headerCol == "EM": paperIn["correspondenceAddress"] = col
-        #if headerCol == "RI": paperIn[""] = col
-        if headerCol == "OI": paperIn["orcid"] = col
-        #if headerCol == "FU": paperIn[""] = col
-        #if headerCol == "FX": paperIn[""] = col
-        if headerCol == "CR": paperIn["citedReferences"] = col
-        #if headerCol == "NR": paperIn[""] = col
-        if headerCol == "TC": paperIn["citedBy"] = col
-        #if headerCol == "Z9": paperIn[""] = col
-        #if headerCol == "U1": paperIn[""] = col
-        #if headerCol == "U2": paperIn[""] = col
-        if headerCol == "PU": paperIn["publisher"] = col
-        #if headerCol == "PI": paperIn[""] = col
-        #if headerCol == "PA": paperIn[""] = col
-        if headerCol == "SN": paperIn["issn"] = col
-        #if headerCol == "EI": paperIn[""] = col
-        if headerCol == "BN": paperIn["isbn"] = col
-        if headerCol == "J9": paperIn["abbreviatedSourceTitle"] = col
-        #if headerCol == "JI": paperIn[""] = col
-        #if headerCol == "PD": paperIn[""] = col
-        if headerCol == "PY": paperIn["year"] = col
-        if headerCol == "VL": paperIn["volume"] = col
-        if headerCol == "IS": paperIn["issue"] = col
-        #if headerCol == "PN": paperIn[""] = col
-        #if headerCol == "SU": paperIn[""] = col
-        #if headerCol == "SI": paperIn[""] = col
-        #if headerCol == "MA": paperIn[""] = col
-        if headerCol == "BP": paperIn["pageSart"] = col
-        if headerCol == "EP": paperIn["pageEnd"] = col
-        if headerCol == "AR": paperIn["artNo"] = col
-        if headerCol == "DI": paperIn["doi"] = col
-        #if headerCol == "D2": paperIn[""] = col
-        if headerCol == "PG": paperIn["pageCount"] = col
-        #if headerCol == "WC": paperIn["subject"] = col
-        if headerCol == "SC": paperIn["subject"] = col
-        #if headerCol == "GA": paperIn[""] = col
-        if headerCol == "UT": paperIn["eid"] = col
-        if headerCol == "PM": paperIn["pubMedId"] = col
-        #if headerCol == "OA": paperIn[""] = col
-        #if headerCol == "HC": paperIn[""] = col
-        #if headerCol == "HP": paperIn[""] = col
-        #if headerCol == "DA": paperIn[""] = col
+        if headerCol == "LA": paperIn["languageOfOriginalDocument"] = col   # Language
+        if headerCol == "DT": paperIn["documentType"] = col   # Language
+        #if headerCol == "CT": paperIn[""] = col    # Conference Title
+        #if headerCol == "CY": paperIn[""] = col    # Conference Date
+        #if headerCol == "CL": paperIn[""] = col    # Conference Location
+        #if headerCol == "SP": paperIn[""] = col    # Conference Sponsor
+        #if headerCol == "HO": paperIn[""] = col    # Conference Host
+        if headerCol == "DE": paperIn["authorKeywords"] = col   # Author Keywords
+        if headerCol == "ID": paperIn["indexKeywords"] = col    # Keywords Plus
+        if headerCol == "AB": paperIn["abstract"] = col   # Abstract
+        if headerCol == "C1": paperIn["affiliations"] = col   # Author Address
+        #if headerCol == "RP": paperIn[""] = col    # Reprint Address
+        if headerCol == "EM": paperIn["correspondenceAddress"] = col    # E-mail Address
+        #if headerCol == "RI": paperIn[""] = col    # ResearcherID Number
+        if headerCol == "OI": paperIn["orcid"] = col    # ORCID Identifier (Open Researcher and Contributor ID)
+        #if headerCol == "FU": paperIn[""] = col    # Funding Agency and Grant Number
+        #if headerCol == "FX": paperIn[""] = col    # Funding Text
+        if headerCol == "CR": paperIn["citedReferences"] = col    # Cited References
+        #if headerCol == "NR": paperIn[""] = col    # Cited Reference Count
+        #if headerCol == "TC": paperIn["citedBy"] = col    # Web of Science Core Collection Times Cited Count
+
+        # Total Times Cited Count (Web of Science Core Collection, BIOSIS Citation Index,
+        # Chinese Science Citation Database, Data Citation Index, Russian Science Citation Index, SciELO Citation Index)
+        if headerCol == "Z9": paperIn["citedBy"] = col
+
+        #if headerCol == "U1": paperIn[""] = col    # Usage Count (Last 180 Days)
+        #if headerCol == "U2": paperIn[""] = col    # Usage Count (Since 2013)
+        if headerCol == "PU": paperIn["publisher"] = col    # Publisher
+        #if headerCol == "PI": paperIn[""] = col    # Publisher City
+        #if headerCol == "PA": paperIn[""] = col    # Publisher Address
+        if headerCol == "SN": paperIn["issn"] = col   # International Standard Serial Number (ISSN)
+        #if headerCol == "EI": paperIn[""] = col    # Electronic International Standard Serial Number (eISSN)
+        if headerCol == "BN": paperIn["isbn"] = col   # International Standard Book Number (ISBN)
+        if headerCol == "J9": paperIn["abbreviatedSourceTitle"] = col   # 29-Character Source Abbreviation
+        #if headerCol == "JI": paperIn[""] = col    # ISO Source Abbreviation
+        #if headerCol == "PD": paperIn[""] = col    # Publication Date
+        if headerCol == "PY": paperIn["year"] = col   # Year Published
+        if headerCol == "VL": paperIn["volume"] = col   # Volume
+        if headerCol == "IS": paperIn["issue"] = col    # Issue
+        #if headerCol == "PN": paperIn[""] = col    # Part Number
+        #if headerCol == "SU": paperIn[""] = col    # Supplement
+        #if headerCol == "SI": paperIn[""] = col    # Special Issue
+        #if headerCol == "MA": paperIn[""] = col    # Meeting Abstract
+        if headerCol == "BP": paperIn["pageSart"] = col   # Beginning Page
+        if headerCol == "EP": paperIn["pageEnd"] = col    # Ending Page
+        if headerCol == "AR": paperIn["artNo"] = col    # Article Number
+        if headerCol == "DI": paperIn["doi"] = col    # Digital Object Identifier (DOI)
+        #if headerCol == "D2": paperIn[""] = col    # Book Digital Object Identifier (DOI)
+        if headerCol == "PG": paperIn["pageCount"] = col    # Page Count
+        #if headerCol == "WC": paperIn["subject"] = col   # Web of Science Categories
+        if headerCol == "SC": paperIn["subject"] = col    # Research Areas
+        #if headerCol == "GA": paperIn[""] = col          #Document Delivery Number
+        if headerCol == "UT": paperIn["eid"] = col        # Accession Number
+        if headerCol == "PM": paperIn["pubMedId"] = col   # PubMed ID
+        #if headerCol == "OA": paperIn[""] = col      # Open Access Indicator
+        #if headerCol == "HC": paperIn[""] = col      # ESI Highly Cited Paper. Note that this field is valued only for ESI subscribers.
+        #if headerCol == "HP": paperIn[""] = col      # ESI Hot Paper. Note that this field is valued only for ESI subscribers.
+        #if headerCol == "DA": paperIn[""] = col      # Date this report was generated.
 
         # Own fields
         if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col
         if headerCol == "country": paperIn["country"] = col
+        if headerCol == "emailHost": paperIn["emailHost"] = col
 
         colnum += 1
 
@@ -246,6 +254,22 @@ def analyzeFileDict(ifile, papersDict):
       # If an author instead a country
       if paperIn["country"].endswith('.'):
         paperIn["country"] = "No country"
+
+      # Get email host
+      if paperIn["emailHost"] == "":
+        splited1 = paperIn["correspondenceAddress"].split("@")
+        if len(splited1) > 1:
+          splited2 = splited1[1].split(";")
+          paperIn["emailHost"] = splited2[0]
+        else:
+          paperIn["emailHost"] = "No email"
+
+      # Institution from WoS
+      if paperIn["institution"] == "":
+        if paperIn["dataBase"] == "WoS" and paperIn["affiliations"] != "":
+          # Get the first author affiliations, and extract the first item as institution
+          firstAf = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])[0]
+          paperIn["institution"] = re.split(", (?=[^\]]*(?:\[|$))|]", firstAf)[1].strip()
 
       # printPaper(paperIn)
 
