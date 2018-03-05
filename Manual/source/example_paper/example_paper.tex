@@ -234,12 +234,12 @@ The yearly growth of IoT related documents were observed as in Figure \ref{fig_d
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for before the duplicates-removal filter graph:}\\
 \hspace*{0.5cm}\verb|python preProcess.py dataIn --noRemDupl|\\
-\hspace*{0.5cm}\verb|python analizeTopic.py dataBase -t "Scopus;WoS" --savePlot "dataBase_preFilter.eps"|\\
+\hspace*{0.5cm}\verb|python scientoPy.py dataBase -t "Scopus;WoS" --savePlot "dataBase_preFilter.eps"|\\
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for after duplicates-removal filter graph:}\\
 \hspace*{0.5cm}\verb|python preProcess.py dataIn|\\
-\hspace*{0.5cm}\verb|python analizeTopic.py dataBase -t "Scopus;WoS" --savePlot "dataBase_postFilter.eps"|\\
+\hspace*{0.5cm}\verb|python scientoPy.py dataBase -t "Scopus;WoS" --savePlot "dataBase_postFilter.eps"|\\
 
 
 The first mention of the ``Internet of Things'' was an article published in March 2002 reported by WoS. Published by Forbes, Schoenberger, and Upbin, this article described how the IoT could be a standardized way to help the computers understand the world \cite{ISI:000174207300032}. In 2003, Scopus reported a paper from the Institute of Electrical and Electronics Engineers (IEEE) International Conference on Systems, Man and Cybernetic, in which Qui and Zhang showed the design of enterprise web servers supporting instant data retrieval for a product labeled with an Radio-frequency identification (RFID) based smart tag \cite{Qiu20032661}. Scopus reported a second conference paper in 2003 for the 36th Annual Hawaii International Conference on System Sciences, Traversat et al. on the stated the JXTA (abbreviation of Juxtapose) protocols as a foundation of the upcoming Web of Things\cite{Traversat2003}. 
@@ -263,7 +263,7 @@ A list of the countries with the most associated publications was generated. Fig
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
-\hspace*{0.5cm}\verb|python topResults.py country --startYear 2002 -l 7 --pYear --savePlot "countries.eps"|\\
+\hspace*{0.5cm}\verb|python scientoPy.py country --startYear 2002 -l 7 --pYear --savePlot "countries.eps"|\\
 
 Germany \cite{Bose2005} and Malaysia \cite{Norman2005} first appear in 2005, joined by the United States  \cite{Djassemi2005}. These three conference papers demonstrated how the RFID can boost Internet of Things for manufacturing, packing, tracking, and automobile logistics. In 2006, the total publications grew from 3 to 12, with~more countries participating, such as France \cite{4022056,1698342}, Switzerland \cite{Adelmann2006366,Lehtonen200677}, and Japan \cite{Futatsumori2006258}. From 2006 to 2009, Germany led the number of publications with 2, 3, 9, and 11, respectively. During that period, the~German author Broll led the citations count with a proposed framework for integrating web services and mobile interaction with physical objects \cite{5262929}.
 
@@ -343,7 +343,7 @@ Expanding the results from Figure \ref{fig_countries}, Table \ref{table_countrie
 
 \noindent
 \textcolor{brown}{To get the previous table, run the following script, and find the results in results/Country.csv:}\\
-\hspace*{0.5cm}\verb|python topResults.py country --startYear 2002 -l 50 --noPlot|\\
+\hspace*{0.5cm}\verb|python scientoPy.py country --startYear 2002 -l 50 --noPlot|\\
 
 
 The  International Data Corporation (IDC) predicts that, by 2019, 20\% of local and regional governments in Indonesia will use the Internet of Things to turn infrastructure such as roads, street lights, and~traffic signals into assets instead of liabilities \cite{Estopace2017}. In addition, the Dutch IoT start-up, Xeelas (Arnhem, Netherlands), and~Turkish group, Sade (Ankara, Turkey), partnered to build Turkey's largest LoRaWAN (LoRa, Long Range Wide-area network network) in Istanbul to enable business, local governments, and conservation groups to collect and analyze from connected devices \cite{turkey2017}. In Russia, the Internet of Things market is expected to reach USD 74 Billion by 2023, where the Russian government's Internet start-up fund (FRII) has joined forces with tech giants GS Group (Saint-Petersburg, Russia) and mobile operators to launch a national Internet of Things (IoT) consortium \cite{russia2017}. In Pakistan, by~January~2017, 17~Internet of Things start-ups were launched, on their own or incubated, at Plan9 (Lahore, Pakistan), NEST i/o (Karachi, Pakistan), and~i2i~(Islamabad, Pakistan) \cite{ignite2017}.
@@ -365,7 +365,7 @@ RFID, security, electric vehicle, artificial immune system, smart grid, and clou
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
-\hspace*{0.5cm}\verb|python topResults.py authors --startYear 2006 -l 5 --savePlot "authors.eps"|\\
+\hspace*{0.5cm}\verb|python scientoPy.py authors --startYear 2006 -l 5 --savePlot "authors.eps"|\\
 
 
 Y. Liu is positioned second with 115 documents, of which 36 list him as the primary author. His~publications are more focused on hardware such as Raspberry Pi, test bed, optical communications, ZigBee, and RFID. The article titled ``IOT gateway: Bridging wireless sensor networks into Internet of Things'' is his most cited document with 134 citations \cite{Zhu2010347}. Y. Liu shares the authorship in four~publications with the first author in this list, Y. Zhang.
@@ -408,7 +408,7 @@ Table \ref{table_top_20_authors} shows the top 20 authors with the most publishe
 
 \noindent
 \textcolor{brown}{To get the previous table, run the following script, find the results in results/Authors\_extended.csv and results/Authors.csv, read the keywords and some papers to extract manually the top author topics}\\
-\hspace*{0.5cm}\verb|python topResults.py authors --startYear 2006 -l 20 --noPlot|\\
+\hspace*{0.5cm}\verb|python scientoPy.py authors --startYear 2006 -l 20 --noPlot|\\
 
 
 Table \ref{table_times_cited} shows the most cited papers for three document types (articles, conference/proceedings and reviews). Atzori et al. surveys IoT vision and enabling technologies \cite{Atzori20102787}. Second in articles, Gubbi~et~al. describe a cloud-centered vision for the worldwide implementation of IoT \cite{Gubbi20131645}. Miorandi~et~al.'s article surveys on technologies, applications and research challenges for IoT \cite{Miorandi20121497}. 
@@ -482,7 +482,7 @@ IoT has a broad spectrum of research fields such as applications, smart objects,
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "WSN,Wireless sensor network,Wireless sensor networks; \
 RFID,RADIO FREQUENCY IDENTIFICATION;Cloud computing;Security;Big data; \
 Privacy;Smart City;6LoWPAN;Sensors;Zigbee" --startYear 2006 --savePlot "keywords.eps"
@@ -514,7 +514,7 @@ There are several application fields related to IoT research and development. In
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for smart applications:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "Smart city,Smart cities;Smart home,Smart homes;Smart grid,Smart grids;\
 Smart objects,Smart object,Smart enviroments,Smart enviroment;\
 Smart buildings,Smart Building;Smart devices;Smart factory" \
@@ -524,7 +524,7 @@ Smart buildings,Smart Building;Smart devices;Smart factory" \
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for not start smart applications:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "Cyber-physical systems,CYBER PHYSICAL SYSTEMS,CPS;\
 Healthcare,E-Health;Energy efficiency;\
 Social networks,Social networks,Social media;\
@@ -591,7 +591,7 @@ Regarding telecommunications systems, the  Open Systems Interconnection model (O
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for media layers' communications protocols:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "RFID,RADIO FREQUENCY IDENTIFICATION;6LoWPAN;\
 ZigBee;BLE,Bluetooth Low Energy;WiFi,Wi-Fi;5G;RPL" \
 --startYear 2006 --savePlot "media_layers.eps"
@@ -600,7 +600,7 @@ ZigBee;BLE,Bluetooth Low Energy;WiFi,Wi-Fi;5G;RPL" \
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for host layers' communication protocols:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "CoAP,Constrained Application Protocol;MQTT,Message Queue Telemetry Transport;\
 DTLS,Datagram Transport Layer Security;TCP;iBeacon;JSON;UDP" \
 --startYear 2006 --savePlot "host_layers.eps"
@@ -632,7 +632,7 @@ The proliferation of IoT has significantly increased the data collection and the
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "Machine learning;Data mining;Complex event processing,CEP;Hadoop" \
 --startYear 2006 --savePlot "software.eps"
 \end{verbatim}
@@ -665,7 +665,7 @@ The data set analyzed here shows that the investigations used different IoT devi
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for operating systems:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "Android,Android OS;Contiki,Contiki OS;Linux,Linux OS;\
 iOS,iPhone Operating System,iPhone Operating System (iOS);\
 Windows,Windows OS" --startYear 2006 --savePlot "operating.eps"
@@ -674,7 +674,7 @@ Windows,Windows OS" --startYear 2006 --savePlot "operating.eps"
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for hardware:}\\
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "Raspberry Pi;Arduino,Arduino board;Smartphone,Smartphones,Smart phone,Smart phones;\
 FPGA,Field-programmable gate array,Field programmable gate array;\
 Microcontroller,Microcontrollers" --startYear 2006 --savePlot "hardware.eps"

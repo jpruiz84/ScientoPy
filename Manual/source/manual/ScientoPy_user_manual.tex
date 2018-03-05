@@ -96,10 +96,9 @@
 
 \begin{enumerate}
 \item Download and install the last version of Python 2.7 (for example Python 2.7.14) from: \\ \url{https://www.python.org/downloads/}
-\item Install the matplotlib library for Python the automatic installation tool \textbf{pip}. From Windows, enter in the command line (Windows + R, cmd, and Enter), go to the folder \verb|C:\Python27\Scripts|, and run the installation script:
+\item Install the  numpy, scipy, and matplotlib  libraries for Python with the automatic installation tool \textbf{pip}. From Windows, enter in the command line (Windows + R, cmd, and Enter), and run the installation script:
 \begin{verbatim}
-cd C:\Python27\Scripts
-pip install matplotlib
+python -m pip install --user numpy scipy matplotlib
 \end{verbatim}
 \end{enumerate}
 
@@ -146,9 +145,9 @@ This section describes the ScientoPy scripts to pre-process and process the bibl
 
 \subsection{Pre-processing}
 
-First we need to pre-process the downloaded dataset. This pre-process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset run this command inside ScientoPy folder: 
+First we need to pre-process the downloaded dataset. This pre-process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset (Internet of things papers) run this command inside ScientoPy folder: 
 \begin{verbatim}
-python preProcess.py dataInExample
+python preProcess.py dataInIoT
 \end{verbatim}
 
 Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files: 
@@ -175,12 +174,13 @@ With this script you can extract the top topics of a selected criterion. The Sci
 \item documentType 
 \item dataBase 
 \item country
+\item institution
 \end{itemize}
 
 For example, to find the top author's keywords you can run this script: 
 
 \begin{verbatim}
-python topResults.py authorKeywords
+python scientoPy.py authorKeywords
 \end{verbatim}
 
 This will generate a list with the top 10 topics on the selected criterion (in this case authorKeywords), with the number of documents per topic, and the h-index associated to each one. Also, this script graphs the evolution of each topic per year, and saves the quantitative results on the folder \verb|ScientoPy/results|. 
@@ -188,32 +188,42 @@ This will generate a list with the top 10 topics on the selected criterion (in t
 This script have more options like, save the plot on a file, or increase the number of topic results. For more information you can run:
 
 \begin{verbatim}
-python topResults.py -h
+python scientoPy.py -h
 \end{verbatim}
 
 \subsection{Analyze pre-defined topics inside a criterion}
 
-If you want to make an analysis of pre-defined topics, such as the two selected countries papers evolution, you can use the \verb|analizeTopic.py| script, with the option \verb|-t|, to specify the topics: 
+If you want to make an analysis of pre-defined topics, such as the two selected countries papers evolution, you can use the \verb|scientoPy.py| script, with the option \verb|-t|, to specify the topics: 
 
 \begin{verbatim}
-python analizeTopic.py country -t "United States; Brazil"
+python scientoPy.py country -t "United States; Brazil"
 \end{verbatim}
 
 You can analyze any topic in any criterion. Put the topics on the \verb|-t| argument. Divide the topics with the \verb|;|. Also, you can integrate two or more topics in one, by dividing it with \verb|,|. This is very useful for abbreviations and plural singulars, for example: 
 \begin{verbatim}
-python analizeTopic.py authorKeywords -t \
+python scientoPy.py authorKeywords -t \
 "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION"
+\end{verbatim}
+
+\textbf{Note: } The command is very long, for that reason the command was divided by "\". If you have problems in Windows, remove the "\" and put the command in one single line.
+
+Also, you can see the results with a parametric graphic (add \verb|--parametirc|). This option plot the accumulative documents, average growth rate (AGR), and h-Index of the selected topic, for example:
+
+\begin{verbatim}
+python scientoPy.py authorKeywords -t \
+"WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION" \
+--parametric
 \end{verbatim}
 
 This script have more options like, save the plot on a file, or others. For more information you can run:
 
 \begin{verbatim}
-python analizeTopic.py -h
+python scientoPy.py -h
 \end{verbatim}
 
 \subsection{Finding trending topics}
 
-This script find the top trending topics based on the higher average growth rate (AGR) over the others. The AGR is calculated on two years periods, using the following Equation \eqref{equation_AGR}:
+This script finds the top trending topics based on the higher average growth rate (AGR) over the others. The AGR is calculated on two years periods, using the following Equation \eqref{equation_AGR}:
 \begin{equation}
 AGR = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i - P_{i-1}}{(Y_e - Y_s)+1},  
 \label{equation_AGR}
@@ -280,7 +290,7 @@ python topCited.py --yearWeight 1.75
 The full document list results is saved in the file \verb|ScientoPy/results/topCitedPapers.csv|. This script have more options like, save the plot on a file, or others. For more information you can run:
 
 \begin{verbatim}
-python trendResults.py -h
+python topCited.py -h
 \end{verbatim}
 
 \end{document}  
