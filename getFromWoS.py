@@ -128,7 +128,6 @@ def wosDownloadList(driver, fromCount, toCount):
 print("Get data from WoS")
 
 DownloadPath = os.getcwd() + DOWNLOAD_FOLDER
-
 print("Download path: %s" % DownloadPath)
 
 if not os.path.exists(DownloadPath):
@@ -177,6 +176,7 @@ while True:
     resultsPerDownload = totalPapersToFind - fromCount + 1
   toCount = fromCount + resultsPerDownload - 1
 
+  print("")
   print("Download from: %d, to: %d" %(fromCount, toCount))
 
   # Download and check download

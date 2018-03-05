@@ -10,7 +10,7 @@ import csv
 import math
 
 BASE_SCOPUS_URL = "https://www-scopus-com.ezproxyegre.uniandes.edu.co:8843"
-DOWNLOAD_FOLDER = "/home/jpruiz84/scopusData"
+DOWNLOAD_FOLDER = "/scopusData"
 SEARCH_STRING = '"Internet+of+things"'
 
 SEARCH_URL = "https://www-scopus-com.ezproxyegre.uniandes.edu.co:8843/results/results.uri?sort=plf-f&src=s&sid=cdc4695c7a613d16887e1e1b1666c35d&sot=a&sdt=a&sl=155&s=TITLE-ABS-KEY%28SEARCH_STRING%29+AND+ORIG-LOAD-DATE+%3e+START_EPOCH+AND+ORIG-LOAD-DATE+%3c+END_EPOCH&origin=searchadvanced&editSaveSearch=&txGid=bf84f20c3def4d7b41d0e39fd8489f62"
@@ -26,22 +26,25 @@ END_LOAD_DATE = "2020-1-1"
 NUM_PAPER_MAX = 1999
 NUM_PAPER_MIN = 200
 
+DownloadPath = ""
+countDonwloads = 0
 
 def startWebDriver(start_url):
   print("Starting WebDriver...")
+  chrome_options = webdriver.ChromeOptions()
+  prefs = {
+      "download": {"default_directory": DownloadPath,
+                   "directory_upgrade": True,
+                   "extensions_to_open": ""},
+      "switches": ["-silent", "--disable-logging"],
+      "chromeOptions": {"args": ["-silent", "--disable-logging"]}
+  }
+  chrome_options.add_experimental_option("prefs", prefs)
 
-  fp = webdriver.FirefoxProfile()
-
-  fp.set_preference("browser.download.folderList",2)
-  fp.set_preference("browser.download.manager.showWhenStarting",False)
-  fp.set_preference("browser.download.dir", DOWNLOAD_FOLDER)
-  fp.set_preference("browser.helperApps.neverAsk.saveToDisk","text/csv")
-
-  driver = webdriver.Firefox(firefox_profile=fp)
-  driver.set_page_load_timeout(30)
+  driver = webdriver.Chrome(chrome_options=chrome_options)
+  driver.implicitly_wait(5)
   driver.get(start_url)
   driver.maximize_window()
-  driver.implicitly_wait(30)
 
   return driver
 
@@ -113,27 +116,35 @@ def scopusDownloadList(driver, countDownloads):
         "#exportCheckboxHeaders > th:nth-child(3) > span:nth-child(1) > label:nth-child(2)")
       abstract.click()
 
+
+    time.sleep(1)
+
     # Export button
     driver.find_element_by_css_selector("#exportTrigger").click()
 
     print("Downloading...")
-    # Wait until file is created
-    while not os.path.isfile(DOWNLOAD_FOLDER + "/scopus.csv"):
-      time.sleep(1)
+
 
     # Wait until the download is created
-    while not os.path.isfile(DOWNLOAD_FOLDER + "/scopus.csv.part"):
+    while not os.path.isfile(DownloadPath + "/scopus.csv.crdownload"):
+      # If donwloaded very fast
+      if os.path.isfile(DownloadPath + "/savedrecs.txt"):
+        if (os.stat(DownloadPath + "/savedrecs.txt").st_size >= 0):
+          break
       time.sleep(1)
 
     # Wait until download is finished
-    while os.path.isfile(DOWNLOAD_FOLDER + "/scopus.csv.part"):
+    while os.path.isfile(DownloadPath + "/scopus.csv.crdownload"):
       time.sleep(1)
 
+    # Wait for file to be renamed by chrome
     time.sleep(2)
 
-    if(os.stat(DOWNLOAD_FOLDER + "/scopus.csv").st_size == 0):
+    if(os.stat(DownloadPath + "/scopus.csv").st_size == 0):
       print("Error, bad file size")
       return False
+
+    print("Download finished.")
 
     return True
 
@@ -148,12 +159,15 @@ def scopusDownloadList(driver, countDownloads):
 
 print("Get CSV from Scopus")
 
-if not os.path.exists(DOWNLOAD_FOLDER):
+DownloadPath = os.getcwd() + DOWNLOAD_FOLDER
+print("Download path: %s" % DownloadPath)
+
+if not os.path.exists(DownloadPath):
   print("No dowwload folder, creating")
-  os.makedirs(DOWNLOAD_FOLDER)
+  os.makedirs(DownloadPath)
 
 # Remove all files from download folder
-shutil.rmtree(DOWNLOAD_FOLDER)
+shutil.rmtree(DownloadPath)
 
 # Start CSV to store results
 ofile = open("getScopusResults.csv", 'w')
@@ -210,8 +224,8 @@ while True:
     print("TOTAL papersCount: " + str(papersCount) +  ", from: " + str(totalPapersToFind))
 
     number = "scopus_%03d-%06d" % (countDonwloads, papersCount)
-    os.rename(DOWNLOAD_FOLDER + "/scopus.csv",
-              "/home/jpruiz84/scopusData/{0}.csv".format(number))
+    os.rename(DownloadPath + "/scopus.csv",
+              DownloadPath + "/{0}.csv".format(number))
 
 
     if(papersCount >= totalPapersToFind):
@@ -265,8 +279,8 @@ while True:
       print("TOTAL papersCount: " + str(papersCount) + ", from: " + str(totalPapersToFind))
 
       number = "scopus_%03d-%06d" % (countDonwloads, papersCount)
-      os.rename(DOWNLOAD_FOLDER + "/scopus.csv",
-                "/home/jpruiz84/scopusData/{0}.csv".format(number))
+      os.rename(DownloadPath + "/scopus.csv",
+                DownloadPath + "/{0}.csv".format(number))
 
       break
     fDividedByTwo = False
