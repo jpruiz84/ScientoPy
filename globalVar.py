@@ -1,7 +1,6 @@
 DEFAULT_START_YEAR = 2006
 DEFAULT_END_YEAR = 2016
 
-
 PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
 OUTPUT_FILE_NAME = "papersPreprocessed.csv"
 DATA_OUT_FOLDER = "dataPre"
@@ -11,8 +10,10 @@ DEFUALT_DATA_IN_FOLDER = "dataIn"
 
 RESULTS_FOLDER = "results"
 
+# TODO comment
 INCLUDED_TYPES = ["Conference Paper", "Article", 
 "Review", "Proceedings Paper"]
+
 TOP_TREND_SIZE = 200
 TREND_PERIODS = 3
 

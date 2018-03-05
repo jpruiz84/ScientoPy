@@ -11,8 +11,7 @@ import math
 
 BASE_SCOPUS_URL = "https://www-scopus-com.ezproxyegre.uniandes.edu.co:8843"
 DOWNLOAD_FOLDER = "/home/jpruiz84/scopusData"
-DATAIN_FOLDER = "./idsData/"
-SEARCH_STRING = "%22FPGA%22+OR+%22FPGAs%22+OR+%22Field+Programmable+Gate+Array%22+OR+%22Field-programmable+gate+array%22+OR+%22Field-programmable+gate+arrays%22+OR+%22Field programmable+gate+arrays%22"
+SEARCH_STRING = '"Internet+of+things"'
 
 SEARCH_URL = "https://www-scopus-com.ezproxyegre.uniandes.edu.co:8843/results/results.uri?sort=plf-f&src=s&sid=cdc4695c7a613d16887e1e1b1666c35d&sot=a&sdt=a&sl=155&s=TITLE-ABS-KEY%28SEARCH_STRING%29+AND+ORIG-LOAD-DATE+%3e+START_EPOCH+AND+ORIG-LOAD-DATE+%3c+END_EPOCH&origin=searchadvanced&editSaveSearch=&txGid=bf84f20c3def4d7b41d0e39fd8489f62"
 
@@ -100,13 +99,10 @@ def scopusDownloadList(driver, countDownloads):
     # Clikc on export results
     driver.find_element_by_css_selector("#export_results").click()
 
-    # Export to cvs
-    time.sleep(random.randint(LOAD_DMAX, LOAD_DMAX))
-    driver.find_element_by_css_selector("#export_results").click()
-
     if(countDonwloads == 0):
-      # CSV (Excel)
+      print ("countDonwloads: %d" % countDonwloads)
       time.sleep(random.randint(LOAD_DMAX, LOAD_DMAX))
+      # CSV (Excel)
       driver.find_element_by_css_selector("li.radio-inline:nth-child(4) > label:nth-child(2)").click()
       # Bibliographical information
       biographical = driver.find_element_by_css_selector(
@@ -125,11 +121,15 @@ def scopusDownloadList(driver, countDownloads):
     while not os.path.isfile(DOWNLOAD_FOLDER + "/scopus.csv"):
       time.sleep(1)
 
+    # Wait until the download is created
+    while not os.path.isfile(DOWNLOAD_FOLDER + "/scopus.csv.part"):
+      time.sleep(1)
+
     # Wait until download is finished
     while os.path.isfile(DOWNLOAD_FOLDER + "/scopus.csv.part"):
       time.sleep(1)
 
-    time.sleep(1)
+    time.sleep(2)
 
     if(os.stat(DOWNLOAD_FOLDER + "/scopus.csv").st_size == 0):
       print("Error, bad file size")
@@ -148,18 +148,17 @@ def scopusDownloadList(driver, countDownloads):
 
 print("Get CSV from Scopus")
 
+if not os.path.exists(DOWNLOAD_FOLDER):
+  print("No dowwload folder, creating")
+  os.makedirs(DOWNLOAD_FOLDER)
+
 # Remove all files from download folder
-try:
-  shutil.rmtree(DOWNLOAD_FOLDER)
-except:
-  print("No dowwload folder")
+shutil.rmtree(DOWNLOAD_FOLDER)
 
+# Start CSV to store results
 ofile = open("getScopusResults.csv", 'w')
-
 fieldnames = ["Number", "Start", "End", "Papers", "Time", "startEpoch", "endEpoch"]
-
 writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
-
 writer.writeheader()
 
 
