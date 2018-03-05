@@ -3,6 +3,7 @@ import globalVar
 import re
 import json
 import unicodedata
+import sys
 
 def strip_accents(s):
    return ''.join(c for c in unicodedata.normalize('NFD', s)
@@ -388,7 +389,6 @@ def removeDuplicates(paperDict, logWriter):
   paperDict = sorted(paperDict, key=lambda x: x["titleB"])
  
   print("Removing duplicates...")
-  print len(paperDict)
 
   # Run on paper list
   for i in range(0, len(paperDict)):
@@ -407,15 +407,15 @@ def removeDuplicates(paperDict, logWriter):
       
       # If the criterion match
       if(match == True):
-        print("\nPaper %s duplicated with %s" %  (i, i+1))
+        #print("\nPaper %s duplicated with %s" %  (i, i+1))
         
-        print("Dup A: %s, %s" % (paperDict[i]["title"], paperDict[i]["year"]))
-        print("Authors: %s, Database: %s, Cited by: %s" %
-        (paperDict[i]["authors"], paperDict[i]["dataBase"], paperDict[i]["citedBy"]))
+        #print("Dup A: %s, %s" % (paperDict[i]["title"], paperDict[i]["year"]))
+        #print("Authors: %s, Database: %s, Cited by: %s" %
+        #(paperDict[i]["authors"], paperDict[i]["dataBase"], paperDict[i]["citedBy"]))
         
-        print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
-        print("Authors: %s, Database: %s, Cited by: %s" %
-        (paperDict[i+1]["authors"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
+        #print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
+        #print("Authors: %s, Database: %s, Cited by: %s" %
+        #(paperDict[i+1]["authors"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
         
         if paperDict[i+1]["dataBase"] == "WoS":
           removedPapersWoS += 1
@@ -424,7 +424,7 @@ def removeDuplicates(paperDict, logWriter):
           removedPapersScopus += 1
           
         # Remove paper j
-        print("Removing: %s" % paperDict[i+1]["dataBase"])
+        #print("Removing: %s" % paperDict[i+1]["dataBase"])
         paperDict[i]["duplicatedIn"] = paperDict[i+1]["eid"]
 
         # Find how many duplicated documents has different cited by
@@ -438,11 +438,14 @@ def removeDuplicates(paperDict, logWriter):
 
         paperDict.remove(paperDict[i+1])
         duplicatedPapersCount += 1
+        progressPer = float(i) / float(len(paperDict)) * 100
+        if progressPer < 100:
+          #print("\r%0.1f%%" % progressPer)
+          sys.stdout.write("\r%d%%  " % (int(progressPer)))
+          sys.stdout.flush()
         continue
 
-    progressPer = float(i)/float(len(paperDict)) * 100
-    if progressPer < 100:
-      print("\r{0:.0f}%".format(progressPer))
+
 
   print("\r{0:.0f}%".format(100))
   print("\nDuplicated papers found: %s" % duplicatedPapersCount)
