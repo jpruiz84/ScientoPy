@@ -46,9 +46,13 @@ help="Short the top results based on times cited", action="store_true")
 parser.add_argument("--agrWidth",
 help="Average growth rate window width in years",type=int, default=2)
 
-
 parser.add_argument("-r", "--previousResults",
 help="Analyze based on the previous results", action="store_true")
+
+parser.add_argument("--onlyFirst",
+help="Only look on the first topic, for example to analize only the first aurhor name, "
+     "country or institution", action="store_true")
+
 
 
 
@@ -151,6 +155,8 @@ else:
             topicDic[item] = int(paper["citedBy"])
       except:
         noWithCitedBy = 1
+      if args.onlyFirst:
+        break
 
   topTopcis = sorted(topicDic.iteritems(),
                      key=lambda x: -x[1])[int(args.start):int(args.length)]
@@ -200,6 +206,8 @@ for paper in papersDict:
           topicResults[topicName]["name"] = item
           topicResults[topicName]["papers"].append(paper)
           papersDictOut.append(paper)
+    if args.onlyFirst:
+      break
 
 #print(topicResults)
 

@@ -1,5 +1,5 @@
-DEFAULT_START_YEAR = 2006
-DEFAULT_END_YEAR = 2016
+DEFAULT_START_YEAR = 2000
+DEFAULT_END_YEAR = 2017
 
 PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
 OUTPUT_FILE_NAME = "papersPreprocessed.csv"
@@ -10,7 +10,7 @@ DEFUALT_DATA_IN_FOLDER = "dataIn"
 
 RESULTS_FOLDER = "results"
 
-# TODO comment
+# Documents types to include on the script processing
 INCLUDED_TYPES = ["Conference Paper", "Article", 
 "Review", "Proceedings Paper"]
 

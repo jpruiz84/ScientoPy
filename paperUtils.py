@@ -221,39 +221,63 @@ def analyzeFileDict(ifile, papersDict):
         paperIn["dataBase"] = "Scopus"
         globalVar.papersScopus += 1
 
+
+      # Extract country
+      # Get each author affiliations
+      affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
+      countries = []
       if paperIn["country"] == "":
-        # Get the first author affiliations, and extract the last item as contry
-        firstAf = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])[0]
-        paperIn["country"] = re.split(", (?=[^\]]*(?:\[|$))", firstAf)[-1]
+        for affiliation in affiliations:
+          # Get the first author affiliations, and extract the last item as contry
+          country = re.split(", (?=[^\]]*(?:\[|$))", affiliation)[-1].strip()
 
-        if "CHINA".upper() in paperIn["country"].upper():
-          paperIn["country"] = "China"
+          if "CHINA".upper() in country.upper():
+            country = "China"
 
-        if "USA".upper() in paperIn["country"].upper():
-          paperIn["country"] = "United States"
+          if "USA".upper() in country.upper():
+            country = "United States"
 
-        if "ENGLAND".upper() in paperIn["country"].upper():
-          paperIn["country"] = "United Kingdom"
-        if "SCOTLAND".upper() in paperIn["country"].upper():
-          paperIn["country"] = "United Kingdom"
-        if "WALES".upper() in paperIn["country"].upper():
-          paperIn["country"] = "United Kingdom"
+          if "ENGLAND".upper() in country.upper():
+            country = "United Kingdom"
+          if "SCOTLAND".upper() in country.upper():
+            country = "United Kingdom"
+          if "WALES".upper() in country.upper():
+            country = "United Kingdom"
 
-        if "U ARAB EMIRATES".upper() in paperIn["country"].upper():
-          paperIn["country"] = "United Arab Emirates"
+          if "U ARAB EMIRATES".upper() in country.upper():
+            country = "United Arab Emirates"
 
-        if "RUSSIA".upper() in paperIn["country"].upper():
-          paperIn["country"] = "Russian Federation"
+          if "RUSSIA".upper() in country.upper():
+            country = "Russian Federation"
 
-        if "VIET NAM".upper() in paperIn["country"].upper():
-          paperIn["country"] = "Vietnam"
+          if "VIET NAM".upper() in country.upper():
+            country = "Vietnam"
 
-        if "TRINID & TOBAGO".upper() in paperIn["country"].upper():
-          paperIn["country"] = "Trinidad and Tobago"
+          if "TRINID & TOBAGO".upper() in country.upper():
+            country = "Trinidad and Tobago"
 
+          if country not in countries:
+            countries.append(country)
+
+        paperIn["country"] = ";".join(countries)
       # If an author instead a country
-      if paperIn["country"].endswith('.'):
-        paperIn["country"] = "No country"
+      #if country.endswith('.'):
+      #  country = "No country"
+
+      # Institution from WoS
+      institutions=[]
+      if paperIn["institution"] == "":
+        if paperIn["dataBase"] == "WoS" and affiliations != "":
+          for affiliation in affiliations:
+            # Get the first author affiliations, and extract the first item as institution
+            afList = re.split(", (?=[^\]]*(?:\[|$))|]", affiliation)
+            if len(afList) < 2:
+              continue
+            institution = afList[1].strip()
+
+            if institution not in institutions:
+              institutions.append(institution)
+          paperIn["institution"] = ";".join(institutions)
 
       # Get email host
       if paperIn["emailHost"] == "":
@@ -264,12 +288,7 @@ def analyzeFileDict(ifile, papersDict):
         else:
           paperIn["emailHost"] = "No email"
 
-      # Institution from WoS
-      if paperIn["institution"] == "":
-        if paperIn["dataBase"] == "WoS" and paperIn["affiliations"] != "":
-          # Get the first author affiliations, and extract the first item as institution
-          firstAf = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])[0]
-          paperIn["institution"] = re.split(", (?=[^\]]*(?:\[|$))|]", firstAf)[1].strip()
+
 
       # printPaper(paperIn)
 
@@ -420,9 +439,12 @@ def removeDuplicates(paperDict, logWriter):
         paperDict.remove(paperDict[i+1])
         duplicatedPapersCount += 1
         continue
-        
-    print("\r{0:.0f}%".format(float(i)/float(len(paperDict)) * 100)),
-        
+
+    progressPer = float(i)/float(len(paperDict)) * 100
+    if progressPer < 100:
+      print("\r{0:.0f}%".format(progressPer))
+
+  print("\r{0:.0f}%".format(100))
   print("\nDuplicated papers found: %s" % duplicatedPapersCount)
   print("Original papers count: %s" % originalPapersCount)
   print("Actual papers count: %s" % len(paperDict))
