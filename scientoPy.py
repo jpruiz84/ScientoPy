@@ -96,6 +96,9 @@ yearPapers = {}
 for i in range(args.startYear, args.endYear + 1):
   yearPapers[i] = 0
 
+
+# Filter papers with invalid year
+papersDict = list(filter(lambda x: x["year"].isdigit(), papersDict))
 # Filter the papers outside the year range
 papersDict = list(filter(lambda x: int(x["year"]) >= args.startYear, papersDict))
 papersDict = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDict))

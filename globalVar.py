@@ -1,5 +1,5 @@
 # Default start and end year
-DEFAULT_START_YEAR = 2007
+DEFAULT_START_YEAR = 2000
 DEFAULT_END_YEAR = 2017
 
 # Default output files and folders
