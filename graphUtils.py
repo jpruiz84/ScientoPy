@@ -192,7 +192,7 @@ def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
     count += 1
 
   plt.xlabel("h-Index")
-  plt.ylabel("Average growth rate, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+  plt.ylabel("Average Growth Rate, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
 
 
   # Calculate plot max and min
@@ -267,7 +267,7 @@ def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
   ax0.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
 
   plt.xlabel("Publication year")
-  plt.ylabel("Number of documents")
+  plt.ylabel("Accumulative Number of Documents")
 
 
 # Keep only the first zero right to left
