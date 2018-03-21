@@ -116,22 +116,19 @@ def saveResults(paperDict, outFileName):
 
 
 def saveTopResults(resultsDict, criterionIn):
-  
+
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".csv")
   ofile = open(fileName, 'w')
-  
+
   fieldnames = ["Pos.", criterion, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
-  
+
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
 
-  def functionShort1(k, v):
-    return (-v["PapersTotal"], k)
-
-  sortedResults = sorted(resultsDict.iteritems(), key=functionShort1)
+  sortedResults = sorted(resultsDict.iteritems(), key=lambda kv: (-kv[1]["PapersTotal"], kv[0]))
 
   count = 1
   for item in sortedResults:
@@ -145,33 +142,31 @@ def saveTopResults(resultsDict, criterionIn):
     for yearItem in value["year"]:
       index = value["year"].index(yearItem)
       dictWriter[yearItem] = value["PapersCount"][index]
-  
+
     count += 1
     writer.writerow(dictWriter)
 
   ofile.close()
-  
+
   print("\nSaved top results on: %s" % fileName)
-  
-  
+
+
 def saveExtendedResults(resultsDict, criterionIn):
-  
+
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
-  
+
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.csv")
   ofile = open(fileName, 'w')
-  
+
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors", "Author keywords", "Country", "Document type"]
-  
+
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
 
-  def functionShort2(k, v):
-    return (-v["PapersTotal"], k)
 
-  sortedResults = sorted(resultsDict.iteritems(), key=functionShort2)
-  
+  sortedResults = sorted(resultsDict.iteritems(), key=lambda kv: (-kv[1]["PapersTotal"], kv[0]))
+
   count = 1
   for itemR in sortedResults:
     key = itemR[0]
@@ -202,7 +197,7 @@ def saveExtendedResults(resultsDict, criterionIn):
       writer.writerow(dictWriter)
 
   ofile.close()
-  
+
   print("\nSaved extended top results on: %s" % fileName)
 
 def saveTopCited(papersDic):

@@ -54,6 +54,9 @@ parser.add_argument("--onlyFirst",
 help="Only look on the first topic, for example to analize only the first aurhor name, "
      "country or institution", action="store_true")
 
+parser.add_argument("--title",
+help="To put a title in your graph", type=str)
+
 
 
 
@@ -65,8 +68,6 @@ if sys.version_info[0] > 2:
   print("ERROR, you are using Python 3, Python 2.7.XX required")
   print("")
   exit()
-
-
 
 args = parser.parse_args()
 
@@ -321,6 +322,9 @@ if args.noPlot:
     if args.pYear:
       plt.ylabel("% of documents per year")
 
+  if args.title:
+    plt.title(args.title)
+
   plt.tight_layout()
 
   if args.savePlot == "":
@@ -328,6 +332,7 @@ if args.noPlot:
   else:
     plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
     bbox_inches = 'tight', pad_inches = 0.01)
+
 
 paperSave.saveTopResults(topicResults, args.criterion)
 paperSave.saveExtendedResults(topicResults, args.criterion)

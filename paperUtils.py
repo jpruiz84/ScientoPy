@@ -20,7 +20,7 @@ def analyzeFileDict(ifile, papersDict):
   else:
     reader = csv.reader(ifile, delimiter=',')
 
-  csv.field_size_limit(sys.maxsize)
+  csv.field_size_limit(int(2e9))
 
   header = 0
   rownum = 0
