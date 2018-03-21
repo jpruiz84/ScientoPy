@@ -5,6 +5,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
+import sys
 
 
 
@@ -60,6 +61,12 @@ help="Only look on the first topic, for example to analize only the first aurhor
 print("\n\nScientoPy: %s" % (globalVar.SCIENTOPY_VERSION))
 print("================\n")
 
+if sys.version_info[0] > 2:
+  print("ERROR, you are using Python 3, Python 2.7.XX required")
+  print("")
+  exit()
+
+
 
 args = parser.parse_args()
 
@@ -80,7 +87,7 @@ papersDict = []
 papersDictOut = []
 
 # Open the storage database and add to papersDict
-ifile = open(INPUT_FILE, "rb")
+ifile = open(INPUT_FILE, "r")
 print("Reading file: %s" % (INPUT_FILE))
 paperUtils.analyzeFileDict(ifile, papersDict)
 ifile.close()
@@ -167,7 +174,7 @@ else:
   for topic in topTopcis:
     topicList.append([topic[0]])
 
-print topicList
+print(topicList)
 
 # Create results data dictionary and init fields
 topicResults = {}

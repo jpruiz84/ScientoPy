@@ -127,8 +127,11 @@ def saveTopResults(resultsDict, criterionIn):
   
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
-  
-  sortedResults = sorted(resultsDict.iteritems(), key=lambda (k,v): (-v["PapersTotal"],k))
+
+  def functionShort1(k, v):
+    return (-v["PapersTotal"], k)
+
+  sortedResults = sorted(resultsDict.iteritems(), key=functionShort1)
 
   count = 1
   for item in sortedResults:
@@ -163,8 +166,11 @@ def saveExtendedResults(resultsDict, criterionIn):
   
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
-  
-  sortedResults = sorted(resultsDict.iteritems(), key=lambda (k,v): (-v["PapersTotal"],k))
+
+  def functionShort2(k, v):
+    return (-v["PapersTotal"], k)
+
+  sortedResults = sorted(resultsDict.iteritems(), key=functionShort2)
   
   count = 1
   for itemR in sortedResults:

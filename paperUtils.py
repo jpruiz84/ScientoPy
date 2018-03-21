@@ -20,6 +20,8 @@ def analyzeFileDict(ifile, papersDict):
   else:
     reader = csv.reader(ifile, delimiter=',')
 
+  csv.field_size_limit(sys.maxsize)
+
   header = 0
   rownum = 0
   for row in reader:
@@ -495,11 +497,10 @@ def sourcesStatics(paperDict, logWriter):
   for paper in paperDict:
     try:
       statics[paper["dataBase"]][paper["documentType"].split("; ")[0]] += 1
+      statics[paper["dataBase"]]["Total"] += 1
 
     except:
       noDocumentTypeCount += 1
-
-    statics[paper["dataBase"]]["Total"] += 1
 
   logWriter.writerow(statics["Scopus"])
   logWriter.writerow(statics["WoS"])

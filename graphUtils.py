@@ -72,7 +72,7 @@ def labeled_scatter_plot(data, labels, plt_in):
 
   # Plot each label
   for i in range(data.shape[0]):
-    print labels[i]
+    print(labels[i])
     xy = get_label_xy(xyData, i)
     plt_in.annotate(
       labels[i],

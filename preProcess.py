@@ -4,6 +4,7 @@ import paperSave
 import globalVar
 import os
 import argparse
+import sys
 
 
 # Parse arguments
@@ -18,6 +19,14 @@ args = parser.parse_args()
 
 
 # Program start ********************************************************
+print("\n\nScientoPy prerprocess")
+print("======================\n")
+
+if sys.version_info[0] > 2:
+  print("ERROR, you are using Python 3, Python 2.7.XX required")
+  print("")
+  exit()
+
 
 # Create output folders if not exist
 if not os.path.exists(globalVar.DATA_OUT_FOLDER):
@@ -34,7 +43,7 @@ globalVar.omitedPapers = 0
 for file in os.listdir(os.path.join(args.dataInFolder, '')):
   if file.endswith(".csv") or file.endswith(".txt"):
     print("Reading file: %s" % (os.path.join(args.dataInFolder, '') + file))
-    ifile = open(os.path.join(args.dataInFolder, '') + file, "rb")
+    ifile = open(os.path.join(args.dataInFolder, '') + file, "r")
     paperUtils.analyzeFileDict(ifile, paperDict)
 
 # Open the file to write the preprocessing log in CSV
