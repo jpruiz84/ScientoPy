@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
 import sys
+from wordcloud import WordCloud
 
 
 
@@ -39,7 +40,11 @@ parser.add_argument("--noPlot",
 help="Do not plot the results, use for large amount of topics", action="store_false")
 
 parser.add_argument("--parametric",
-help="Graph on Y the number of publications, and on X accomulative number of citatiosn", action="store_true")
+help="Graph on Y the number of publications, and on X accomulative number of citations", action="store_true")
+
+parser.add_argument("--wordCloud",
+help="Graph the topics word cloud", action="store_true")
+
 
 parser.add_argument("--useCitedBy",
 help="Short the top results based on times cited", action="store_true")
@@ -236,9 +241,11 @@ for topic in topicList:
     pastCount = topicResults[topicName]["PapersCount"][i]
 
   # Calculate AGR from rates
-  endYearIndex = len(topicResults[topicName]["PapersCount"]) - 1
+  endYearIndex = len(topicResults[topicName]["year"]) - 1
   startYearIndex = endYearIndex - args.agrWidth
-  topicResults[topicName]["agr"] = np.mean(topicResults[topicName]["PapersCountRate"][startYearIndex:endYearIndex])
+
+  topicResults[topicName]["agr"] = \
+    np.mean(topicResults[topicName]["PapersCountRate"][startYearIndex : endYearIndex + 1])
 
 # Extract accumulative
 for topic in topicList:
@@ -300,6 +307,20 @@ if args.noPlot:
     if args.yLog:
       plt.yscale('log')
 
+  elif args.wordCloud:
+    my_dpi = 96
+    plt.figure(figsize=(1960/my_dpi, 1080/my_dpi), dpi=my_dpi)
+    
+    wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "Paired")
+    freq = {}
+    for topic in topicList:
+      freq[topicResults[topic[0].upper()]["name"]] = topicResults[topic[0].upper()]["PapersTotal"]
+    # generate word cloud
+    wc.generate_from_frequencies(freq)
+
+    # show
+    plt.imshow(wc, interpolation="bilinear")
+    plt.axis("off")
   else:
     count = 0
     legendArray=[]
