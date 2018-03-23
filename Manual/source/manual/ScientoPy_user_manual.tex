@@ -95,13 +95,14 @@
 \section{Installation}
 
 \begin{enumerate}
-\item Download and install the last version of Python 2.7 (for example Python 2.7.14) from: \\ \url{https://www.python.org/downloads/}
-\item Install the  numpy, scipy, and matplotlib  libraries for Python with the automatic installation tool \textbf{pip}. From Windows, enter in the command line (Windows + R, cmd, and Enter), and run the installation script:
+\item Download and install the last version of Python 2.7 (for example Python 2.7.14) from: \\ \url{https://www.python.org/downloads/}.\\
+\textbf{Note: } Do not use Python 3.X, ScientoPy is only compatible with Python 2.7.XX versions.
+\item In Windows install Microsoft Visual C++ Compiler for Python 2.7 from: \url{http://aka.ms/vcpython27}
+\item Install the  numpy, scipy, matplotlib, and wordcloud Pyton librarie. For Windows, enter in the command line (Windows + R, cmd, and Enter), and run the installation script:
 \begin{verbatim}
-python -m pip install --user numpy scipy matplotlib
+python -m pip install --user numpy scipy matplotlib wordcloud
 \end{verbatim}
 \end{enumerate}
-
 
 \section{Download the bibliometric dataset}
 This section describes how to download the proper dataset from Scopus and WoS. Define a search criteria, it will be used for Scopus and WoS. For this guide we are using: "Internet of thing"  AND  "Gateway" 

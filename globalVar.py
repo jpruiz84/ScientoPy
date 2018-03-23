@@ -1,6 +1,6 @@
 # Default start and end year
 DEFAULT_START_YEAR = 2000
-DEFAULT_END_YEAR = 2017
+DEFAULT_END_YEAR = 2018
 
 # Default output files and folders
 PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
@@ -50,4 +50,4 @@ papersScopus = 0
 papersWoS = 0
 omitedPapers = 0
 
-SCIENTOPY_VERSION = "1.0.3c"
+SCIENTOPY_VERSION = "1.1.0"

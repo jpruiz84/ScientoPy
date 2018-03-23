@@ -6,15 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
 import sys
-from wordcloud import WordCloud
-
 
 
 import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
 parser.add_argument("criterion", choices=["authors", "source",  "subject",
-"authorKeywords", "indexKeywords", "documentType", "dataBase", "country", "emailHost", "institution"],
+"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "country", "emailHost", "institution"],
 help="Select the criterion to analyze the topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
@@ -308,10 +306,11 @@ if args.noPlot:
       plt.yscale('log')
 
   elif args.wordCloud:
+    from wordcloud import WordCloud
     my_dpi = 96
     plt.figure(figsize=(1960/my_dpi, 1080/my_dpi), dpi=my_dpi)
     
-    wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "Paired")
+    wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "Dark2")
     freq = {}
     for topic in topicList:
       freq[topicResults[topic[0].upper()]["name"]] = topicResults[topic[0].upper()]["PapersTotal"]

@@ -13,9 +13,10 @@ def saveResults(paperDict, outFileName):
     # WoS Fieldnames
     fieldnames = ["Authors", "Title", "Year", "Source title", "Volume", "Issue", "Art. No.", "Page start",
                   "Page end", "Page count", "Cited by", "DOI", "Link", "Affiliations", "Authors with affiliations",
-                  "Abstract", "Author Keywords", "Index Keywords", "Correspondence Address", "Editors", "Publisher",
-                  "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document", "Abbreviated Source Title",
-                  "Document Type", "Source", "EID", "Subject", "duplicatedIn", "country", "emailHost", "institution"]
+                  "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
+                  "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
+                  "Abbreviated Source Title", "Document Type", "Source", "EID", "Subject", "duplicatedIn",
+                  "country", "emailHost", "institution"]
 
 
 
@@ -63,6 +64,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["country"] = paperOut["country"]
       paperDicWrite["emailHost"] = paperOut["emailHost"]
       paperDicWrite["institution"] = paperOut["institution"]
+      paperDicWrite["bothKeywords"] = paperOut["bothKeywords"]
 
       writer.writerow(paperDicWrite)
 
@@ -159,7 +161,8 @@ def saveExtendedResults(resultsDict, criterionIn):
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.csv")
   ofile = open(fileName, 'w')
 
-  fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors", "Author keywords", "Country", "Document type"]
+  fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors",
+                "Author keywords", "Both keywords", "Abstract", "Country", "Document type"]
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -189,7 +192,9 @@ def saveExtendedResults(resultsDict, criterionIn):
       dictWriter["Year"] = paper["year"]
       dictWriter["Authors"] = paper["authors"]
       dictWriter["Country"] = paper["country"]
-      dictWriter["Author keywords"] = paper["authorKeywords"].upper()
+      dictWriter["Author keywords"] = paper["authorKeywords"]
+      dictWriter["Both keywords"] = paper["bothKeywords"]
+      dictWriter["Abstract"] = paper["abstract"]
       dictWriter["Document type"] = paper["documentType"]
       dictWriter["Cited by"] = paper["citedBy"]
       dictWriter["EID"] = paper["eid"]

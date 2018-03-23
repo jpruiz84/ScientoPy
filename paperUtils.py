@@ -78,6 +78,7 @@ def analyzeFileDict(ifile, papersDict):
 
       paperIn["emailHost"] = ""
       paperIn["institution"] = ""
+      paperIn["bothKeywords"] = ""
 
       for col in row:
         if colnum >= len(header):
@@ -224,12 +225,12 @@ def analyzeFileDict(ifile, papersDict):
         paperIn["dataBase"] = "Scopus"
         globalVar.papersScopus += 1
 
-
-      # Extract country
       # Get each author affiliations
       affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
-      countries = []
+
+      # Extract country
       if paperIn["country"] == "":
+        countries = []
         for affiliation in affiliations:
           # Get the first author affiliations, and extract the last item as contry
           country = re.split(", (?=[^\]]*(?:\[|$))", affiliation)[-1].strip()
@@ -259,7 +260,7 @@ def analyzeFileDict(ifile, papersDict):
           if "TRINID & TOBAGO".upper() in country.upper():
             country = "Trinidad and Tobago"
 
-          if country not in countries:
+          if country.upper() not in [x.upper() for x in countries]:
             countries.append(country)
 
         paperIn["country"] = ";".join(countries)
@@ -268,8 +269,8 @@ def analyzeFileDict(ifile, papersDict):
       #  country = "No country"
 
       # Institution from WoS
-      institutions=[]
       if paperIn["institution"] == "":
+        institutions = []
         if paperIn["dataBase"] == "WoS" and affiliations != "":
           for affiliation in affiliations:
             # Get the first author affiliations, and extract the first item as institution
@@ -278,7 +279,7 @@ def analyzeFileDict(ifile, papersDict):
               continue
             institution = afList[1].strip()
 
-            if institution not in institutions:
+            if institution.upper() not in [x.upper() for x in institution]:
               institutions.append(institution)
           paperIn["institution"] = ";".join(institutions)
 
@@ -291,7 +292,23 @@ def analyzeFileDict(ifile, papersDict):
         else:
           paperIn["emailHost"] = "No email"
 
+      # Both keywords
+      if paperIn["bothKeywords"] == "":
+        bothKeywords = []
+        for keyword in paperIn["authorKeywords"].split(";"):
+          keywordStriped = keyword.strip()
+          if keywordStriped == "":
+            continue
+          if keywordStriped.upper() not in [x.upper() for x in bothKeywords]:
+            bothKeywords.append(keywordStriped)
 
+        for keyword in paperIn["indexKeywords"].split(";"):
+          keywordStriped = keyword.strip()
+          if keywordStriped == "":
+            continue
+          if keywordStriped.upper() not in [x.upper() for x in bothKeywords]:
+            bothKeywords.append(keywordStriped)
+        paperIn["bothKeywords"] = ";".join(bothKeywords)
 
       # printPaper(paperIn)
 
