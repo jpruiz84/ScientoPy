@@ -3,8 +3,8 @@ DEFAULT_START_YEAR = 2000
 DEFAULT_END_YEAR = 2018
 
 # Default output files and folders
-PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
-OUTPUT_FILE_NAME = "papersPreprocessed.csv"
+PREPROCESS_LOG_FILE = "PreprocessedBrief.tsv"
+OUTPUT_FILE_NAME = "papersPreprocessed.tsv"
 DATA_OUT_FOLDER = "dataPre"
 GRAPHS_OUT_FOLDER = "graphs"
 DEFUALT_DATA_IN_FOLDER = "dataIn"
@@ -50,4 +50,4 @@ papersScopus = 0
 papersWoS = 0
 omitedPapers = 0
 
-SCIENTOPY_VERSION = "1.1.0"
+SCIENTOPY_VERSION = "1.2.0"

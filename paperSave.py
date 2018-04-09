@@ -122,7 +122,7 @@ def saveTopResults(resultsDict, criterionIn):
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".tsv")
   ofile = open(fileName, 'w')
 
   fieldnames = ["Pos.", criterion, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
@@ -158,7 +158,7 @@ def saveExtendedResults(resultsDict, criterionIn):
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.tsv")
   ofile = open(fileName, 'w')
 
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors",
@@ -207,7 +207,7 @@ def saveExtendedResults(resultsDict, criterionIn):
 
 def saveTopCited(papersDic):
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.tsv")
   ofile = open(fileName, 'w')
 
   fieldnames = ["Pos.", "Year", "Cited by", "Cited by scaled", "Title", "Authors", "Author keywords"]
