@@ -87,7 +87,7 @@ def analyzeFileDict(ifile, papersDict):
         headerCol = header[colnum].decode("ascii", errors="ignore").encode()
 
         # Scopus fields
-        if headerCol == "Authors": paperIn["authors"] = col.replace(",", ";")
+        if headerCol == "Authors": paperIn["authors"] = col
         if headerCol == "Title": paperIn["title"] = col
         if headerCol == "Year": paperIn["year"] = col
         if headerCol == "Source title": paperIn["sourceTitle"] = col
@@ -197,33 +197,44 @@ def analyzeFileDict(ifile, papersDict):
 
         colnum += 1
 
+      # Put the database ussing eid
+      if paperIn["dataBase"] == "":
+        if paperIn["eid"].startswith("WOS"):
+          paperIn["dataBase"] = "WoS"
+          paperIn["source"] = "WoS"
+          globalVar.papersWoS += 1
+
+        if paperIn["eid"].startswith("2-"):
+          paperIn["dataBase"] = "Scopus"
+          globalVar.papersScopus += 1
+
       # If cited by is emtpy add 0
       if paperIn["citedBy"] == "":
         paperIn["citedBy"] = "0"
 
-      # Remove dots from authors
-      paperIn["authors"] = paperIn["authors"].replace(".", "")
+      # Change to false to not preprocess authors
+      if False:
+        # For Scopus authors, replace , with ;
+        if paperIn["dataBase"] == "Scopus":
+          paperIn["authors"] = paperIn["authors"].replace(",", ";")
 
-      # Remove coma from authors
-      paperIn["authors"] = paperIn["authors"].replace(",", "")
+        # Remove dots from authors
+        paperIn["authors"] = paperIn["authors"].replace(".", "")
 
-      # Remove accents in authors
-      paperIn["authors"] = strip_accents(unicode(paperIn["authors"], "utf-8"))
-      paperIn["authors"] = paperIn["authors"].encode('utf-8')
+        # Remove coma from authors
+        paperIn["authors"] = paperIn["authors"].replace(",", "")
+
+        # Remove accents in authors
+        paperIn["authors"] = strip_accents(unicode(paperIn["authors"], "utf-8"))
+        paperIn["authors"] = paperIn["authors"].encode('utf-8')
+
 
       # Omit papers without title
       if paperIn["title"] == "":
         print("No title, continue")
         continue
 
-      if paperIn["eid"].startswith("WOS"):
-        paperIn["dataBase"] = "WoS"
-        paperIn["source"] = "WoS"
-        globalVar.papersWoS += 1
 
-      if paperIn["eid"].startswith("2-"):
-        paperIn["dataBase"] = "Scopus"
-        globalVar.papersScopus += 1
 
       # Get each author affiliations
       affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
@@ -234,6 +245,7 @@ def analyzeFileDict(ifile, papersDict):
         for affiliation in affiliations:
           # Get the first author affiliations, and extract the last item as contry
           country = re.split(", (?=[^\]]*(?:\[|$))", affiliation)[-1].strip()
+          country = country.replace(".", "")
 
           if "CHINA".upper() in country.upper():
             country = "China"
@@ -246,6 +258,8 @@ def analyzeFileDict(ifile, papersDict):
           if "SCOTLAND".upper() in country.upper():
             country = "United Kingdom"
           if "WALES".upper() in country.upper():
+            country = "United Kingdom"
+          if "UK".upper() == country.upper():
             country = "United Kingdom"
 
           if "U ARAB EMIRATES".upper() in country.upper():
@@ -399,9 +413,9 @@ def removeDuplicates(paperDict, logWriter):
 
   # Remove part of the title inside parentisis or square brakets
   # Some journals put this the original language tile in the brakets
-  # Remove whitespace at the end of the tile
+  # Remove whitespace at the end and start of the tile
   for paper in paperDict:
-    paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["title"].upper()).rstrip()
+    paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["title"].upper()).strip()
 
   # Short by database, to put WoS first over Scopus, reverse True
   paperDict = sorted(paperDict, key=lambda x: x["dataBase"], reverse=True)
@@ -415,15 +429,16 @@ def removeDuplicates(paperDict, logWriter):
 
     match = True
     while(match):
-      
+
+      # If we are on the last paper in the list
       if i >= (len(paperDict) - 1):
         match = False
         continue
 
+      # Compare first author and titleB in uppercase
       match = paperDict[i]["authors"].split(" ")[0].upper() == paperDict[i+1]["authors"].split(" ")[0].upper()
       match &=  paperDict[i]["titleB"] == paperDict[i+1]["titleB"]
 
-      
       # If the criterion match
       if(match == True):
         #print("\nPaper %s duplicated with %s" %  (i, i+1))
@@ -435,14 +450,14 @@ def removeDuplicates(paperDict, logWriter):
         #print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
         #print("Authors: %s, Database: %s, Cited by: %s" %
         #(paperDict[i+1]["authors"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
-        
+
+        # Update the removed count
         if paperDict[i+1]["dataBase"] == "WoS":
           removedPapersWoS += 1
 
         if paperDict[i+1]["dataBase"] == "Scopus":
           removedPapersScopus += 1
           
-        # Remove paper j
         #print("Removing: %s" % paperDict[i+1]["dataBase"])
         paperDict[i]["duplicatedIn"] = paperDict[i+1]["eid"]
 
@@ -455,7 +470,10 @@ def removeDuplicates(paperDict, logWriter):
         if int(paperDict[i + 1]["citedBy"]) > int(paperDict[i]["citedBy"]):
           paperDict[i]["citedBy"] = paperDict[i + 1]["citedBy"]
 
+        # Remove paper i + 1
         paperDict.remove(paperDict[i+1])
+
+        # Update progress percentage
         duplicatedPapersCount += 1
         progressPer = float(i) / float(len(paperDict)) * 100
         if progressPer < 100:
