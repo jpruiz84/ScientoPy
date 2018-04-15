@@ -12,7 +12,7 @@ RESULTS_FOLDER = "results"
 
 # Documents types to include on the script processing
 INCLUDED_TYPES = ["Conference Paper", "Article", 
-"Review", "Proceedings Paper"]
+"Review", "Proceedings Paper", "Article in Press"]
 
 # Default trend sizes
 TOP_TREND_SIZE = 200

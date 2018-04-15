@@ -44,7 +44,7 @@ for file in os.listdir(os.path.join(args.dataInFolder, '')):
   if file.endswith(".csv") or file.endswith(".txt"):
     print("Reading file: %s" % (os.path.join(args.dataInFolder, '') + file))
     ifile = open(os.path.join(args.dataInFolder, '') + file, "r")
-    paperUtils.analyzeFileDict(ifile, paperDict)
+    paperUtils.openFileToDict(ifile, paperDict)
 
 # Open the file to write the preprocessing log in CSV
 logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w')

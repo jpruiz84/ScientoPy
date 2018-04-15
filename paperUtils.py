@@ -10,7 +10,7 @@ def strip_accents(s):
                   if unicodedata.category(c) != 'Mn')
 
 
-def analyzeFileDict(ifile, papersDict):
+def openFileToDict(ifile, papersDict):
   firstLineTell = ifile.tell()
   firstLine = ifile.readline()
   ifile.seek(firstLineTell)
@@ -191,6 +191,7 @@ def analyzeFileDict(ifile, papersDict):
         #if headerCol == "DA": paperIn[""] = col      # Date this report was generated.
 
         # Own fields
+        if headerCol == "Subject": paperIn["subject"] = col
         if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col
         if headerCol == "country": paperIn["country"] = col
         if headerCol == "emailHost": paperIn["emailHost"] = col
@@ -213,7 +214,7 @@ def analyzeFileDict(ifile, papersDict):
         paperIn["citedBy"] = "0"
 
       # Change to false to not preprocess authors
-      if False:
+      if True:
         # For Scopus authors, replace , with ;
         if paperIn["dataBase"] == "Scopus":
           paperIn["authors"] = paperIn["authors"].replace(",", ";")
@@ -247,11 +248,11 @@ def analyzeFileDict(ifile, papersDict):
           country = re.split(", (?=[^\]]*(?:\[|$))", affiliation)[-1].strip()
           country = country.replace(".", "")
 
+          if "BOSNIA & HERCEG".upper() == country.upper():
+            country = "Bosnia and Herzegovina"
+
           if "CHINA".upper() in country.upper():
             country = "China"
-
-          if "USA".upper() in country.upper():
-            country = "United States"
 
           if "ENGLAND".upper() in country.upper():
             country = "United Kingdom"
@@ -262,18 +263,28 @@ def analyzeFileDict(ifile, papersDict):
           if "UK".upper() == country.upper():
             country = "United Kingdom"
 
-          if "U ARAB EMIRATES".upper() in country.upper():
-            country = "United Arab Emirates"
+          if "KINGDOM OF SAUDI ARABIA".upper() == country.upper():
+            country = "Saudi Arabia"
 
           if "RUSSIA".upper() in country.upper():
             country = "Russian Federation"
 
-          if "VIET NAM".upper() in country.upper():
-            country = "Vietnam"
-
-          if "TRINID & TOBAGO".upper() in country.upper():
+          if "TRINID & TOBAGO".upper() == country.upper():
             country = "Trinidad and Tobago"
 
+          if "U ARAB EMIRATES".upper() == country.upper():
+            country = "United Arab Emirates"
+
+          if "USA".upper() in country.upper():
+            country = "United States"
+
+          if "VIET NAM".upper() == country.upper():
+            country = "Vietnam"
+
+
+
+
+          # To do not duplicate countries in couty field
           if country.upper() not in [x.upper() for x in countries]:
             countries.append(country)
 
@@ -287,7 +298,7 @@ def analyzeFileDict(ifile, papersDict):
         institutions = []
         if paperIn["dataBase"] == "WoS" and affiliations != "":
           for affiliation in affiliations:
-            # Get the first author affiliations, and extract the first item as institution
+            # Get the author affiliations, and extract the first item as institution
             afList = re.split(", (?=[^\]]*(?:\[|$))|]", affiliation)
             if len(afList) < 2:
               continue
@@ -512,18 +523,14 @@ def sourcesStatics(paperDict, logWriter):
   statics = {}
 
   statics["Scopus"]={}
-  statics["Scopus"]["Article"] = 0
-  statics["Scopus"]["Conference Paper"] = 0
-  statics["Scopus"]["Proceedings Paper"] = 0
-  statics["Scopus"]["Review"] = 0
+  for type in globalVar.INCLUDED_TYPES:
+    statics["Scopus"][type] = 0
   statics["Scopus"]["Total"] = 0
   statics["Scopus"]["Source"] = "Scopus"
 
   statics["WoS"] = {}
-  statics["WoS"]["Article"] = 0
-  statics["WoS"]["Conference Paper"] = 0
-  statics["WoS"]["Proceedings Paper"] = 0
-  statics["WoS"]["Review"] = 0
+  for type in globalVar.INCLUDED_TYPES:
+    statics["WoS"][type] = 0
   statics["WoS"]["Total"] = 0
   statics["WoS"]["Source"] = "WoS"
 

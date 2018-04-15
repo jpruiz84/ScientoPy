@@ -11,8 +11,8 @@ import sys
 import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
-parser.add_argument("criterion", choices=["authors", "source",  "subject",
-"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "country", "emailHost", "institution"],
+parser.add_argument("criterion", choices=["authors", "sourceTitle",  "subject",
+"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "country", "institution"],
 help="Select the criterion to analyze the topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
@@ -93,7 +93,7 @@ papersDictOut = []
 # Open the storage database and add to papersDict
 ifile = open(INPUT_FILE, "r")
 print("Reading file: %s" % (INPUT_FILE))
-paperUtils.analyzeFileDict(ifile, papersDict)
+paperUtils.openFileToDict(ifile, papersDict)
 ifile.close()
 
 print("Scopus papers: %s" % globalVar.papersScopus)
