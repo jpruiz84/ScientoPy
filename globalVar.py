@@ -50,4 +50,4 @@ papersScopus = 0
 papersWoS = 0
 omitedPapers = 0
 
-SCIENTOPY_VERSION = "1.2.0"
+SCIENTOPY_VERSION = "1.2.1"
