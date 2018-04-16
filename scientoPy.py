@@ -197,30 +197,30 @@ else:
 print("Topic list:")
 print(topicList)
 
-# Create results data dictionary and init fields
-topicResults = {}
+# Create results data dictionary list and init fields
+topicResults = []
 
 # Create a dictonary in topicResults per element in topicList
 for topics in topicList:
-  topicName = topics[0].upper()
-  topicResults[topicName] = {}
-  topicResults[topicName]["year"] = yearArray
-  topicResults[topicName]["PapersCount"] = [0] * len(yearArray)
-  topicResults[topicName]["PapersCountAccum"] = [0] * len(yearArray)
-  topicResults[topicName]["PapersCountRate"] = [0] * len(yearArray)
-  topicResults[topicName]["PapersTotal"] = 0
-  topicResults[topicName]["CitedByCount"] = [0] * len(yearArray)
-  topicResults[topicName]["CitedByCountAccum"] = [0] * len(yearArray)
-  topicResults[topicName]["CitedByTotal"] = 0
-  topicResults[topicName]["name"] = topics[0]
-  topicResults[topicName]["papers"] = []
-  topicResults[topicName]["hIndex"] = 0
-  topicResults[topicName]["agr"] = 0
+  topicItem = {}
+  topicItem["upperName"] = topics[0].upper()
+  topicItem["name"] = topics[0]
+  topicItem["allTopics"] = topics
+  topicItem["year"] = yearArray
+  topicItem["PapersCount"] = [0] * len(yearArray)
+  topicItem["PapersCountAccum"] = [0] * len(yearArray)
+  topicItem["PapersCountRate"] = [0] * len(yearArray)
+  topicItem["PapersTotal"] = 0
+  topicItem["CitedByCount"] = [0] * len(yearArray)
+  topicItem["CitedByCountAccum"] = [0] * len(yearArray)
+  topicItem["CitedByTotal"] = 0
+  topicItem["papers"] = []
+  topicItem["hIndex"] = 0
+  topicItem["agr"] = 0
+  topicResults.append(topicItem)
 #print(topicResults)
 
 # Find papers within the arguments, and fill the topicResults fileds per year.
-
-startSumTime = time.time()
 print("Calcualting papers sum...")
 # For each paper
 for paper in papersDict:
@@ -230,59 +230,48 @@ for paper in papersDict:
     item = item.strip()
     itemUp = item.upper()
 
-    # For each main topic
-    for topics in topicList:
-      # For each sub topic
-      for topic in topics:
-        if topic.upper() == itemUp:
-          topicName = topics[0].upper()
-          yearIndex = topicResults[topicName]["year"].index(int(paper["year"]))
-          topicResults[topicName]["PapersCount"][yearIndex] += 1
-          topicResults[topicName]["PapersTotal"] += 1
-          topicResults[topicName]["CitedByCount"][yearIndex] += int(paper["citedBy"])
-          topicResults[topicName]["CitedByTotal"] += int(paper["citedBy"])
-          topicResults[topicName]["name"] = item
-          topicResults[topicName]["papers"].append(paper)
+    for topicItem in topicResults:
+      for subTopic in topicItem["allTopics"]:
+        if subTopic.upper() == itemUp:
+          yearIndex = topicItem["year"].index(int(paper["year"]))
+          topicItem["PapersCount"][yearIndex] += 1
+          topicItem["PapersTotal"] += 1
+          topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
+          topicItem["CitedByTotal"] += int(paper["citedBy"])
+          topicItem["name"] = item
+          topicItem["papers"].append(paper)
           papersDictOut.append(paper)
     if args.onlyFirst:
       break
 
-endSumTime = time.time()
-
-#print(topicResults)
-
 print("Calculating AGR...")
 # Extract the Average Growth Rate (AGR)
-for topic in topicList:
-  topicName = topic[0].upper()
-  citedAccumValue = 0
-  papersAccumValue = 0
-
+for topicItem in topicResults:
   # Calculate rates
   pastCount = 0
-  for i in range(0, len(topicResults[topicName]["PapersCount"])):
-    topicResults[topicName]["PapersCountRate"][i] = topicResults[topicName]["PapersCount"][i] - pastCount
-    pastCount = topicResults[topicName]["PapersCount"][i]
+  # Per year with papers count data
+  for i in range(0, len(topicItem["PapersCount"])):
+    topicItem["PapersCountRate"][i] = topicItem["PapersCount"][i] - pastCount
+    pastCount = topicItem["PapersCount"][i]
 
   # Calculate AGR from rates
-  endYearIndex = len(topicResults[topicName]["year"]) - 1
+  endYearIndex = len(topicItem["year"]) - 1
   startYearIndex = endYearIndex - args.agrWidth
 
-  topicResults[topicName]["agr"] = \
-    np.mean(topicResults[topicName]["PapersCountRate"][startYearIndex : endYearIndex + 1])
+  topicItem["agr"] = \
+    np.mean(topicItem["PapersCountRate"][startYearIndex : endYearIndex + 1])
 
 print("Calculating accumulatives...")
 # Extract accumulative
-for topic in topicList:
-  topicName = topic[0].upper()
+for topicItem in topicResults:
   citedAccumValue = 0
   papersAccumValue = 0
-  for i in range(0,len(topicResults[topicName]["CitedByCountAccum"])):
-    citedAccumValue += topicResults[topicName]["CitedByCount"][i]
-    topicResults[topicName]["CitedByCountAccum"][i] = citedAccumValue
+  for i in range(0,len(topicItem["CitedByCountAccum"])):
+    citedAccumValue += topicItem["CitedByCount"][i]
+    topicItem["CitedByCountAccum"][i] = citedAccumValue
 
-    papersAccumValue += topicResults[topicName]["PapersCount"][i]
-    topicResults[topicName]["PapersCountAccum"][i] = papersAccumValue
+    papersAccumValue += topicItem["PapersCount"][i]
+    topicItem["PapersCountAccum"][i] = papersAccumValue
 
 # Scale in percentage per year
 if args.pYear:
@@ -294,12 +283,12 @@ if args.pYear:
 
 print("Calculating h-index...")
 # Calculate h index per topic
-for topic in topicList:
-  topicName = topic[0].upper()
+for topicItem in topicResults:
+
   #print("\n" + topicName)
 
   # Sort papers by cited by count
-  papersIn = topicResults[topicName]["papers"]
+  papersIn = topicItem["papers"]
   papersIn = sorted(papersIn, key=lambda x: int(x["citedBy"]), reverse = True)
 
   count = 1
@@ -310,25 +299,24 @@ for topic in topicList:
       hIndex = count
     count += 1
     #print("hIndex: " + str(hIndex))
-    topicResults[topicName]["hIndex"] = hIndex
+    topicItem["hIndex"] = hIndex
 
 # Print top topics
 print("\nTop topics:")
 print("Pos. " + args.criterion + ", Total, AGR, h-index")
 count = 0
-for topic in topicList:
-  print("%s. %s:, %d, %.1f, %d" % (count + 1,
-  topicResults[topic[0].upper()]["name"], topicResults[topic[0].upper()]["PapersTotal"],
-                                       topicResults[topic[0].upper()]["agr"],
-                            topicResults[topic[0].upper()]["hIndex"]))
+for topicItem in topicResults:
+  print("%s. %s:, %d, %.1f, %d" %
+        (count + 1, topicItem["name"], topicItem["PapersTotal"], topicItem["agr"], topicItem["hIndex"]))
   count += 1
+
 
 # Plot
 if args.noPlot:
 
   if args.parametric:
 
-    graphUtils.plot_parametric(plt, topicResults, topicList, yearArray[startYearIndex], yearArray[endYearIndex])
+    graphUtils.plot_parametric(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex])
     if args.yLog:
       plt.yscale('log')
 
@@ -339,8 +327,8 @@ if args.noPlot:
     
     wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "Dark2")
     freq = {}
-    for topic in topicList:
-      freq[topicResults[topic[0].upper()]["name"]] = topicResults[topic[0].upper()]["PapersTotal"]
+    for topicItem in topicResults:
+      freq[topicItem["name"]] = topicItem["PapersTotal"]
     # generate word cloud
     wc.generate_from_frequencies(freq)
 
@@ -350,10 +338,10 @@ if args.noPlot:
   else:
     count = 0
     legendArray=[]
-    for topics in topicList:
-      legendArray.append(topicResults[topics[0].upper()]["name"])
+    for topicItem in topicResults:
+      legendArray.append(topicItem["name"])
 
-      plt.plot(topicResults[topics[0].upper()]["year"], topicResults[topics[0].upper()]["PapersCount"],
+      plt.plot(topicItem["year"], topicItem["PapersCount"],
       linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
       zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
 
@@ -387,7 +375,3 @@ paperSave.saveExtendedResults(topicResults, args.criterion)
 # Only save results if that is result of a not previous result
 if not args.previousResults:
   paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
-
-
-print("Time sum: " + str(endSumTime - startSumTime))
-

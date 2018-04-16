@@ -117,7 +117,7 @@ def saveResults(paperDict, outFileName):
     print("ERROR, no SAVE_RESULTS_ON selected on globalVar.py")
 
 
-def saveTopResults(resultsDict, criterionIn):
+def saveTopResults(topicResults, criterionIn):
 
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
@@ -125,17 +125,15 @@ def saveTopResults(resultsDict, criterionIn):
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".tsv")
   ofile = open(fileName, 'w')
 
-  fieldnames = ["Pos.", criterion, "Total", "hIndex"] + resultsDict[resultsDict.keys()[0]]["year"]
+  fieldnames = ["Pos.", criterion, "Total", "hIndex"] + topicResults[0]["year"]
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
 
-  sortedResults = sorted(resultsDict.iteritems(), key=lambda kv: (-kv[1]["PapersTotal"], kv[0]))
+  sortedResults = sorted(topicResults, key=lambda x: x["PapersTotal"], reverse=True)
 
   count = 1
-  for item in sortedResults:
-    key = item[0]
-    value = item[1]
+  for value in sortedResults:
     dictWriter = {}
     dictWriter["Pos."] = str(count)
     dictWriter[criterion] = value["name"]
@@ -153,7 +151,7 @@ def saveTopResults(resultsDict, criterionIn):
   print("\nSaved top results on: %s" % fileName)
 
 
-def saveExtendedResults(resultsDict, criterionIn):
+def saveExtendedResults(topicResults, criterionIn):
 
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
@@ -167,13 +165,10 @@ def saveExtendedResults(resultsDict, criterionIn):
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
 
-
-  sortedResults = sorted(resultsDict.iteritems(), key=lambda kv: (-kv[1]["PapersTotal"], kv[0]))
+  sortedResults = sorted(topicResults, key=lambda x: x["PapersTotal"], reverse=True)
 
   count = 1
-  for itemR in sortedResults:
-    key = itemR[0]
-    value = itemR[1]
+  for value in sortedResults:
     dictWriter = {}
     dictWriter["Pos."] = str(count)
     dictWriter["Topic " + criterion] = value["name"]

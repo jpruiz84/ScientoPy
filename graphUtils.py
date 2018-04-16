@@ -168,7 +168,7 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
     plt_in.ylim(ymax=yMax * (-1.2))
 
 
-def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
+def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   my_dpi = 80
   plt.figure(figsize=(800 / my_dpi, 500 / my_dpi), dpi=my_dpi)
 
@@ -179,14 +179,14 @@ def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
   xArray = []
   yArray = []
   count = 0
-  for topics in topicList:
-    x = topicResults[topics[0].upper()]["hIndex"]
-    y = topicResults[topics[0].upper()]["agr"]
+  for topicItem in topicResults:
+    x = topicItem["hIndex"]
+    y = topicItem["agr"]
 
     xArray.append(x)
     yArray.append(y)
 
-    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicResults[topics[0].upper()]["name"],
+    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"],
                s=200, c=globalVar.COLORS[count], edgecolors=globalVar.COLORS[count])
 
     count += 1
@@ -236,12 +236,12 @@ def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
 
   count = 0
   legendArray = []
-  for topics in topicList:
-    legendArray.append(topicResults[topics[0].upper()]["name"])
+  for topicItem in topicResults:
+    legendArray.append(topicItem["name"])
     #zero_to_nan(topicResults[topics[0].upper()]["PapersCountAccum"])
 
-    x = topicResults[topics[0].upper()]["year"]
-    y = topicResults[topics[0].upper()]["PapersCountAccum"]
+    x = topicItem["year"]
+    y = topicItem["PapersCountAccum"]
 
     xnew = np.linspace(min(x), max(x), 300)
 
@@ -254,7 +254,7 @@ def plot_parametric(plt, topicResults, topicList, agrStartYear, agrEndYear):
     ax0.plot(xnew, ynew,
     #ax0.plot(x, y,
              linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
-             zorder=(len(topicList) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
+             zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
 
 
 
