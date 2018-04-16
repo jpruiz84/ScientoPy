@@ -54,7 +54,7 @@ papersDict = []
 # Open the database and add to papersDict 
 ifile = open(INPUT_FILE, "rb")
 print("Reading file: %s" % (INPUT_FILE))
-paperUtils.analyzeFileDict(ifile, papersDict)
+paperUtils.openFileToDict(ifile, papersDict)
 ifile.close()
 
 print("Scopus papers: %s" % globalVar.papersScopus)

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
 import sys
+import time
 
 
 import argparse
@@ -60,18 +61,23 @@ help="Only look on the first topic, for example to analize only the first aurhor
 parser.add_argument("--title",
 help="To put a title in your graph", type=str)
 
+parser.add_argument("--trend",
+help="Get the top trending topics, with the highest last AGR", type=str)
 
 
+# ************************* Program start ********************************************************
+# ************************************************************************************************
 
-# Program start ********************************************************
 print("\n\nScientoPy: %s" % (globalVar.SCIENTOPY_VERSION))
 print("================\n")
 
+# Check python version
 if sys.version_info[0] > 2:
   print("ERROR, you are using Python 3, Python 2.7.XX required")
   print("")
   exit()
 
+# Parse arguments
 args = parser.parse_args()
 
 # Create output folders if not exist
@@ -89,6 +95,7 @@ else:
 # Start paper list empty
 papersDict = []
 papersDictOut = []
+topicList = []
 
 # Open the storage database and add to papersDict
 ifile = open(INPUT_FILE, "r")
@@ -107,7 +114,6 @@ yearPapers = {}
 for i in range(args.startYear, args.endYear + 1):
   yearPapers[i] = 0
 
-
 # Filter papers with invalid year
 papersDict = list(filter(lambda x: x["year"].isdigit(), papersDict))
 # Filter the papers outside the year range
@@ -122,7 +128,6 @@ for paper in papersDict:
   if int(paper["year"]) in yearPapers.keys():
     yearPapers[int(paper["year"])] += 1
 
-topicList = []
 # Parse custom topics
 if args.topics:
   print("Custom topics entered:")
@@ -133,7 +138,7 @@ if args.topics:
   for x in topicsFirst:
     topicList.append(x.split(","))
 
-  # Remove begining space from topics
+  # Remove begining and ending space from topics
   for topic in topicList:
     for idx,item in enumerate(topic):
       topic[idx] = item.strip()
@@ -148,40 +153,54 @@ else:
   print("Finding the top topics...")
 
   topicDic = {}
-  # Find papers within the arguments
-  # run on papersDict
+
+  # For each paper
   for paper in papersDict:
+    # For each item in paper critera
     for item in paper[args.criterion].split(";"):
+      # Strip paper item and upper
       item = item.strip()
       item = item.upper()
+
+      # If paper item empty continue
       if item == "":
         continue
+
       try:
+        # If topic already in topicDic
         if item in topicDic:
           if not args.useCitedBy:
             topicDic[item] += 1
           else:
             topicDic[item] += int(paper["citedBy"])
+        # If topic is not in topicDic
         else:
           if not args.useCitedBy:
             topicDic[item] = 1
           else:
             topicDic[item] = int(paper["citedBy"])
+      # If citedBy has problem converting to int
       except:
         noWithCitedBy = 1
+      # If onlyFirst, only keep the firt processesing
       if args.onlyFirst:
         break
 
+  # Get the top topics by the topDic count
   topTopcis = sorted(topicDic.iteritems(),
-                     key=lambda x: -x[1])[int(args.start):int(args.length)]
+                     key=lambda x: -x[1])[int(args.start):int(args.start + args.length)]
 
+  # Put the topTopics in topic List
   for topic in topTopcis:
     topicList.append([topic[0]])
 
+print("Topic list:")
 print(topicList)
 
 # Create results data dictionary and init fields
 topicResults = {}
+
+# Create a dictonary in topicResults per element in topicList
 for topics in topicList:
   topicName = topics[0].upper()
   topicResults[topicName] = {}
@@ -200,15 +219,20 @@ for topics in topicList:
 #print(topicResults)
 
 # Find papers within the arguments, and fill the topicResults fileds per year.
-# run on papersDict
+
+startSumTime = time.time()
+print("Calcualting papers sum...")
+# For each paper
 for paper in papersDict:
-  # run on criterin sub fields
+  # For each item in paper critera
   for item in paper[args.criterion].split(";"):
+    # Strip paper item and upper
     item = item.strip()
     itemUp = item.upper()
 
-    # run in topicList to fill topicResults
+    # For each main topic
     for topics in topicList:
+      # For each sub topic
       for topic in topics:
         if topic.upper() == itemUp:
           topicName = topics[0].upper()
@@ -223,9 +247,11 @@ for paper in papersDict:
     if args.onlyFirst:
       break
 
+endSumTime = time.time()
+
 #print(topicResults)
 
-
+print("Calculating AGR...")
 # Extract the Average Growth Rate (AGR)
 for topic in topicList:
   topicName = topic[0].upper()
@@ -245,6 +271,7 @@ for topic in topicList:
   topicResults[topicName]["agr"] = \
     np.mean(topicResults[topicName]["PapersCountRate"][startYearIndex : endYearIndex + 1])
 
+print("Calculating accumulatives...")
 # Extract accumulative
 for topic in topicList:
   topicName = topic[0].upper()
@@ -265,7 +292,7 @@ if args.pYear:
       if value != 0:
         topicResults[topics[0].upper()]["PapersCount"][index] /= (float(value)/100.0)
 
-
+print("Calculating h-index...")
 # Calculate h index per topic
 for topic in topicList:
   topicName = topic[0].upper()
@@ -362,4 +389,5 @@ if not args.previousResults:
   paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
 
 
+print("Time sum: " + str(endSumTime - startSumTime))
 
