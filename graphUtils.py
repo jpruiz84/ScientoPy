@@ -168,14 +168,15 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
     plt_in.ylim(ymax=yMax * (-1.2))
 
 
+# This is the used for parametric right now ********************************************
 def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   my_dpi = 80
   plt.figure(figsize=(800 / my_dpi, 500 / my_dpi), dpi=my_dpi)
 
   gs = gridspec.GridSpec(1, 2, width_ratios=[5, 3])
 
+  # Plot AGR and H-index
   ax = plt.subplot(gs[1])
-
   xArray = []
   yArray = []
   count = 0
@@ -231,7 +232,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   #plt.xlabel("Total documents ")
 
 
-
+  # Plot accumulative papers count
   ax0 = plt.subplot(gs[0])
 
   count = 0
@@ -245,16 +246,21 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
 
     xnew = np.linspace(min(x), max(x), 300)
 
-    s = Rbf(x, y, smooth=0.2)
+    s = Rbf(x, y, smooth=0.4, epsilon = 0.25)
     ynew = s(xnew)
 
     zero_to_nan(ynew)
     zero_to_nan(y)
 
     ax0.plot(xnew, ynew,
-    #ax0.plot(x, y,
              linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
              zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
+
+
+    #ax0.plot(x, y,
+    #         linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
+    #         zorder=(len(topicResults) - count), color=globalVar.COLORS[count], alpha = 0.25, markeredgewidth=0.0)
+
 
 
 
