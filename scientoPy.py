@@ -62,7 +62,7 @@ parser.add_argument("--title",
 help="To put a title in your graph", type=str)
 
 parser.add_argument("--trend",
-help="Get the top trending topics, with the highest last AGR", type=str)
+help="Get the top trending topics, with the highest last AGR", action="store_true")
 
 
 # ************************* Program start ********************************************************
@@ -148,6 +148,9 @@ if args.topics:
     for item2 in item1:
       item2 = item2.strip()
 
+  for topic in topicList:
+    print topic
+
 # Find the top topics
 else:
   print("Finding the top topics...")
@@ -186,16 +189,24 @@ else:
       if args.onlyFirst:
         break
 
+  if args.trend:
+    topicListLength = globalVar.TOP_TREND_SIZE
+    startList = 0
+  else:
+    topicListLength = args.length
+    startList = args.start
+
+
   # Get the top topics by the topDic count
   topTopcis = sorted(topicDic.iteritems(),
-                     key=lambda x: -x[1])[int(args.start):int(args.start + args.length)]
+                     key=lambda x: -x[1])[startList:(startList + topicListLength)]
 
   # Put the topTopics in topic List
   for topic in topTopcis:
     topicList.append([topic[0]])
 
-print("Topic list:")
-print(topicList)
+#print("Topic list:")
+#print(topicList)
 
 # Create results data dictionary list and init fields
 topicResults = []
@@ -300,6 +311,10 @@ for topicItem in topicResults:
     count += 1
     #print("hIndex: " + str(hIndex))
     topicItem["hIndex"] = hIndex
+
+if args.trend:
+  topicResults = sorted(topicResults, key=lambda x: int(x["agr"]), reverse=True)
+  topicResults =  topicResults[args.start:(args.start+args.length)]
 
 # Print top topics
 print("\nTop topics:")
