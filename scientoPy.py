@@ -49,7 +49,7 @@ parser.add_argument("--useCitedBy",
 help="Short the top results based on times cited", action="store_true")
 
 parser.add_argument("--agrWidth",
-help="Average growth rate window width in years",type=int, default=2)
+help="Average growth rate window width in years",type=int, default=1)
 
 parser.add_argument("-r", "--previousResults",
 help="Analyze based on the previous results", action="store_true")
@@ -318,6 +318,7 @@ if args.trend:
 
 # Print top topics
 print("\nTop topics:")
+print("Average Growth Rate period: %d - %d" % (yearArray[startYearIndex], yearArray[endYearIndex]))
 print("Pos. " + args.criterion + ", Total, AGR, h-index")
 count = 0
 for topicItem in topicResults:

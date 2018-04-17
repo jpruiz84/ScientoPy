@@ -4,6 +4,6 @@
 # But not these files...
 !.gitignore
 !*.py
-!*.sh
+exampleGenerateGraphs.sh
 
 !dataInExample\*
