@@ -16,7 +16,7 @@ def saveResults(paperDict, outFileName):
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
                   "Abbreviated Source Title", "Document Type", "Source", "EID", "Subject", "duplicatedIn",
-                  "country", "emailHost", "institution"]
+                  "countries", "emailHost", "institutions"]
 
 
 
@@ -61,9 +61,9 @@ def saveResults(paperDict, outFileName):
 
       paperDicWrite["Subject"] = paperOut["subject"]
       paperDicWrite["duplicatedIn"] = paperOut["duplicatedIn"]
-      paperDicWrite["country"] = paperOut["country"]
+      paperDicWrite["countries"] = paperOut["countries"]
       paperDicWrite["emailHost"] = paperOut["emailHost"]
-      paperDicWrite["institution"] = paperOut["institution"]
+      paperDicWrite["institutions"] = paperOut["institutions"]
       paperDicWrite["bothKeywords"] = paperOut["bothKeywords"]
 
       writer.writerow(paperDicWrite)
@@ -83,7 +83,7 @@ def saveResults(paperDict, outFileName):
                   "TC", "Z9", "U1", "U2", "PU", "PI", "PA", "SN", "EI", "BN", "J9",
                   "JI", "PD", "PY", "VL", "IS", "PN", "SU", "SI", "MA", "BP", "EP",
                   "AR", "DI", "D2", "PG", "WC", "SC", "GA", "UT", "PM", "OA", "HC",
-                  "HP", "DA", "duplicatedIn", "country"]
+                  "HP", "DA", "duplicatedIn", "countries"]
 
     writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
 
@@ -107,7 +107,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["UT"] = paperOut["eid"]
 
       paperDicWrite["duplicatedIn"] = paperOut["duplicatedIn"]
-      paperDicWrite["country"] = paperOut["country"]
+      paperDicWrite["countries"] = paperOut["countries"]
 
       writer.writerow(paperDicWrite)
 
@@ -148,7 +148,7 @@ def saveTopResults(topicResults, criterionIn):
 
   ofile.close()
 
-  print("\nSaved top results on: %s" % fileName)
+  print("Saved top results on: %s" % fileName)
 
 
 def saveExtendedResults(topicResults, criterionIn):
@@ -160,7 +160,7 @@ def saveExtendedResults(topicResults, criterionIn):
   ofile = open(fileName, 'w')
 
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors",
-                "Author keywords", "Both keywords", "Abstract", "Country", "Document type"]
+                "Author keywords", "Both keywords", "Abstract", "Countries", "Document type"]
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -186,7 +186,7 @@ def saveExtendedResults(topicResults, criterionIn):
       dictWriter["Title"] = paper["title"]
       dictWriter["Year"] = paper["year"]
       dictWriter["Authors"] = paper["authors"]
-      dictWriter["Country"] = paper["country"]
+      dictWriter["Countries"] = paper["countries"]
       dictWriter["Author keywords"] = paper["authorKeywords"]
       dictWriter["Both keywords"] = paper["bothKeywords"]
       dictWriter["Abstract"] = paper["abstract"]
@@ -198,7 +198,7 @@ def saveExtendedResults(topicResults, criterionIn):
 
   ofile.close()
 
-  print("\nSaved extended top results on: %s" % fileName)
+  print("Saved extended top results on: %s" % fileName)
 
 def saveTopCited(papersDic):
 
@@ -226,4 +226,4 @@ def saveTopCited(papersDic):
 
   ofile.close()
 
-  print("\nSaved top cited results on: %s" % fileName)
+  print("Saved top cited results on: %s" % fileName)

@@ -66,7 +66,7 @@ def openFileToDict(ifile, papersDict):
       paperIn["cr"] = ""
       paperIn["eid"] = ""
       paperIn["dataBase"] = ""
-      paperIn["country"] = ""
+      paperIn["countries"] = ""
       paperIn["subject"] = ""
       paperIn["sourceTitle"] = ""
 
@@ -77,7 +77,7 @@ def openFileToDict(ifile, papersDict):
       paperIn["duplicatedIn"] = ""
 
       paperIn["emailHost"] = ""
-      paperIn["institution"] = ""
+      paperIn["institutions"] = ""
       paperIn["bothKeywords"] = ""
 
       for col in row:
@@ -193,7 +193,7 @@ def openFileToDict(ifile, papersDict):
         # Own fields
         if headerCol == "Subject": paperIn["subject"] = col
         if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col
-        if headerCol == "country": paperIn["country"] = col
+        if headerCol == "countries": paperIn["countries"] = col
         if headerCol == "emailHost": paperIn["emailHost"] = col
 
         colnum += 1
@@ -240,8 +240,8 @@ def openFileToDict(ifile, papersDict):
       # Get each author affiliations
       affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
 
-      # Extract country
-      if paperIn["country"] == "":
+      # Extract countries
+      if paperIn["countries"] == "":
         countries = []
         for affiliation in affiliations:
           # Get the first author affiliations, and extract the last item as contry
@@ -288,13 +288,13 @@ def openFileToDict(ifile, papersDict):
           if country.upper() not in [x.upper() for x in countries]:
             countries.append(country)
 
-        paperIn["country"] = ";".join(countries)
+        paperIn["countries"] = ";".join(countries)
       # If an author instead a country
       #if country.endswith('.'):
       #  country = "No country"
 
       # Institution from WoS
-      if paperIn["institution"] == "":
+      if paperIn["institutions"] == "":
         institutions = []
         if paperIn["dataBase"] == "WoS" and affiliations != "":
           for affiliation in affiliations:
@@ -306,7 +306,7 @@ def openFileToDict(ifile, papersDict):
 
             if institution.upper() not in [x.upper() for x in institution]:
               institutions.append(institution)
-          paperIn["institution"] = ";".join(institutions)
+          paperIn["institutions"] = ";".join(institutions)
 
       # Get email host
       if paperIn["emailHost"] == "":
@@ -406,7 +406,7 @@ def printPaper(paper):
   
   for af in re.split("; (?=[^\]]*(?:\[|$))",paper["affiliations"]):
     print("- " + af)
-  print('Country: %s' % (paper["country"]))
+  print('Countries: %s' % (paper["countries"]))
   print('Document type: %s' % (paper["documentType"]))
   print('Cited by: %s' % (paper["citedBy"]))
   print('\n')
