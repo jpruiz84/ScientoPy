@@ -13,7 +13,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
 parser.add_argument("criterion", choices=["authors", "sourceTitle",  "subject",
-"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "country", "institution"],
+"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "countries", "institutions"],
 help="Select the criterion to analyze the topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
@@ -286,11 +286,11 @@ for topicItem in topicResults:
 
 # Scale in percentage per year
 if args.pYear:
-  for topics in topicList:
+  for topicItem in topicResults:
     for year, value in yearPapers.iteritems():
-      index = topicResults[topics[0].upper()]["year"].index(year)
+      index = topicItem["year"].index(year)
       if value != 0:
-        topicResults[topics[0].upper()]["PapersCount"][index] /= (float(value)/100.0)
+        topicItem["PapersCount"][index] /= (float(value)/100.0)
 
 print("Calculating h-index...")
 # Calculate h index per topic
@@ -325,6 +325,7 @@ for topicItem in topicResults:
   print("%s. %s:, %d, %.1f, %d" %
         (count + 1, topicItem["name"], topicItem["PapersTotal"], topicItem["agr"], topicItem["hIndex"]))
   count += 1
+print("")
 
 
 # Plot
@@ -363,7 +364,7 @@ if args.noPlot:
 
       count += 1
 
-    plt.legend(legendArray, loc = 2)
+    plt.legend(legendArray, loc = "best")
     plt.xlabel("Publication year")
     plt.ylabel("Number of documents")
 
@@ -383,6 +384,7 @@ if args.noPlot:
   else:
     plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
     bbox_inches = 'tight', pad_inches = 0.01)
+    print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
 
 
 paperSave.saveTopResults(topicResults, args.criterion)
