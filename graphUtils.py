@@ -3,8 +3,8 @@ from scipy.spatial import cKDTree
 import globalVar
 from matplotlib.lines import Line2D
 from matplotlib import gridspec
-from scipy import interpolate
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
+from scipy import interpolate
 
 LABEL_COLOR = "#dddddd"
 BUBBLE_COLOR = "#63d065"
@@ -207,7 +207,8 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   if (xMin > 0):
     plt.xlim(xmin=0)
   else:
-    plt.xlim(xmin=xMin * 1.2)
+    plt.xlim(xmin=-0.5)
+
   plt.xlim(xmax=xMax * 1.2)
 
   if (yMin > 0):
@@ -221,9 +222,16 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     plt.ylim(ymax=yMax * (-1.2))
 
 
+
   # Plot the X dash line
   xmin, xmax = ax.get_xlim()
-  dashed_line = Line2D([0.0, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
+  dashed_line = Line2D([xmin, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
+                       transform=ax.transData)
+  ax.lines.append(dashed_line)
+
+  # Plot the Y dash line
+  ymin, ymax = ax.get_ylim()
+  dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
                        transform=ax.transData)
   ax.lines.append(dashed_line)
 
@@ -246,8 +254,16 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
 
     xnew = np.linspace(min(x), max(x), 300)
 
-    s = Rbf(x, y, smooth=0.4, epsilon = 0.25)
+    f = interpolate.interp1d(x, y, kind='linear')
+    ylineal = f(xnew)
+
+    s = Rbf(x, y, smooth=0.4, epsilon = 0.2)
     ynew = s(xnew)
+
+    for i in range(0,len(ylineal)):
+      if ylineal[i] < 0.1:
+        ynew[i] = 0
+
 
     zero_to_nan(ynew)
     zero_to_nan(y)
@@ -267,7 +283,11 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     count += 1
 
   [xmin, xmax] = ax0.get_xlim()
-  ax0.set_xlim([xmin, xmax + (xmax-xmin)*0.1])
+  ax0.set_xlim([min(x), xmax + (xmax-xmin)*0.1])
+
+  [ymin, ymax] = ax0.get_ylim()
+  ax0.set_ylim(0, ymax)
+
 
   ax0.ticklabel_format(useOffset=False)
   ax0.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
@@ -280,7 +300,11 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
 def zero_to_nan(values):
   firstZero = False
   for i in reversed(range(0, len(values))):
-    if values[i] < 0.25:
+    if values[i] < 0.1:
       if firstZero:
         values[i] = float('nan')
       firstZero = True
+
+
+def func(x, a, b, c):
+  return a * np.exp(-b * x) + c
