@@ -364,7 +364,9 @@ if args.noPlot:
 
       count += 1
 
-    plt.legend(legendArray, loc = "best")
+    legend1 = plt.legend(legendArray, loc = "best", fancybox= "false")
+    legend1.get_frame().set_alpha(1)
+    legend1.set_zorder(count)  # put the legend on top
     plt.xlabel("Publication year")
     plt.ylabel("Number of documents")
 
