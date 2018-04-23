@@ -297,6 +297,38 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   plt.xlabel("Publication year")
   plt.ylabel("Accumulative Number of Documents")
 
+def plot_time_line(plt, topicResults, fSecundary):
+    count = 0
+    ax = plt.gca()
+    for topicItem in topicResults:
+      x = topicItem["year"]
+      y = topicItem["PapersCount"]
+      yAcum = topicItem["PapersCountAccum"]
+      zero_to_nan2(y, yAcum)
+
+      if not fSecundary:
+        plt.plot(x, y,
+        linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, label = topicItem["name"],
+        zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
+      else:
+        plt.plot(x, y,
+                 linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, label=topicItem["name"],
+                 zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0,
+                 linestyle = "--")
+
+      ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+      count += 1
+
+    [xmin, xmax] = ax.get_xlim()
+    ax.set_xlim([min(x), xmax + (xmax - xmin) * 0.1])
+
+    legend1 = plt.legend(loc = "best", fancybox= "false")
+    legend1.get_frame().set_alpha(1)
+    legend1.set_zorder(count)  # put the legend on top
+    plt.xlabel("Publication year")
+    plt.ylabel("Number of documents")
+
 
 # Keep only the first zero right to left
 def zero_to_nan(values):
