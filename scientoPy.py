@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
 import sys
-from matplotlib.ticker import MaxNLocator
 
 
 import argparse
@@ -356,33 +355,7 @@ if args.noPlot:
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
   else:
-    count = 0
-    legendArray=[]
-    ax = plt.subplot()
-    for topicItem in topicResults:
-      legendArray.append(topicItem["name"])
-
-      x = topicItem["year"]
-      y = topicItem["PapersCount"]
-      yAcum = topicItem["PapersCountAccum"]
-      graphUtils.zero_to_nan2(y, yAcum)
-
-      plt.plot(x, y,
-      linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
-      zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
-
-      ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-
-      count += 1
-
-    [xmin, xmax] = ax.get_xlim()
-    ax.set_xlim([min(x), xmax + (xmax - xmin) * 0.1])
-
-    legend1 = plt.legend(legendArray, loc = "best", fancybox= "false")
-    legend1.get_frame().set_alpha(1)
-    legend1.set_zorder(count)  # put the legend on top
-    plt.xlabel("Publication year")
-    plt.ylabel("Number of documents")
+    graphUtils.plot_time_line(plt, topicResults, False)
 
     if args.yLog:
       plt.yscale('log')
