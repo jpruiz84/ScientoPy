@@ -29,7 +29,7 @@ python scientoPy.py country --startYear 2002 -l 7 --pYear --savePlot "countries.
 #python scientoPy.py country -t "Colombia;Argentina;Ecuador"
 
 # Authors:
-python scientoPy.py authors --startYear 2006 -l 5 --savePlot "authors.eps"
+python scientoPy.py author --startYear 2006 -l 5 --savePlot "authors.eps"
 
 # Subject
 python scientoPy.py subject --startYear 2006 -l 7 --savePlot "subject.eps"

@@ -33,7 +33,7 @@ def openFileToDict(ifile, papersDict):
       paperIn = {}
 
       # Init key elements as zero
-      paperIn["authors"] = ""
+      paperIn["author"] = ""
       paperIn["title"] = ""
       paperIn["year"] = ""
       paperIn["source"] = ""
@@ -77,7 +77,8 @@ def openFileToDict(ifile, papersDict):
       paperIn["duplicatedIn"] = ""
 
       paperIn["emailHost"] = ""
-      paperIn["institutions"] = ""
+      paperIn["country"] = ""
+      paperIn["institution"] = ""
       paperIn["bothKeywords"] = ""
 
       for col in row:
@@ -87,7 +88,7 @@ def openFileToDict(ifile, papersDict):
         headerCol = header[colnum].decode("ascii", errors="ignore").encode()
 
         # Scopus fields
-        if headerCol == "Authors": paperIn["authors"] = col
+        if headerCol == "Authors": paperIn["author"] = col
         if headerCol == "Title": paperIn["title"] = col
         if headerCol == "Year": paperIn["year"] = col
         if headerCol == "Source title": paperIn["sourceTitle"] = col
@@ -120,7 +121,7 @@ def openFileToDict(ifile, papersDict):
 
         # WoS fields
         #if headerCol == "PT": paperIn[""] = col    # Publication Type (J=Journal; B=Book; S=Series; P=Patent)
-        if headerCol == "AU": paperIn["authors"] = col    # Authors
+        if headerCol == "AU": paperIn["author"] = col    # Authors
         #if headerCol == "BA": paperIn[""] = col    # Book authors
         if headerCol == "BE": paperIn["editors"] = col    # Editors
         #if headerCol == "GP": paperIn[""] = col    # Book Group Author(s)
@@ -193,7 +194,7 @@ def openFileToDict(ifile, papersDict):
         # Own fields
         if headerCol == "Subject": paperIn["subject"] = col
         if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col
-        if headerCol == "countries": paperIn["countries"] = col
+        if headerCol == "country": paperIn["country"] = col
         if headerCol == "emailHost": paperIn["emailHost"] = col
 
         colnum += 1
@@ -213,21 +214,21 @@ def openFileToDict(ifile, papersDict):
       if paperIn["citedBy"] == "":
         paperIn["citedBy"] = "0"
 
-      # Change to false to not preprocess authors
+      # Change to false to not preprocess author
       if True:
-        # For Scopus authors, replace , with ;
+        # For Scopus author, replace , with ;
         if paperIn["dataBase"] == "Scopus":
-          paperIn["authors"] = paperIn["authors"].replace(",", ";")
+          paperIn["author"] = paperIn["author"].replace(",", ";")
 
-        # Remove dots from authors
-        paperIn["authors"] = paperIn["authors"].replace(".", "")
+        # Remove dots from author
+        paperIn["author"] = paperIn["author"].replace(".", "")
 
-        # Remove coma from authors
-        paperIn["authors"] = paperIn["authors"].replace(",", "")
+        # Remove coma from author
+        paperIn["author"] = paperIn["author"].replace(",", "")
 
-        # Remove accents in authors
-        paperIn["authors"] = strip_accents(unicode(paperIn["authors"], "utf-8"))
-        paperIn["authors"] = paperIn["authors"].encode('utf-8')
+        # Remove accents in author
+        paperIn["author"] = strip_accents(unicode(paperIn["author"], "utf-8"))
+        paperIn["author"] = paperIn["author"].encode('utf-8')
 
 
       # Omit papers without title
@@ -240,8 +241,8 @@ def openFileToDict(ifile, papersDict):
       # Get each author affiliations
       affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
 
-      # Extract countries
-      if paperIn["countries"] == "":
+      # Extract country
+      if paperIn["country"] == "":
         countries = []
         for affiliation in affiliations:
           # Get the first author affiliations, and extract the last item as contry
@@ -288,13 +289,13 @@ def openFileToDict(ifile, papersDict):
           if country.upper() not in [x.upper() for x in countries]:
             countries.append(country)
 
-        paperIn["countries"] = ";".join(countries)
+        paperIn["country"] = ";".join(countries)
       # If an author instead a country
       #if country.endswith('.'):
       #  country = "No country"
 
       # Institution from WoS
-      if paperIn["institutions"] == "":
+      if paperIn["institution"] == "":
         institutions = []
         if paperIn["dataBase"] == "WoS" and affiliations != "":
           for affiliation in affiliations:
@@ -306,7 +307,7 @@ def openFileToDict(ifile, papersDict):
 
             if institution.upper() not in [x.upper() for x in institution]:
               institutions.append(institution)
-          paperIn["institutions"] = ";".join(institutions)
+          paperIn["institution"] = ";".join(institutions)
 
       # Get email host
       if paperIn["emailHost"] == "":
@@ -392,7 +393,7 @@ def getPapersLinkFromFile(ifile, papersDict):
   
 
 def printPaper(paper):
-  print('Authors: %s' % (paper["authors"]))
+  print('Authors: %s' % (paper["author"]))
   print('Title: %s' % (paper["title"]))
   print('Year: %s' % (paper["year"]))
   print('Source: %s' % (paper["source"]))
@@ -406,7 +407,7 @@ def printPaper(paper):
   
   for af in re.split("; (?=[^\]]*(?:\[|$))",paper["affiliations"]):
     print("- " + af)
-  print('Countries: %s' % (paper["countries"]))
+  print('Country: %s' % (paper["country"]))
   print('Document type: %s' % (paper["documentType"]))
   print('Cited by: %s' % (paper["citedBy"]))
   print('\n')
@@ -447,7 +448,7 @@ def removeDuplicates(paperDict, logWriter):
         continue
 
       # Compare first author and titleB in uppercase
-      match = paperDict[i]["authors"].split(" ")[0].upper() == paperDict[i+1]["authors"].split(" ")[0].upper()
+      match = paperDict[i]["author"].split(" ")[0].upper() == paperDict[i+1]["author"].split(" ")[0].upper()
       match &=  paperDict[i]["titleB"] == paperDict[i+1]["titleB"]
 
       # If the criterion match
@@ -456,11 +457,11 @@ def removeDuplicates(paperDict, logWriter):
         
         #print("Dup A: %s, %s" % (paperDict[i]["title"], paperDict[i]["year"]))
         #print("Authors: %s, Database: %s, Cited by: %s" %
-        #(paperDict[i]["authors"], paperDict[i]["dataBase"], paperDict[i]["citedBy"]))
+        #(paperDict[i]["author"], paperDict[i]["dataBase"], paperDict[i]["citedBy"]))
         
         #print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
         #print("Authors: %s, Database: %s, Cited by: %s" %
-        #(paperDict[i+1]["authors"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
+        #(paperDict[i+1]["author"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
 
         # Update the removed count
         if paperDict[i+1]["dataBase"] == "WoS":

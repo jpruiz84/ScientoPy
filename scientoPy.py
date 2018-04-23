@@ -12,8 +12,8 @@ import time
 import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
-parser.add_argument("criterion", choices=["authors", "sourceTitle",  "subject",
-"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "countries", "institutions"],
+parser.add_argument("criterion", choices=["author", "sourceTitle",  "subject",
+"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "country", "institution"],
 help="Select the criterion to analyze the topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")

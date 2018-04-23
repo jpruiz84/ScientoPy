@@ -16,7 +16,7 @@ def saveResults(paperDict, outFileName):
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
                   "Abbreviated Source Title", "Document Type", "Source", "EID", "Subject", "duplicatedIn",
-                  "countries", "emailHost", "institutions"]
+                  "country", "emailHost", "institution"]
 
 
 
@@ -28,7 +28,7 @@ def saveResults(paperDict, outFileName):
 
       paperDicWrite = {}
 
-      paperDicWrite["Authors"] = paperOut["authors"]
+      paperDicWrite["Authors"] = paperOut["author"]
       paperDicWrite["Title"] = paperOut["title"]
       paperDicWrite["Year"] = paperOut["year"]
       paperDicWrite["Source title"] = paperOut["sourceTitle"]
@@ -61,9 +61,9 @@ def saveResults(paperDict, outFileName):
 
       paperDicWrite["Subject"] = paperOut["subject"]
       paperDicWrite["duplicatedIn"] = paperOut["duplicatedIn"]
-      paperDicWrite["countries"] = paperOut["countries"]
+      paperDicWrite["country"] = paperOut["country"]
       paperDicWrite["emailHost"] = paperOut["emailHost"]
-      paperDicWrite["institutions"] = paperOut["institutions"]
+      paperDicWrite["institution"] = paperOut["institution"]
       paperDicWrite["bothKeywords"] = paperOut["bothKeywords"]
 
       writer.writerow(paperDicWrite)
@@ -83,7 +83,7 @@ def saveResults(paperDict, outFileName):
                   "TC", "Z9", "U1", "U2", "PU", "PI", "PA", "SN", "EI", "BN", "J9",
                   "JI", "PD", "PY", "VL", "IS", "PN", "SU", "SI", "MA", "BP", "EP",
                   "AR", "DI", "D2", "PG", "WC", "SC", "GA", "UT", "PM", "OA", "HC",
-                  "HP", "DA", "duplicatedIn", "countries"]
+                  "HP", "DA", "duplicatedIn", "country"]
 
     writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
 
@@ -91,7 +91,7 @@ def saveResults(paperDict, outFileName):
 
     for paperOut in paperDict:
       paperDicWrite = {}
-      paperDicWrite["AU"] = paperOut["authors"]
+      paperDicWrite["AU"] = paperOut["author"]
       paperDicWrite["TI"] = paperOut["title"]
       paperDicWrite["PY"] = paperOut["year"]
       paperDicWrite["SO"] = paperOut["source"]
@@ -107,7 +107,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["UT"] = paperOut["eid"]
 
       paperDicWrite["duplicatedIn"] = paperOut["duplicatedIn"]
-      paperDicWrite["countries"] = paperOut["countries"]
+      paperDicWrite["country"] = paperOut["country"]
 
       writer.writerow(paperDicWrite)
 
@@ -160,7 +160,7 @@ def saveExtendedResults(topicResults, criterionIn):
   ofile = open(fileName, 'w')
 
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors",
-                "Author keywords", "Both keywords", "Abstract", "Countries", "Document type"]
+                "Author keywords", "Both keywords", "Abstract", "Country", "Document type"]
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -185,8 +185,8 @@ def saveExtendedResults(topicResults, criterionIn):
       dictWriter = {}
       dictWriter["Title"] = paper["title"]
       dictWriter["Year"] = paper["year"]
-      dictWriter["Authors"] = paper["authors"]
-      dictWriter["Countries"] = paper["countries"]
+      dictWriter["Authors"] = paper["author"]
+      dictWriter["Country"] = paper["country"]
       dictWriter["Author keywords"] = paper["authorKeywords"]
       dictWriter["Both keywords"] = paper["bothKeywords"]
       dictWriter["Abstract"] = paper["abstract"]
@@ -218,7 +218,7 @@ def saveTopCited(papersDic):
     dictWriter["Cited by"] = paper["citedBy"]
     dictWriter["Cited by scaled"] = int(paper["scaledCitedBy"])
     dictWriter["Title"] = paper["title"]
-    dictWriter["Authors"] = paper["authors"]
+    dictWriter["Authors"] = paper["author"]
     dictWriter["Author keywords"] = paper["authorKeywords"].upper()
     writer.writerow(dictWriter)
 
