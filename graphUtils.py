@@ -5,6 +5,7 @@ from matplotlib.lines import Line2D
 from matplotlib import gridspec
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 from scipy import interpolate
+from matplotlib.ticker import MaxNLocator
 
 LABEL_COLOR = "#dddddd"
 BUBBLE_COLOR = "#63d065"
@@ -203,6 +204,8 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   xMin = min(xArray)
   yMin = min(yArray)
 
+  yMaxMax = max([abs(yMax), abs(yMin)])
+
   # Set the graphs limits
   if (xMin > 0):
     plt.xlim(xmin=0)
@@ -214,10 +217,10 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   if (yMin > 0):
     plt.ylim(ymin=0)
   else:
-    plt.ylim(ymin=yMin - (yMax * 0.1))
+    plt.ylim(ymin=yMin - (yMaxMax * 0.1))
 
   if (yMax > 0):
-    plt.ylim(ymax=yMax * 1.4)
+    plt.ylim(ymax=yMax + (yMaxMax * 0.1))
   else:
     plt.ylim(ymax=yMax * (-1.2))
 
@@ -264,7 +267,6 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
       if ylineal[i] < 0.1:
         ynew[i] = 0
 
-
     zero_to_nan(ynew)
     zero_to_nan(y)
 
@@ -277,7 +279,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     #         linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
     #         zorder=(len(topicResults) - count), color=globalVar.COLORS[count], alpha = 0.25, markeredgewidth=0.0)
 
-
+    ax0.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
     count += 1
@@ -305,6 +307,11 @@ def zero_to_nan(values):
         values[i] = float('nan')
       firstZero = True
 
+# Keep only the first zero right to left
+def zero_to_nan2(values, valuesAcum):
+  for i in reversed(range(0, len(values))):
+    if valuesAcum[i] == 0:
+      if values[i] == 0:
+        values[i] = float('nan')
 
-def func(x, a, b, c):
-  return a * np.exp(-b * x) + c
+

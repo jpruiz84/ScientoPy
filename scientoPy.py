@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
 import sys
-import time
+from matplotlib.ticker import MaxNLocator
 
 
 import argparse
@@ -122,6 +122,9 @@ papersDict = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDict))
 
 print("Total papers in range (%s - %s): %s" %
       (args.startYear, args.endYear , len(papersDict)))
+
+if(len(papersDict) == 0):
+  exit()
 
 # Find the number of total papers per year
 for paper in papersDict:
@@ -355,14 +358,25 @@ if args.noPlot:
   else:
     count = 0
     legendArray=[]
+    ax = plt.subplot()
     for topicItem in topicResults:
       legendArray.append(topicItem["name"])
 
-      plt.plot(topicItem["year"], topicItem["PapersCount"],
+      x = topicItem["year"]
+      y = topicItem["PapersCount"]
+      yAcum = topicItem["PapersCountAccum"]
+      graphUtils.zero_to_nan2(y, yAcum)
+
+      plt.plot(x, y,
       linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10,
       zorder=(len(topicList) - count), color=globalVar.COLORS[count],markeredgewidth=0.0)
 
+      ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
       count += 1
+
+    [xmin, xmax] = ax.get_xlim()
+    ax.set_xlim([min(x), xmax + (xmax - xmin) * 0.1])
 
     legend1 = plt.legend(legendArray, loc = "best", fancybox= "false")
     legend1.get_frame().set_alpha(1)
