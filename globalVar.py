@@ -57,8 +57,12 @@ SAVE_RESULTS_ON = "SCOPUS_FIELDS"
 
 # Global variables
 logFile = 0
+loadedPapers = 0
+omitedPapers = 0
+OriginalTotalPapers = 0
 papersScopus = 0
 papersWoS = 0
-omitedPapers = 0
+totalAfterRemDupl = 0
+
 
 SCIENTOPY_VERSION = "1.2.1"

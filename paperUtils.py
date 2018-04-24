@@ -199,16 +199,19 @@ def openFileToDict(ifile, papersDict):
 
         colnum += 1
 
+      # Omit papers without title
+      if paperIn["title"] == "":
+        print("No title, continue")
+        continue
+
       # Put the database ussing eid
       if paperIn["dataBase"] == "":
         if paperIn["eid"].startswith("WOS"):
           paperIn["dataBase"] = "WoS"
           paperIn["source"] = "WoS"
-          globalVar.papersWoS += 1
 
         if paperIn["eid"].startswith("2-"):
           paperIn["dataBase"] = "Scopus"
-          globalVar.papersScopus += 1
 
       # If cited by is emtpy add 0
       if paperIn["citedBy"] == "":
@@ -229,13 +232,6 @@ def openFileToDict(ifile, papersDict):
         # Remove accents in author
         paperIn["author"] = strip_accents(unicode(paperIn["author"], "utf-8"))
         paperIn["author"] = paperIn["author"].encode('utf-8')
-
-
-      # Omit papers without title
-      if paperIn["title"] == "":
-        print("No title, continue")
-        continue
-
 
 
       # Get each author affiliations
@@ -338,10 +334,18 @@ def openFileToDict(ifile, papersDict):
 
       # printPaper(paperIn)
 
+      globalVar.loadedPapers += 1
+
       # Filter papers that are not in document tipe list
       if any(pType.upper() in paperIn["documentType"].upper().split("; ") \
              for pType in globalVar.INCLUDED_TYPES):
         papersDict.append(paperIn)
+        if paperIn["dataBase"] == "WoS":
+          globalVar.papersWoS += 1
+        if paperIn["dataBase"] == "Scopus":
+          globalVar.papersScopus += 1
+
+
       else:
         globalVar.omitedPapers += 1
     rownum += 1
@@ -420,7 +424,6 @@ def removeDuplicates(paperDict, logWriter):
   removedPapersScopus = 0
   removedPapersWoS = 0
   duplicatedWithDifferentCitedBy = 0
-  originalPapersCount = len(paperDict)
   noAuthors = 0
 
   # Remove part of the title inside parentisis or square brakets
@@ -498,24 +501,37 @@ def removeDuplicates(paperDict, logWriter):
 
   print("\r{0:.0f}%".format(100))
   print("\nDuplicated papers found: %s" % duplicatedPapersCount)
-  print("Original papers count: %s" % originalPapersCount)
+  print("Original papers count: %s" % globalVar.OriginalTotalPapers)
   print("Actual papers count: %s" % len(paperDict))
-  print("Removed papers WoS: %s" % removedPapersWoS)
-  print("Removed papers Scopus: %s" % removedPapersScopus)
+  print("Removed papers WoS: %s, %.1f %%" %
+        (removedPapersWoS, 100.0*removedPapersWoS/globalVar.papersWoS))
+  print("Removed papers Scopus: %s, %.1f %%" %
+        (removedPapersScopus, 100.0*removedPapersScopus/globalVar.papersScopus))
   if(duplicatedPapersCount != 0):
-    print("Duplicated documents with different cited by: %s, %s %%\n" % (duplicatedWithDifferentCitedBy,
-          100*duplicatedWithDifferentCitedBy/duplicatedPapersCount))
+    print("Duplicated documents with different cited by: %s, %.1f %%\n" % (duplicatedWithDifferentCitedBy,
+          100.0*duplicatedWithDifferentCitedBy/duplicatedPapersCount))
 
   logWriter.writerow({'Info': ''})
-  logWriter.writerow({'Info': '***** Duplication removal statics *****'})
-  logWriter.writerow({'Info': 'Duplicated papers found', 'Number': str(duplicatedPapersCount)})
-  logWriter.writerow({'Info': 'Original papers count', 'Number': str(originalPapersCount)})
-  logWriter.writerow({'Info': 'Actual papers count', 'Number': str(len(paperDict))})
-  logWriter.writerow({'Info': 'Removed papers WoS', 'Number': str(removedPapersWoS)})
-  logWriter.writerow({'Info': 'Removed papers Scopus', 'Number': str(removedPapersScopus)})
+  logWriter.writerow({'Info': 'Duplication removal statics'})
 
-  if(duplicatedPapersCount != 0):
-    logWriter.writerow({'Info': 'Duplicated documents with different cited by', 'Number': str(duplicatedWithDifferentCitedBy)})
+  logWriter.writerow({'Info': 'Duplicated papers found',
+                      'Number':("%d" % (duplicatedPapersCount)),
+                      'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
+
+  logWriter.writerow({'Info': 'Removed papers WoS',
+                      'Number':("%d" % (removedPapersWoS)),
+                      'Percentage': ("%.1f%%" % (100.0 * removedPapersWoS / globalVar.papersWoS))})
+
+  logWriter.writerow({'Info': 'Removed papers Scopus',
+                      'Number':("%d" % (removedPapersScopus)),
+                      'Percentage': ("%.1f%%" % (100.0 * removedPapersScopus / globalVar.papersScopus))})
+
+  logWriter.writerow({'Info': 'Duplicated documents with different cited by',
+                      'Number':("%d" % (duplicatedWithDifferentCitedBy)),
+                      'Percentage': ("%.1f%%" % (100.0 * duplicatedWithDifferentCitedBy /duplicatedPapersCount))})
+
+  globalVar.totalAfterRemDupl = len(paperDict)
+  logWriter.writerow({'Info': 'Total papers after rem. dupl.', 'Number': str(globalVar.totalAfterRemDupl)})
 
   return paperDict
 
@@ -523,20 +539,24 @@ def removeDuplicates(paperDict, logWriter):
 def sourcesStatics(paperDict, logWriter):
   statics = {}
 
-  statics["Scopus"]={}
-  for type in globalVar.INCLUDED_TYPES:
-    statics["Scopus"][type] = 0
-  statics["Scopus"]["Total"] = 0
-  statics["Scopus"]["Source"] = "Scopus"
+  totalPapers = len(paperDict)
 
   statics["WoS"] = {}
-  for type in globalVar.INCLUDED_TYPES:
-    statics["WoS"][type] = 0
+  for typeIn in globalVar.INCLUDED_TYPES:
+    statics["WoS"][typeIn] = 0
   statics["WoS"]["Total"] = 0
   statics["WoS"]["Source"] = "WoS"
 
+  statics["Scopus"]={}
+  for typeIn in globalVar.INCLUDED_TYPES:
+    statics["Scopus"][typeIn] = 0
+  statics["Scopus"]["Total"] = 0
+  statics["Scopus"]["Source"] = "Scopus"
+
+
   noDocumentTypeCount = 0
 
+  # On each paper to count statics
   for paper in paperDict:
     try:
       statics[paper["dataBase"]][paper["documentType"].split("; ")[0]] += 1
@@ -545,8 +565,14 @@ def sourcesStatics(paperDict, logWriter):
     except:
       noDocumentTypeCount += 1
 
-  logWriter.writerow(statics["Scopus"])
+  # Put the percentajes
+  for key1, value1 in statics.iteritems():
+    for key2, value2 in statics[key1].iteritems():
+      if type(statics[key1][key2]) == int:
+        statics[key1][key2] = ("%d, %.1f%%" % (statics[key1][key2], (100.0 * statics[key1][key2]/totalPapers)))
+
   logWriter.writerow(statics["WoS"])
+  logWriter.writerow(statics["Scopus"])
 
 
 

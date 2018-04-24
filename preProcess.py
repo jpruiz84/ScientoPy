@@ -8,7 +8,6 @@ import sys
 import matplotlib.pyplot as plt
 import graphUtils
 
-
 # Parse arguments
 parser = argparse.ArgumentParser(description="Pre process and remove duplicates documents from Scopus and WoS")
 
@@ -17,8 +16,10 @@ parser.add_argument("dataInFolder", help="Folder where the Scopus or WoS data is
 parser.add_argument("--noRemDupl",
 help="To do not remove the duplicated documents", action="store_false")
 
-parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the pre process graph")
-parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the pre process graph")
+parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,
+                    help="Start year to limit the pre process graph, and to extract the number of papers in year range")
+parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,
+                    help="End year year to limit the pre process graph, and to extract the number of papers in year range")
 
 parser.add_argument("--savePlot", default="",  help='Save the pre processed graph to a file, ex: --savePlot "preProcessed.eps"')
 
@@ -81,7 +82,7 @@ def grapPreprocess(plt, papersDict, fOriginal):
 
   graphUtils.plot_time_line(plt,topicResults, fOriginal)
 
-# Program start ********************************************************
+# *****************  Program start ********************************************************
 print("\n\nScientoPy prerprocess")
 print("======================\n")
 
@@ -90,17 +91,17 @@ if sys.version_info[0] > 2:
   print("")
   exit()
 
-
 # Create output folders if not exist
 if not os.path.exists(globalVar.DATA_OUT_FOLDER):
     os.makedirs(globalVar.DATA_OUT_FOLDER)
  
 # Init variables
 paperDict = []
+globalVar.loadedPapers = 0
+globalVar.totalPapers = 0
 globalVar.papersScopus = 0
 globalVar.papersWoS = 0
 globalVar.omitedPapers = 0
-
 
 # Read files from the dataInFolder
 for file in os.listdir(os.path.join(args.dataInFolder, '')):
@@ -111,18 +112,35 @@ for file in os.listdir(os.path.join(args.dataInFolder, '')):
 
 # Open the file to write the preprocessing log in CSV
 logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w')
-fieldnames = ["Info", "Number", "Source"] + globalVar.INCLUDED_TYPES + ["Total"]
+fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]
 logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel_tab)
 logWriter.writeheader()
 
+globalVar.OriginalTotalPapers = len(paperDict)
 logWriter.writerow({'Info': '***** Original data *****'})
-logWriter.writerow({'Info': 'Total papers', 'Number' : str(len(paperDict))})
-logWriter.writerow({'Info': 'Omited papers', 'Number' : str(globalVar.omitedPapers)})
+logWriter.writerow({'Info': 'Loaded papers', 'Number' : str(globalVar.loadedPapers)})
 
-print("Total papers: %s" % len(paperDict))
-print("Scopus papers: %s" % globalVar.papersScopus)
-print("WoS papers: %s" % globalVar.papersWoS)
+logWriter.writerow({'Info': 'Omitted papers',
+                    'Number': ("%d" % (globalVar.omitedPapers)),
+                    'Percentage': ("%.1f%%" % (100.0 * globalVar.omitedPapers / globalVar.loadedPapers))})
+
+
+logWriter.writerow({'Info': 'Total papers', 'Number' : str(globalVar.OriginalTotalPapers)})
+logWriter.writerow({'Info': 'Papers from WoS',
+                    'Number': ("%d" % (globalVar.papersWoS)),
+                    'Percentage': ("%.1f%%" % (100.0 * globalVar.papersWoS / globalVar.OriginalTotalPapers))})
+logWriter.writerow({'Info': 'Papers from Scopus',
+                    'Number': ("%d" % (globalVar.papersScopus)),
+                    'Percentage': ("%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
+
+
+
+
+print("Loaded papers: %s" % len(paperDict))
 print("Omited papers: %s" % globalVar.omitedPapers)
+print("total papers: %s" % globalVar.OriginalTotalPapers)
+print("WoS papers: %s" % globalVar.papersWoS)
+print("Scopus papers: %s" % globalVar.papersScopus)
 paperUtils.sourcesStatics(paperDict, logWriter)
 
 grapPreprocess(plt, paperDict, True)
@@ -131,11 +149,26 @@ grapPreprocess(plt, paperDict, True)
 if args.noRemDupl:
   paperDict = paperUtils.removeDuplicates(paperDict, logWriter)
   logWriter.writerow({'Info': ''})
-  logWriter.writerow({'Info': '***** Statics after duplication removal *****'})
-  logWriter.writerow({'Info': 'Total papers', 'Number' : str(len(paperDict))})
+  logWriter.writerow({'Info': 'After duplication removal'})
   paperUtils.sourcesStatics(paperDict, logWriter)
 
   grapPreprocess(plt, paperDict, False)
+
+# Filter papers with invalid year
+papersDictYear = list(filter(lambda x: x["year"].isdigit(), paperDict))
+# Filter the papers outside the year range
+papersDictYear = list(filter(lambda x: int(x["year"]) >= args.startYear, papersDictYear))
+papersDictYear = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDictYear))
+
+totalPapersInRagne = len(papersDictYear)
+
+print("Total papers in range (%s - %s): %s" %
+      (args.startYear, args.endYear , totalPapersInRagne))
+
+logWriter.writerow({'Info': "Total papers in range (%s - %s)" % (args.startYear, args.endYear),
+                    'Number': ("%d" % (totalPapersInRagne)),
+                    'Percentage': ("%.1f%%" % (100.0 * totalPapersInRagne / globalVar.totalAfterRemDupl))})
+
 
 # Save final results
 paperSave.saveResults(paperDict,
