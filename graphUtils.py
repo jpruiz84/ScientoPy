@@ -188,7 +188,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     xArray.append(x)
     yArray.append(y)
 
-    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"], zorder=(len(topicResults) - count),
+    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"], zorder=(3 + len(topicResults) - count),
                s=200, c=globalVar.COLORS[count], edgecolors=globalVar.COLORS[count])
 
     count += 1
@@ -225,20 +225,21 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     plt.ylim(ymax=yMax * (-1.2))
 
 
+  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10), zorder = 1)
 
   # Plot the X dash line
   xmin, xmax = ax.get_xlim()
-  dashed_line = Line2D([xmin, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
+  dashed_line = Line2D([xmin, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
                        transform=ax.transData)
   ax.lines.append(dashed_line)
 
   # Plot the Y dash line
   ymin, ymax = ax.get_ylim()
-  dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
+  dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
                        transform=ax.transData)
   ax.lines.append(dashed_line)
 
-  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+
 
   #plt.ylabel("Average growth rate, %d - %d (doc./year)" % (
   #  yearArray[startYearIndex], yearArray[endYearIndex]))
