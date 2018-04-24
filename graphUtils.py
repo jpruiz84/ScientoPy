@@ -188,7 +188,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     xArray.append(x)
     yArray.append(y)
 
-    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"],
+    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"], zorder=(len(topicResults) - count),
                s=200, c=globalVar.COLORS[count], edgecolors=globalVar.COLORS[count])
 
     count += 1
@@ -237,6 +237,8 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=1,
                        transform=ax.transData)
   ax.lines.append(dashed_line)
+
+  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
   #plt.ylabel("Average growth rate, %d - %d (doc./year)" % (
   #  yearArray[startYearIndex], yearArray[endYearIndex]))
@@ -289,6 +291,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
 
   [ymin, ymax] = ax0.get_ylim()
   ax0.set_ylim(0, ymax)
+  ax0.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
 
   ax0.ticklabel_format(useOffset=False)
@@ -322,6 +325,8 @@ def plot_time_line(plt, topicResults, fSecundary):
 
     [xmin, xmax] = ax.get_xlim()
     ax.set_xlim([min(x), xmax + (xmax - xmin) * 0.1])
+
+    ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
     legend1 = plt.legend(loc = "best", fancybox= "false")
     legend1.get_frame().set_alpha(1)
