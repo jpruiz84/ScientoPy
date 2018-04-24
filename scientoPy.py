@@ -344,7 +344,7 @@ if args.noPlot:
     my_dpi = 96
     plt.figure(figsize=(1960/my_dpi, 1080/my_dpi), dpi=my_dpi)
     
-    wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "Dark2")
+    wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "tab10")
     freq = {}
     for topicItem in topicResults:
       freq[topicItem["name"]] = topicItem["PapersTotal"]
