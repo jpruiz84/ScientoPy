@@ -86,8 +86,9 @@ def grapPreprocess(plt, papersDict, fOriginal):
 print("\n\nScientoPy prerprocess")
 print("======================\n")
 
-if sys.version_info[0] > 2:
-  print("ERROR, you are using Python 3, Python 2.7.XX required")
+# Check python version
+if sys.version_info[0] < 3:
+  print("ERROR, you are using Python 2, Python 3.X.X required")
   print("")
   exit()
 
@@ -107,11 +108,11 @@ globalVar.omitedPapers = 0
 for file in os.listdir(os.path.join(args.dataInFolder, '')):
   if file.endswith(".csv") or file.endswith(".txt"):
     print("Reading file: %s" % (os.path.join(args.dataInFolder, '') + file))
-    ifile = open(os.path.join(args.dataInFolder, '') + file, "r")
+    ifile = open(os.path.join(args.dataInFolder, '') + file, "r", encoding='utf-8')
     paperUtils.openFileToDict(ifile, paperDict)
 
 # Open the file to write the preprocessing log in CSV
-logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w')
+logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
 fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]
 logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel_tab)
 logWriter.writeheader()

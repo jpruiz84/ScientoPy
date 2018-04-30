@@ -8,7 +8,7 @@ def saveResults(paperDict, outFileName):
 
     print("Saving results on: %s, with Scopus fields" % outFileName)
 
-    ofile = open(outFileName, 'w')
+    ofile = open(outFileName, 'w', encoding='utf-8')
 
     # WoS Fieldnames
     fieldnames = ["Authors", "Title", "Year", "Source title", "Volume", "Issue", "Art. No.", "Page start",
@@ -74,7 +74,7 @@ def saveResults(paperDict, outFileName):
 
     print("Saving results on: %s, with WoS fields" % outFileName)
 
-    ofile = open(outFileName, 'w')
+    ofile = open(outFileName, 'w', encoding='utf-8')
 
     # WoS Fieldnames
     fieldnames = ["PT", "AU", "BA", "BE", "GP", "AF", "BF", "CA", "TI",
@@ -123,9 +123,9 @@ def saveTopResults(topicResults, criterionIn):
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".tsv")
-  ofile = open(fileName, 'w')
+  ofile = open(fileName, 'w', encoding='utf-8')
 
-  fieldnames = ["Pos.", criterion, "Total", "hIndex"] + topicResults[0]["year"]
+  fieldnames = ["Pos.", criterion, "Total", "hIndex"] + list(topicResults[0]["year"])
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -157,7 +157,7 @@ def saveExtendedResults(topicResults, criterionIn):
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.tsv")
-  ofile = open(fileName, 'w')
+  ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors",
                 "Author keywords", "Both keywords", "Abstract", "Country", "Document type"]
@@ -203,7 +203,7 @@ def saveExtendedResults(topicResults, criterionIn):
 def saveTopCited(papersDic):
 
   fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.tsv")
-  ofile = open(fileName, 'w')
+  ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", "Year", "Cited by", "Cited by scaled", "Title", "Authors", "Author keywords"]
 

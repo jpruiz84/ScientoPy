@@ -1,14 +1,9 @@
 import csv
 import globalVar
 import re
-import json
 import unicodedata
 import sys
-
-def strip_accents(s):
-   return ''.join(c for c in unicodedata.normalize('NFD', s)
-                  if unicodedata.category(c) != 'Mn')
-
+import unidecode
 
 def openFileToDict(ifile, papersDict):
   firstLineTell = ifile.tell()
@@ -85,7 +80,8 @@ def openFileToDict(ifile, papersDict):
         if colnum >= len(header):
           break
 
-        headerCol = header[colnum].decode("ascii", errors="ignore").encode()
+        # remove special accents
+        headerCol = unidecode.unidecode(header[colnum])
 
         # Scopus fields
         if headerCol == "Authors": paperIn["author"] = col
@@ -230,9 +226,7 @@ def openFileToDict(ifile, papersDict):
         paperIn["author"] = paperIn["author"].replace(",", "")
 
         # Remove accents in author
-        paperIn["author"] = strip_accents(unicode(paperIn["author"], "utf-8"))
-        paperIn["author"] = paperIn["author"].encode('utf-8')
-
+        paperIn["author"] = unidecode.unidecode(paperIn["author"])
 
       # Get each author affiliations
       affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
@@ -450,9 +444,9 @@ def removeDuplicates(paperDict, logWriter):
         match = False
         continue
 
-      # Compare first author and titleB in uppercase
-      match = paperDict[i]["author"].split(" ")[0].upper() == paperDict[i+1]["author"].split(" ")[0].upper()
-      match &=  paperDict[i]["titleB"] == paperDict[i+1]["titleB"]
+      # Compare first author last name and titleB in uppercase
+      match = (paperDict[i]["author"].split(" ")[0].upper() == paperDict[i+1]["author"].split(" ")[0].upper())
+      match &=  (paperDict[i]["titleB"] == paperDict[i+1]["titleB"])
 
       # If the criterion match
       if(match == True):
@@ -566,8 +560,8 @@ def sourcesStatics(paperDict, logWriter):
       noDocumentTypeCount += 1
 
   # Put the percentajes
-  for key1, value1 in statics.iteritems():
-    for key2, value2 in statics[key1].iteritems():
+  for key1, value1 in statics.items():
+    for key2, value2 in statics[key1].items():
       if type(statics[key1][key2]) == int:
         statics[key1][key2] = ("%d, %.1f%%" % (statics[key1][key2], (100.0 * statics[key1][key2]/totalPapers)))
 

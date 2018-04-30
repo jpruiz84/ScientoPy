@@ -71,8 +71,8 @@ print("\n\nScientoPy: %s" % (globalVar.SCIENTOPY_VERSION))
 print("================\n")
 
 # Check python version
-if sys.version_info[0] > 2:
-  print("ERROR, you are using Python 3, Python 2.7.XX required")
+if sys.version_info[0] < 3:
+  print("ERROR, you are using Python 2, Python 3.X.X required")
   print("")
   exit()
 
@@ -97,7 +97,7 @@ papersDictOut = []
 topicList = []
 
 # Open the storage database and add to papersDict
-ifile = open(INPUT_FILE, "r")
+ifile = open(INPUT_FILE, "r", encoding='utf-8')
 print("Reading file: %s" % (INPUT_FILE))
 paperUtils.openFileToDict(ifile, papersDict)
 ifile.close()
@@ -151,7 +151,7 @@ if args.topics:
       item2 = item2.strip()
 
   for topic in topicList:
-    print topic
+    print(topic)
 
 # Find the top topics
 else:
@@ -200,7 +200,7 @@ else:
 
 
   # Get the top topics by the topDic count
-  topTopcis = sorted(topicDic.iteritems(),
+  topTopcis = sorted(topicDic.items(),
                      key=lambda x: -x[1])[startList:(startList + topicListLength)]
 
   # Put the topTopics in topic List
