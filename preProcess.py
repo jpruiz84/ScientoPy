@@ -111,6 +111,9 @@ for file in os.listdir(os.path.join(args.dataInFolder, '')):
     ifile = open(os.path.join(args.dataInFolder, '') + file, "r", encoding='utf-8')
     paperUtils.openFileToDict(ifile, paperDict)
 
+# Filter papers with invalid year
+paperDict = list(filter(lambda x: x["year"].isdigit(), paperDict))
+
 # Open the file to write the preprocessing log in CSV
 logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
 fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]
