@@ -337,6 +337,12 @@ for topicItem in topicResults:
     #print("hIndex: " + str(hIndex))
     topicItem["hIndex"] = hIndex
 
+
+# Sort by PapersTotal, then by hIndex, and then by name.
+topicResults = sorted(topicResults, key=lambda x: x["name"], reverse=False)
+topicResults = sorted(topicResults, key=lambda x: int(x["hIndex"]), reverse=True)
+topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
+
 if args.trend:
   topicResults = sorted(topicResults, key=lambda x: int(x["agr"]), reverse=True)
   topicResults =  topicResults[args.start:(args.start+args.length)]
@@ -352,6 +358,9 @@ for topicItem in topicResults:
   count += 1
 print("")
 
+if filterSubTopic != "":
+  for topicItem in topicResults:
+    topicItem["name"] = topicItem["name"].split(",")[0].strip()
 
 # Plot
 if args.noPlot:
