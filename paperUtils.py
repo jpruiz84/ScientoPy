@@ -74,6 +74,7 @@ def openFileToDict(ifile, papersDict):
       paperIn["emailHost"] = ""
       paperIn["country"] = ""
       paperIn["institution"] = ""
+      paperIn["institutionWithCountry"] = ""
       paperIn["bothKeywords"] = ""
 
       for col in row:
@@ -191,6 +192,9 @@ def openFileToDict(ifile, papersDict):
         if headerCol == "Subject": paperIn["subject"] = col
         if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col
         if headerCol == "country": paperIn["country"] = col
+        if headerCol == "institution": paperIn["institution"] = col
+        if headerCol == "institutionWithCountry": paperIn["institutionWithCountry"] = col
+        if headerCol == "bothKeywords": paperIn["bothKeywords"] = col
         if headerCol == "emailHost": paperIn["emailHost"] = col
 
         colnum += 1
@@ -228,15 +232,26 @@ def openFileToDict(ifile, papersDict):
         # Remove accents in author
         paperIn["author"] = unidecode.unidecode(paperIn["author"])
 
-      # Get each author affiliations
-      affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
 
-      # Extract country
-      if paperIn["country"] == "":
+      # Extract country, institution and institutionWithCountry from affilation
+      if paperIn["country"] == "" or paperIn["institution"] == "" or paperIn["institutionWithCountry"] == "":
+
+        # Get each author affiliations
+        affiliations = re.split("; (?=[^\]]*(?:\[|$))", paperIn["affiliations"])
+
         countries = []
+        institutions = []
+        institutionsWithCoutnry = []
+
+        # For each affiliation
         for affiliation in affiliations:
-          # Get the first author affiliations, and extract the last item as contry
-          country = re.split(", (?=[^\]]*(?:\[|$))", affiliation)[-1].strip()
+          # Divide affiliation in sections by ",", but not consider "," inside "[]"
+          afSections = re.split(", (?=[^\]]*(?:\[|$))|]", affiliation)
+
+          # The last item in affiliation list is the country
+          country = afSections[-1].strip()
+
+          # Remove dots in country
           country = country.replace(".", "")
 
           if "BOSNIA & HERCEG".upper() == country.upper():
@@ -272,32 +287,34 @@ def openFileToDict(ifile, papersDict):
           if "VIET NAM".upper() == country.upper():
             country = "Vietnam"
 
-
-
-
-          # To do not duplicate countries in couty field
+          # To do not duplicate countries in country field
           if country.upper() not in [x.upper() for x in countries]:
             countries.append(country)
 
+          # Get institution
+          institution = ""
+          if paperIn["dataBase"] == "WoS" and affiliations != "":
+            # Extract institution as the second element in affiliation sections
+            if len(afSections) >= 2:
+              institution = afSections[1].strip()
+              if institution.upper() not in [x.upper() for x in institutions]:
+                institutions.append(institution)
+
+          institutionWithCoutnry = ""
+          if institution != "":
+            institutionWithCoutnry = ("%s, %s" % (institution.replace(",", ""), country.replace(",", "")))
+            if institutionWithCoutnry.upper() not in [x.upper() for x in institutionsWithCoutnry]:
+              institutionsWithCoutnry.append(institutionWithCoutnry)
+
+          #print("\nOriginal: %s" % affiliation)
+          #print("afSections: %s" % str(afSections))
+          #print("country: %s" % country)
+          #print("institution: %s" % institution)
+          #print("institutionWithCoutnry: %s" % institutionWithCoutnry)
+
         paperIn["country"] = ";".join(countries)
-      # If an author instead a country
-      #if country.endswith('.'):
-      #  country = "No country"
-
-      # Institution from WoS
-      if paperIn["institution"] == "":
-        institutions = []
-        if paperIn["dataBase"] == "WoS" and affiliations != "":
-          for affiliation in affiliations:
-            # Get the author affiliations, and extract the first item as institution
-            afList = re.split(", (?=[^\]]*(?:\[|$))|]", affiliation)
-            if len(afList) < 2:
-              continue
-            institution = afList[1].strip()
-
-            if institution.upper() not in [x.upper() for x in institution]:
-              institutions.append(institution)
-          paperIn["institution"] = ";".join(institutions)
+        paperIn["institution"] = ";".join(institutions)
+        paperIn["institutionWithCountry"] = ";".join(institutionsWithCoutnry)
 
       # Get email host
       if paperIn["emailHost"] == "":

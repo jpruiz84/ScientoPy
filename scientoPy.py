@@ -6,13 +6,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import graphUtils
 import sys
+import re
 
 
 import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
-parser.add_argument("criterion", choices=["author", "sourceTitle",  "subject",
-"authorKeywords", "indexKeywords", "bothKeywords", "documentType", "dataBase", "country", "institution"],
+validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords",
+                  "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
+
+parser.add_argument("criterion", choices = validCriterion,
 help="Select the criterion to analyze the topics")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
@@ -62,6 +65,10 @@ help="To put a title in your graph", type=str)
 
 parser.add_argument("--trend",
 help="Get the top trending topics, with the highest last AGR", action="store_true")
+
+parser.add_argument("-f", "--filter", help='Filter to be aplied on a sub topic.'
+  'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
+
 
 
 # ************************* Program start ********************************************************
@@ -130,6 +137,13 @@ for paper in papersDict:
   if int(paper["year"]) in yearPapers.keys():
     yearPapers[int(paper["year"])] += 1
 
+
+# Get the filter options
+filterSubTopic = ""
+if args.filter:
+  filterSubTopic = args.filter.strip()
+  print("Filter Sub Topic: %s" % filterSubTopic)
+
 # Parse custom topics
 if args.topics:
   print("Custom topics entered:")
@@ -171,6 +185,11 @@ else:
       if item == "":
         continue
 
+      # If filter sub topic, omit items outside that do not match with the subtopic
+      if filterSubTopic != "" and len(item.split(",")) >= 2:
+        if(item.split(",")[1].strip().upper() != filterSubTopic.upper()):
+          continue
+
       try:
         # If topic already in topicDic
         if item in topicDic:
@@ -206,6 +225,10 @@ else:
   # Put the topTopics in topic List
   for topic in topTopcis:
     topicList.append([topic[0]])
+
+  if len(topicList) == 0:
+    print("\nFINISHED : There is not results with your inputs criteria or filter")
+    exit()
 
 #print("Topic list:")
 #print(topicList)
@@ -289,7 +312,7 @@ for topicItem in topicResults:
 # Scale in percentage per year
 if args.pYear:
   for topicItem in topicResults:
-    for year, value in yearPapers.iteritems():
+    for year, value in yearPapers.items():
       index = topicItem["year"].index(year)
       if value != 0:
         topicItem["PapersCount"][index] /= (float(value)/100.0)

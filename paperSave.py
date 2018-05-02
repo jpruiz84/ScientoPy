@@ -16,7 +16,7 @@ def saveResults(paperDict, outFileName):
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
                   "Abbreviated Source Title", "Document Type", "Source", "EID", "Subject", "duplicatedIn",
-                  "country", "emailHost", "institution"]
+                  "country", "emailHost", "institution", "institutionWithCountry"]
 
 
 
@@ -64,6 +64,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["country"] = paperOut["country"]
       paperDicWrite["emailHost"] = paperOut["emailHost"]
       paperDicWrite["institution"] = paperOut["institution"]
+      paperDicWrite["institutionWithCountry"] = paperOut["institutionWithCountry"]
       paperDicWrite["bothKeywords"] = paperOut["bothKeywords"]
 
       writer.writerow(paperDicWrite)
