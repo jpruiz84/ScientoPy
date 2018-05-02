@@ -296,7 +296,10 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
 
 
   ax0.ticklabel_format(useOffset=False)
-  ax0.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
+  legend1 = ax0.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
+  legend1.get_frame().set_alpha(1)
+  legend1.set_zorder(count)  # put the legend on top
+
 
   plt.xlabel("Publication year")
   plt.ylabel("Accumulative Number of Documents")
