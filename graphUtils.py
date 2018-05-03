@@ -338,6 +338,24 @@ def plot_time_line(plt, topicResults, fSecundary):
     plt.xlabel("Publication year")
     plt.ylabel("Number of documents")
 
+def plot_bar_horizontal(plt, topicResults):
+  topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=False)
+
+  ax = plt.gca()
+  itemsName = []
+  x = []
+  for topicItem in topicResults:
+    x.append(topicItem["PapersTotal"])
+    itemsName.append(topicItem["name"])
+
+  y_pos = np.arange(len(itemsName))
+
+  plt.barh(y_pos, x, align='center', color=globalVar.COLORS, zorder = 5)
+  plt.yticks(y_pos, itemsName)
+  plt.xlabel('Total number of documents')
+
+  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+
 
 # Keep only the first zero right to left
 def zero_to_nan(values):

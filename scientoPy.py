@@ -46,6 +46,9 @@ help="Graph on Y the number of publications, and on X accomulative number of cit
 parser.add_argument("--wordCloud",
 help="Graph the topics word cloud", action="store_true")
 
+parser.add_argument("--bar",
+help="Graph the topics in horizontal bar", action="store_true")
+
 
 parser.add_argument("--useCitedBy",
 help="Short the top results based on times cited", action="store_true")
@@ -386,6 +389,9 @@ if args.noPlot:
     # show
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
+  elif args.bar:
+    graphUtils.plot_bar_horizontal(plt, topicResults)
+
   else:
     graphUtils.plot_time_line(plt, topicResults, False)
 
