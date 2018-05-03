@@ -17,8 +17,8 @@
 *-converted-to.*
 # these rules might exclude image files for figures etc.
 *.ps
-#*.eps
+*.eps
 *.pdf
 
 # Include eps figures
-#!figures/*.eps
+!figures/*.eps

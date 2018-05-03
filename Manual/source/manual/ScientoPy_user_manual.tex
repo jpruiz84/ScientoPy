@@ -83,7 +83,7 @@
 
 %\textsc{Desarrollo de aplicaciones para plataformas ubicuas}
 
-\textsc{ScientoPy, Installation and User Manual}
+\textsc{ScientoPy v 1.3.1, Installation and User Manual}
 
 \end{tabular}
 \begin{tabbing}
@@ -95,7 +95,7 @@
 \section{Installation}
 
 \begin{enumerate}
-\item For Windows download and install the last version of Python 3 (for example Python 3.6.5) from: \\ \url{https://www.python.org/downloads/}.
+\item For Windows download and install the Python 3 latest version (for example Python 3.6.5) from: \\ \url{https://www.python.org/downloads/}.
 \item For Debian or Ubuntu run these commands to install Python3: 
 \begin{verbatim}
 sudo apt-get install python3 python3-tk
@@ -107,6 +107,8 @@ sudo apt-get install python3 python3-tk
 \begin{verbatim}
 python -m pip install --user unidecode numpy scipy matplotlib wordcloud
 \end{verbatim}
+
+\textbf{IMPORTANT NOTE:} If you have installed Python 2 and Python 3, run the previous and the following commands with \verb|python3| instead \verb|python|
 \end{enumerate}
 
 \section{Download the bibliometric dataset}
@@ -153,13 +155,13 @@ This section describes the ScientoPy scripts to pre-process and process the bibl
 
 First we need to pre-process the downloaded dataset. This pre-process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset (Internet of things papers) run this command inside ScientoPy folder: 
 \begin{verbatim}
-python preProcess.py dataInIoT
+python preProcess.py dataInExample
 \end{verbatim}
 
 Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files: 
 \begin{itemize}
-\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data. 
-\item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
+\item \textbf{papersPreprocessed.tsv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data. 
+\item \textbf{PreprocessedBrief.tsv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
 \end{itemize}
 
 To find more options of the pre-processing script you can run:
@@ -177,7 +179,7 @@ With this script you can extract the top topics of a selected criterion. The Sci
 	\label{table_criterion}
 	
 	
-	\begin{tabular}{ p{3cm} p{10cm}}
+	\begin{tabular}{ p{4cm} p{10cm}}
 	\hline\noalign{\smallskip}
 	Criteron       & Description                             \\
 	\noalign{\smallskip}\hline\noalign{\smallskip}                                                                         
@@ -191,6 +193,7 @@ With this script you can extract the top topics of a selected criterion. The Sci
 	dataBase       & Database where the document was extracted (WoS or Scopus)                                                      \\
 	country        & Country extracted from authors affiliations                                                                    \\
 	institution    & Institution extracted from authors affiliations                                                                \\
+	institutionWithCountry    & Institution with country extracted from authors affiliations                                        \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 	
@@ -261,23 +264,10 @@ $AGR$ = Average growth rate;
 To find the top trending topics on author's keywords criterion, you can run the following script: 
 
 \begin{verbatim}
-python trendResults.py authorKeywords
+python scientoPy.py authorKeywords --trend
 \end{verbatim}
 
 This script will find the top 200 topics, then it calculates the AGR for the last 3 periods of 2 years. Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 10 AGR topics with the corresponding value per period is graphed. 
-
-Also, you can find the AGR for selected topics inside a criterion, writing the topic on the argument \verb|-t|, like the following example: 
-
-\begin{verbatim}
-python trendResults.py authorKeywords -t "Cloud computing;Security;Big Data"
-\end{verbatim}
-
-This script have more options like, save the plot on a file, get the list from the lower last period AGR to the higher, or others. For more information you can run:
-
-\begin{verbatim}
-python trendResults.py -h
-\end{verbatim}
-
 
 \subsection{Finding trending documents}
 
@@ -306,10 +296,79 @@ python topCited.py --yearWeight 1.75
 \end{verbatim}
 
 
-The full document list results is saved in the file \verb|ScientoPy/results/topCitedPapers.csv|. This script have more options like, save the plot on a file, or others. For more information you can run:
+The full document list results is saved in the file \verb|ScientoPy/results/topCitedPapers.tsv|. This script have more options like, save the plot on a file, or others. For more information you can run:
 
 \begin{verbatim}
 python topCited.py -h
 \end{verbatim}
+
+\section{ScientoPy graph types}
+
+ScientoPy has 4 different ways to graph the results described on Table \ref{table_graph_types}.
+
+\begin{table}[h]
+	\centering
+	\caption{ScientoPy output graphs types}
+	\label{table_graph_types}
+
+	\begin{tabular}{ p{4cm} p{3cm} p{10cm}}
+	\hline\noalign{\smallskip}
+	Graph type     &  Argument & Description                             \\
+	\noalign{\smallskip}\hline\noalign{\smallskip}                                                                         
+	Time line      & No argument & Graphs the number of documents of each topic vs the publication year \\
+	Horizontal bars  & \verb|--bar| & Graphs the total number of documents of each topic in horizontal bars \\
+	Word cloud     & \verb|--wordCloud| & Generate a word cloud based on the topic total number of publications \\
+	Parametric     & \verb|--parametric| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the AGR vs the h-index\\
+	\noalign{\smallskip}\hline
+	\end{tabular}
+\end{table}
+
+Below are showed some examples of these graphs types, with the used command.
+
+\subsection{Time line graph}
+Command: 
+\begin{verbatim}
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.5\textwidth]{./figures/graph_timeline.eps}
+\end{center}
+
+
+\subsection{Horizontal bars graph}
+Command: 
+\begin{verbatim}
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.5\textwidth]{./figures/graph_bar.eps}
+\end{center}
+
+
+\subsection{Word cloud graph}
+Command: 
+\begin{verbatim}
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 -l 500 --wordCloud
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_word_cloud.eps}
+\end{center}
+
+\newpage
+\subsection{Parametric graph}
+Command: 
+\begin{verbatim}
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_parametric.eps}
+\end{center}
+
+
+
 
 \end{document}  

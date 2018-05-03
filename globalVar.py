@@ -1,4 +1,11 @@
 from matplotlib import cm
+import sys
+
+# Check python version
+if sys.version_info[0] < 3:
+  print("ERROR, you are using Python 2, Python 3.X.X required")
+  print("")
+  exit()
 
 # Default start and end year
 DEFAULT_START_YEAR = 2000
@@ -65,4 +72,4 @@ papersWoS = 0
 totalAfterRemDupl = 0
 
 
-SCIENTOPY_VERSION = "1.3.0"
+SCIENTOPY_VERSION = "1.3.1"
