@@ -128,7 +128,7 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
 
   i = 0
   for dataIn in data:
-    # plt_in.plot(dataIn[0], dataIn[1], 'o', color=globalVar.COLORS[i], markersize=100*dataIn[2]/float(zMax), label=labels[i])
+    # plt_in.plot(dataIn[0], dataIn[1], 'o', color=globalVar.COLORS_TAB10[i], markersize=100*dataIn[2]/float(zMax), label=labels[i])
     ax.scatter(dataIn[0], dataIn[1], marker="o", s=2000 * (dataIn[2] + 1) / float(zMax), c="w", edgecolors=EDGE_COLOR)
     ax.scatter(dataIn[0], dataIn[1], marker=globalVar.MARKERS[i], label=labels[i],
                s=800 * (dataIn[2] + 1) / float(zMax), c=cmap[i].tolist(), edgecolors=cmap[i].tolist())
@@ -189,7 +189,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
     yArray.append(y)
 
     ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"], zorder=(3 + len(topicResults) - count),
-               s=200, c=globalVar.COLORS[count], edgecolors=globalVar.COLORS[count])
+               s=200, c=globalVar.COLORS_TAB10[count], edgecolors=globalVar.COLORS_TAB10[count])
 
     count += 1
 
@@ -275,12 +275,12 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
 
     ax0.plot(xnew, ynew,
              linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
-             zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
+             zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], markeredgewidth=0.0)
 
 
     #ax0.plot(x, y,
     #         linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
-    #         zorder=(len(topicResults) - count), color=globalVar.COLORS[count], alpha = 0.25, markeredgewidth=0.0)
+    #         zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], alpha = 0.25, markeredgewidth=0.0)
 
     ax0.xaxis.set_major_locator(MaxNLocator(integer=True))
 
@@ -316,11 +316,11 @@ def plot_time_line(plt, topicResults, fSecundary):
       if not fSecundary:
         plt.plot(x, y,
         linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, label = topicItem["name"],
-        zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0)
+        zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], markeredgewidth=0.0)
       else:
         plt.plot(x, y,
                  linewidth=1.2, marker=globalVar.MARKERS[count], markersize=10, label=topicItem["name"],
-                 zorder=(len(topicResults) - count), color=globalVar.COLORS[count], markeredgewidth=0.0,
+                 zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], markeredgewidth=0.0,
                  linestyle = "--")
 
       ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -350,10 +350,11 @@ def plot_bar_horizontal(plt, topicResults):
 
   y_pos = np.arange(len(itemsName))
 
-  plt.barh(y_pos, x, align='center', color=globalVar.COLORS, zorder = 5)
+  plt.barh(y_pos, x, 0.6, align='center', color=globalVar.COLORS_TAB20, edgecolor="black", linewidth=0.5)
   plt.yticks(y_pos, itemsName)
   plt.xlabel('Total number of documents')
 
+  ax.set_axisbelow(True)
   ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
 

@@ -38,7 +38,7 @@ parser.add_argument("--yLog",
 help="Plot with Y axes on log scale", action="store_true")
 
 parser.add_argument("--noPlot",
-help="Do not plot the results, use for large amount of topics", action="store_false")
+help="Do not plot the results, use for large amount of topics", action="store_true")
 
 parser.add_argument("--parametric",
 help="Graph on Y the number of publications, and on X accomulative number of citations", action="store_true")
@@ -365,8 +365,14 @@ if filterSubTopic != "":
   for topicItem in topicResults:
     topicItem["name"] = topicItem["name"].split(",")[0].strip()
 
+
+# If more than 100 results and not wordCloud, no plot.
+if len(topicResults) > 100 and not args.wordCloud:
+  args.noPlot = True
+  print("\nERROR: Not allowed to graph more than 100 results")
+
 # Plot
-if args.noPlot:
+if not args.noPlot:
 
   if args.parametric:
 
@@ -378,7 +384,7 @@ if args.noPlot:
     from wordcloud import WordCloud
     my_dpi = 96
     plt.figure(figsize=(1960/my_dpi, 1080/my_dpi), dpi=my_dpi)
-    
+
     wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "tab10")
     freq = {}
     for topicItem in topicResults:
