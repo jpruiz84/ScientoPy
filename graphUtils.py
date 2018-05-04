@@ -350,10 +350,11 @@ def plot_bar_horizontal(plt, topicResults):
 
   y_pos = np.arange(len(itemsName))
 
-  plt.barh(y_pos, x, align='center', color=globalVar.COLORS, zorder = 5)
+  plt.barh(y_pos, x, 0.6, align='center', color=globalVar.COLORS, edgecolor="black", linewidth=0.5)
   plt.yticks(y_pos, itemsName)
   plt.xlabel('Total number of documents')
 
+  ax.set_axisbelow(True)
   ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
 
