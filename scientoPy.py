@@ -12,7 +12,7 @@ import re
 import argparse
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
-validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords",
+validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract", 
                   "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
 
 parser.add_argument("criterion", choices = validCriterion,
@@ -23,8 +23,9 @@ parser.add_argument("-l", "--length", type=int, default=10, help="Length of the 
 parser.add_argument("-s", "--start", type=int, default=0,  help="To filter the \
 first elements, ex to filter the first 2 elements on the list use -s 2")
 
-parser.add_argument("-t", "--topics", help='Topics to analyze according to critera, '
-                                           'ex: authorKeywords -t "internet of things,iot;bluetooth" ')
+parser.add_argument("-t", "--topics", help='Topics to analyze according to critera,\n\r'
+                                           'ex: authorKeywords -t "internet of things,iot;bluetooth" \n\r'
+                                           'asterisk wildcard ex: authorKeywords -t "device*"')
 
 parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
 parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
