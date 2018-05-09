@@ -72,4 +72,4 @@ papersWoS = 0
 totalAfterRemDupl = 0
 
 
-SCIENTOPY_VERSION = "1.3.1"
+SCIENTOPY_VERSION = "1.3.3"
