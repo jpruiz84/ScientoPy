@@ -83,7 +83,7 @@
 
 %\textsc{Desarrollo de aplicaciones para plataformas ubicuas}
 
-\textsc{ScientoPy v 1.3.1, Installation and User Manual}
+\textsc{ScientoPy v 1.3.3, Installation and User Manual}
 
 \end{tabular}
 \begin{tabbing}
@@ -105,7 +105,7 @@ sudo apt-get install python3 python3-tk
 
 \item Install the unidecode, numpy, scipy, matplotlib, and wordcloud Python libraries. For Windows, enter in the command line (Windows + R, cmd, and Enter), and run the installation script:
 \begin{verbatim}
-python -m pip install --user unidecode numpy scipy matplotlib wordcloud
+python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
 \end{verbatim}
 
 \textbf{IMPORTANT NOTE:} If you have installed Python 2 and Python 3, run the previous and the following commands with \verb|python3| instead \verb|python|
@@ -155,7 +155,7 @@ This section describes the ScientoPy scripts to pre-process and process the bibl
 
 First we need to pre-process the downloaded dataset. This pre-process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset (Internet of things papers) run this command inside ScientoPy folder: 
 \begin{verbatim}
-python preProcess.py dataInExample
+python3 preProcess.py dataInExample
 \end{verbatim}
 
 Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files: 
@@ -166,7 +166,7 @@ Then, inside the folder \verb|ScientoPy/dataPre| you will find the following fil
 
 To find more options of the pre-processing script you can run:
 \begin{verbatim}
-python preProcess.py -h
+python3 preProcess.py -h
 \end{verbatim}
 
 \subsection{Extract the top topics}
@@ -202,7 +202,7 @@ With this script you can extract the top topics of a selected criterion. The Sci
 For example, to find the top author's keywords you can run this script: 
 
 \begin{verbatim}
-python scientoPy.py authorKeywords
+python3 scientoPy.py authorKeywords
 \end{verbatim}
 
 This will generate a list with the top 10 topics on the selected criterion (in this case authorKeywords), with the number of documents per topic, and the h-index associated to each one. Also, this script graphs the evolution of each topic per year, and saves the quantitative results on the folder \verb|ScientoPy/results|. 
@@ -210,7 +210,7 @@ This will generate a list with the top 10 topics on the selected criterion (in t
 This script have more options like, save the plot on a file, or increase the number of topic results. For more information you can run:
 
 \begin{verbatim}
-python scientoPy.py -h
+python3 scientoPy.py -h
 \end{verbatim}
 
 \subsection{Analyze pre-defined topics inside a criterion}
@@ -218,21 +218,47 @@ python scientoPy.py -h
 If you want to make an analysis of pre-defined topics, such as the two selected countries papers evolution, you can use the \verb|scientoPy.py| script, with the option \verb|-t|, to specify the topics: 
 
 \begin{verbatim}
-python scientoPy.py country -t "United States; Brazil"
+python3 scientoPy.py country -t "United States; Brazil"
 \end{verbatim}
 
 You can analyze any topic in any criterion. Put the topics on the \verb|-t| argument. Divide the topics with the \verb|;|. Also, you can integrate two or more topics in one, by dividing it with \verb|,|. This is very useful for abbreviations and plural singulars, for example: 
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py authorKeywords -t \
 "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION"
 \end{verbatim}
 
 \textbf{Note: } The command is very long, for that reason the command was divided by "\". If you have problems in Windows, remove the "\" and put the command in one single line.
 
+\subsubsection{Asterisk (*) wildcard}
+
+You can use the asterisk wildcar to find phrases or words which starts or ends with the letters that you have inserted. For example, if you want to find "device", "devices", and "device integration", enter the following command: 
+
+\begin{verbatim}
+python3 scientoPy.py authorKeywords -t "device*"
+\end{verbatim}
+
+ScientoPy will print the topic found for the previous search using the asterisk wildcard: 
+
+\begin{verbatim}
+Topics found for device*:
+"devices;device management;Device Interactions;Device objectification;Device;Device integration"
+\end{verbatim}
+
+You can use this information, to find the statics of each specific topic found, like this: 
+
+\begin{verbatim}
+python3 scientoPy.py authorKeywords -t \
+"devices;device management;Device Interactions;Device objectification;Device;Device integration"
+\end{verbatim}
+
+
+
+\subsubsection{Parametric plot}
+
 Also, you can see the results with a parametric graphic (add \verb|--parametirc|). This option plot the accumulative documents, average growth rate (AGR), and h-Index of the selected topic, for example:
 
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py authorKeywords -t \
 "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION" \
 --parametric
 \end{verbatim}
@@ -240,7 +266,7 @@ python scientoPy.py authorKeywords -t \
 This script have more options like, save the plot on a file, or others. For more information you can run:
 
 \begin{verbatim}
-python scientoPy.py -h
+python3 scientoPy.py -h
 \end{verbatim}
 
 \subsection{Finding trending topics}
@@ -264,7 +290,7 @@ $AGR$ = Average growth rate;
 To find the top trending topics on author's keywords criterion, you can run the following script: 
 
 \begin{verbatim}
-python scientoPy.py authorKeywords --trend
+python3 scientoPy.py authorKeywords --trend
 \end{verbatim}
 
 This script will find the top 200 topics, then it calculates the AGR for the last 3 periods of 2 years. Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 10 AGR topics with the corresponding value per period is graphed. 
@@ -286,20 +312,20 @@ $Y_w$ = Year weight, default 1;
 The number of citations (citat) of each document is multiplicated by the corresponding $YS_i$, to get the Scaled citations (S. cita). The final publications list is sorted by this Scaled citations. The following script find the trending documents as described:
 
 \begin{verbatim}
-python topCited.py
+python3 topCited.py
 \end{verbatim}
 
 This script, graphs the all documents citations sum per year, this citations sum scaled (multiplied by the $YS_i$), and the scale per year ($YS_i$). If you want to put more weight to the citation than publication year, you can reduce the Year weight. On the other way, if you want to put more weight to the newer papers you can increase the year weight. The recommended values are between 0 to 5. For example, to get the most cited document of the last years you can run the script with a Year weight of 1.75:
 
 \begin{verbatim}
-python topCited.py --yearWeight 1.75
+python3 topCited.py --yearWeight 1.75
 \end{verbatim}
 
 
 The full document list results is saved in the file \verb|ScientoPy/results/topCitedPapers.tsv|. This script have more options like, save the plot on a file, or others. For more information you can run:
 
 \begin{verbatim}
-python topCited.py -h
+python3 topCited.py -h
 \end{verbatim}
 
 \section{ScientoPy graph types}

@@ -243,7 +243,10 @@ topicResults = []
 for topics in topicList:
   topicItem = {}
   topicItem["upperName"] = topics[0].upper()
-  topicItem["name"] = topics[0]
+  if args.topics:
+    topicItem["name"] = topics[0]
+  else:
+    topicItem["name"] = ""
   topicItem["allTopics"] = topics
   topicItem["year"] = yearArray
   topicItem["PapersCount"] = [0] * len(yearArray)
@@ -254,6 +257,7 @@ for topics in topicList:
   topicItem["CitedByCountAccum"] = [0] * len(yearArray)
   topicItem["CitedByTotal"] = 0
   topicItem["papers"] = []
+  topicItem["topicsFound"] = []
   topicItem["hIndex"] = 0
   topicItem["agr"] = 0
   topicResults.append(topicItem)
@@ -271,17 +275,37 @@ for paper in papersDict:
 
     for topicItem in topicResults:
       for subTopic in topicItem["allTopics"]:
-        if subTopic.upper() == itemUp:
+        if args.topics and "*" in subTopic.upper():
+          subTopicRegex = subTopic.upper().replace("*", ".*")
+          p = re.compile(subTopicRegex)
+          match = p.match(itemUp)
+        else:
+          match = subTopic.upper() == itemUp
+
+        if match:
           yearIndex = topicItem["year"].index(int(paper["year"]))
           topicItem["PapersCount"][yearIndex] += 1
           topicItem["PapersTotal"] += 1
           topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
           topicItem["CitedByTotal"] += int(paper["citedBy"])
-          topicItem["name"] = item
+          if topicItem["name"] == "":
+            topicItem["name"] = item
           topicItem["papers"].append(paper)
           papersDictOut.append(paper)
+
+          if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
+            topicItem["topicsFound"].append(item)
     if args.onlyFirst:
       break
+
+# Print the topics found if the asterisk willcard was used
+for topicItem in topicResults:
+  for subTopic in topicItem["allTopics"]:
+    if args.topics and "*" in subTopic.upper():
+      print("\nTopics found for %s:" % subTopic)
+      print('"' + ';'.join(topicItem["topicsFound"]) + '"')
+      print("")
+
 
 print("Calculating AGR...")
 # Extract the Average Growth Rate (AGR)
