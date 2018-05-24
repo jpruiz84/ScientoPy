@@ -7,6 +7,7 @@ import numpy as np
 import graphUtils
 import sys
 import re
+from PIL import Image
 
 
 import argparse
@@ -46,6 +47,8 @@ help="Graph on Y the number of publications, and on X accomulative number of cit
 
 parser.add_argument("--wordCloud",
 help="Graph the topics word cloud", action="store_true")
+
+parser.add_argument("--wordCloudMask", default="",  help='PNG mask image to use for wordCloud')
 
 parser.add_argument("--bar",
 help="Graph the topics in horizontal bar", action="store_true")
@@ -410,7 +413,16 @@ if not args.noPlot:
     my_dpi = 96
     plt.figure(figsize=(1960/my_dpi, 1080/my_dpi), dpi=my_dpi)
 
-    wc = WordCloud(background_color="white", max_words=1000, width = 1960, height = 1080 , colormap = "tab10")
+    if args.wordCloudMask:
+      imageMask = np.array(Image.open(args.wordCloudMask))
+      wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10",
+                     mask=imageMask)
+    else:
+      wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10")
+
+
+
+
     freq = {}
     for topicItem in topicResults:
       freq[topicItem["name"]] = topicItem["PapersTotal"]
