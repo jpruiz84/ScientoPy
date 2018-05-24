@@ -169,9 +169,14 @@ totalPapersInRagne = len(papersDictYear)
 print("Total papers in range (%s - %s): %s" %
       (args.startYear, args.endYear , totalPapersInRagne))
 
+if(totalPapersInRagne > 0):
+  totalPapersInRagnePercentaje = 100.0 * totalPapersInRagne / totalPapersInRagne
+else:
+  totalPapersInRagnePercentaje = 100.0
+
 logWriter.writerow({'Info': "Total papers in range (%s - %s)" % (args.startYear, args.endYear),
                     'Number': ("%d" % (totalPapersInRagne)),
-                    'Percentage': ("%.1f%%" % (100.0 * totalPapersInRagne / globalVar.totalAfterRemDupl))})
+                    'Percentage': ("%.1f%%" % totalPapersInRagnePercentaje)})
 
 
 # Save final results
