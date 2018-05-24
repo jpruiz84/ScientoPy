@@ -508,6 +508,19 @@ def removeDuplicates(paperDict, logWriter):
           sys.stdout.flush()
         continue
 
+  # To avoid by zero division
+  if globalVar.papersScopus > 0:
+    percentajeRemovedPapersScopus = 100.0*removedPapersScopus/globalVar.papersScopus
+  else:
+    percentajeRemovedPapersScopus = 0
+  if globalVar.papersWoS > 0:
+    percentajeRemovedPapersWoS = 100.0 * removedPapersWoS / globalVar.papersWoS
+  else:
+    percentajeRemovedPapersWoS = 0
+  if duplicatedPapersCount > 0:
+    percenDuplicatedWithDifferentCitedBy = 100.0*duplicatedWithDifferentCitedBy/duplicatedPapersCount
+  else:
+    percenDuplicatedWithDifferentCitedBy = 0
 
 
   print("\r{0:.0f}%".format(100))
@@ -515,12 +528,12 @@ def removeDuplicates(paperDict, logWriter):
   print("Original papers count: %s" % globalVar.OriginalTotalPapers)
   print("Actual papers count: %s" % len(paperDict))
   print("Removed papers WoS: %s, %.1f %%" %
-        (removedPapersWoS, 100.0*removedPapersWoS/globalVar.papersWoS))
+        (removedPapersWoS, percentajeRemovedPapersWoS))
   print("Removed papers Scopus: %s, %.1f %%" %
-        (removedPapersScopus, 100.0*removedPapersScopus/globalVar.papersScopus))
+        (removedPapersScopus, percentajeRemovedPapersScopus))
   if(duplicatedPapersCount != 0):
     print("Duplicated documents with different cited by: %s, %.1f %%\n" % (duplicatedWithDifferentCitedBy,
-          100.0*duplicatedWithDifferentCitedBy/duplicatedPapersCount))
+                                                                           percenDuplicatedWithDifferentCitedBy))
 
   logWriter.writerow({'Info': ''})
   logWriter.writerow({'Info': 'Duplication removal statics'})
@@ -531,15 +544,15 @@ def removeDuplicates(paperDict, logWriter):
 
   logWriter.writerow({'Info': 'Removed papers WoS',
                       'Number':("%d" % (removedPapersWoS)),
-                      'Percentage': ("%.1f%%" % (100.0 * removedPapersWoS / globalVar.papersWoS))})
+                      'Percentage': ("%.1f%%" % (percentajeRemovedPapersWoS))})
 
   logWriter.writerow({'Info': 'Removed papers Scopus',
                       'Number':("%d" % (removedPapersScopus)),
-                      'Percentage': ("%.1f%%" % (100.0 * removedPapersScopus / globalVar.papersScopus))})
+                      'Percentage': ("%.1f%%" % (percentajeRemovedPapersScopus))})
 
   logWriter.writerow({'Info': 'Duplicated documents with different cited by',
                       'Number':("%d" % (duplicatedWithDifferentCitedBy)),
-                      'Percentage': ("%.1f%%" % (100.0 * duplicatedWithDifferentCitedBy /duplicatedPapersCount))})
+                      'Percentage': ("%.1f%%" % (percenDuplicatedWithDifferentCitedBy))})
 
   globalVar.totalAfterRemDupl = len(paperDict)
   logWriter.writerow({'Info': 'Total papers after rem. dupl.', 'Number': str(globalVar.totalAfterRemDupl)})
