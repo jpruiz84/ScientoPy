@@ -70,6 +70,12 @@ help="Only look on the first topic, for example to analize only the first aurhor
 parser.add_argument("--title",
 help="To put a title in your graph", type=str)
 
+parser.add_argument("--plotWidth", type=int, default=globalVar.DEFAULT_PLOT_WIDTH,
+                    help="Set the plot width size in inches, default: " + str(globalVar.DEFAULT_PLOT_WIDTH))
+
+parser.add_argument("--plotHeight", type=int, default=globalVar.DEFAULT_PLOT_HEIGHT,
+                    help="Set the plot heigth size in inches, default: " + str(globalVar.DEFAULT_PLOT_HEIGHT))
+
 parser.add_argument("--trend",
 help="Get the top trending topics, with the highest last AGR", action="store_true")
 
@@ -434,9 +440,13 @@ if not args.noPlot:
     plt.axis("off")
   elif args.bar:
     graphUtils.plot_bar_horizontal(plt, topicResults)
+    fig = plt.gcf()
+    fig.set_size_inches(args.plotWidth, args.plotHeight)
 
   else:
     graphUtils.plot_time_line(plt, topicResults, False)
+    fig = plt.gcf()
+    fig.set_size_inches(args.plotWidth, args.plotHeight)
 
     if args.yLog:
       plt.yscale('log')

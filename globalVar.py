@@ -10,6 +10,11 @@ if sys.version_info[0] < 3:
 DEFAULT_START_YEAR = 2000
 DEFAULT_END_YEAR = 2018
 
+# Default plot width and height in inches
+DEFAULT_PLOT_WIDTH = 6.4
+DEFAULT_PLOT_HEIGHT = 4.8
+
+
 # Default output files and folders
 PREPROCESS_LOG_FILE = "PreprocessedBrief.tsv"
 OUTPUT_FILE_NAME = "papersPreprocessed.tsv"
