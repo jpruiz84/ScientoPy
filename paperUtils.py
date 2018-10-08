@@ -97,6 +97,7 @@ def openFileToDict(ifile, papersDict):
       paperIn["institution"] = ""
       paperIn["institutionWithCountry"] = ""
       paperIn["bothKeywords"] = ""
+      paperIn["authorFull"] = ""
 
       for col in row:
         if colnum >= len(header):
@@ -107,6 +108,7 @@ def openFileToDict(ifile, papersDict):
 
         # Scopus fields
         if headerCol == "Authors": paperIn["author"] = col
+        if headerCol == "Authors": paperIn["authorFull"] = col
         if headerCol == "Title": paperIn["title"] = col
         if headerCol == "Year": paperIn["year"] = col
         if headerCol == "Source title": paperIn["sourceTitle"] = col
@@ -143,7 +145,7 @@ def openFileToDict(ifile, papersDict):
         #if headerCol == "BA": paperIn[""] = col    # Book authors
         if headerCol == "BE": paperIn["editors"] = col    # Editors
         #if headerCol == "GP": paperIn[""] = col    # Book Group Author(s)
-        #if headerCol == "AF": paperIn[""] = col    # Authors full name
+        if headerCol == "AF": paperIn["authorFull"] = col    # Authors full name
         #if headerCol == "BF": paperIn[""] = col    # Book Authors Full Name
         #if headerCol == "CA": paperIn[""] = col    # Group authors
         if headerCol == "TI": paperIn["title"] = col    # Document Title
@@ -217,6 +219,7 @@ def openFileToDict(ifile, papersDict):
         if headerCol == "institutionWithCountry": paperIn["institutionWithCountry"] = col
         if headerCol == "bothKeywords": paperIn["bothKeywords"] = col
         if headerCol == "emailHost": paperIn["emailHost"] = col
+        if headerCol == "authorFull": paperIn["authorFull"] = col
 
         colnum += 1
 

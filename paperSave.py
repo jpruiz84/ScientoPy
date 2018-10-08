@@ -37,7 +37,7 @@ def saveResults(paperDict, outFileName):
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
                   "Abbreviated Source Title", "Document Type", "Source", "EID", "Subject", "duplicatedIn",
-                  "country", "emailHost", "institution", "institutionWithCountry"]
+                  "country", "emailHost", "institution", "institutionWithCountry", "authorFull"]
 
 
 
@@ -54,6 +54,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["Year"] = paperOut["year"]
       paperDicWrite["Source title"] = paperOut["sourceTitle"]
       paperDicWrite["Volume"] = paperOut["volume"]
+      paperDicWrite["authorFull"] = paperOut["authorFull"]
       paperDicWrite["Issue"] = paperOut["issue"]
       paperDicWrite["Art. No."] = paperOut["artNo"]
       paperDicWrite["Page start"] = paperOut["pageSart"]
