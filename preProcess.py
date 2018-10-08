@@ -115,8 +115,12 @@ if sys.version_info[0] < 3:
 
 # Create output folders if not exist
 if not os.path.exists(globalVar.DATA_OUT_FOLDER):
-    os.makedirs(globalVar.DATA_OUT_FOLDER)
- 
+  os.makedirs(globalVar.DATA_OUT_FOLDER)
+if not os.path.exists(globalVar.GRAPHS_OUT_FOLDER):
+  os.makedirs(globalVar.GRAPHS_OUT_FOLDER)
+if not os.path.exists(globalVar.RESULTS_FOLDER):
+  os.makedirs(globalVar.RESULTS_FOLDER)
+
 # Init variables
 paperDict = []
 globalVar.loadedPapers = 0

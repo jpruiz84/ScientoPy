@@ -396,3 +396,83 @@ def zero_to_nan2(values, valuesAcum):
         values[i] = float('nan')
 
 
+
+# This is the used for parametric right now ********************************************
+def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear):
+  #my_dpi = 80
+  #plt.figure(figsize=(640 / my_dpi, 380 / my_dpi), dpi=my_dpi)
+
+
+  # Plot AGR and Total papers
+  ax = plt.subplot(111)
+  xArray = []
+  yArray = []
+  count = 0
+  legendArray = []
+  for topicItem in topicResults:
+    x = topicItem["PapersTotal"]
+    y = topicItem["agr"]
+    legendArray.append(topicItem["name"])
+
+
+    xArray.append(x)
+    yArray.append(y)
+
+    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"], zorder=(3 + len(topicResults) - count),
+               s=100, c=globalVar.COLORS_TAB10[count], edgecolors=globalVar.COLORS_TAB10[count])
+
+    count += 1
+
+  plt.xlabel("Total number of documents")
+  plt.ylabel("Average Growth Rate, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+
+
+  # Calculate plot max and min
+  xMax = max(xArray)
+  yMax = max(yArray)
+
+  xMin = min(xArray)
+  yMin = min(yArray)
+
+  yMaxMax = max([abs(yMax), abs(yMin)])
+
+  # Set the graphs limits
+  if (xMin > 0):
+    plt.xlim(xmin=0)
+  else:
+    plt.xlim(xmin=-0.5)
+
+  plt.xlim(xmax=xMax * 1.2)
+
+  if (yMin > 0):
+    plt.ylim(ymin=0)
+  else:
+    plt.ylim(ymin=yMin - (yMaxMax * 0.1))
+
+  if (yMax > 0):
+    plt.ylim(ymax=yMax + (yMaxMax * 0.1))
+  else:
+    plt.ylim(ymax=yMax * (-1.2))
+
+
+  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10), zorder = 1)
+
+  # Plot the X dash line
+  xmin, xmax = ax.get_xlim()
+  dashed_line = Line2D([xmin, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
+                       transform=ax.transData)
+  ax.lines.append(dashed_line)
+
+  # Plot the Y dash line
+  ymin, ymax = ax.get_ylim()
+  dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
+                       transform=ax.transData)
+  ax.lines.append(dashed_line)
+
+
+  ax.ticklabel_format(useOffset=False)
+  legend1 = ax.legend(fontsize=10, scatterpoints=1, loc = "center left", bbox_to_anchor = (1, 0.5), numpoints = 1)
+
+
+
+

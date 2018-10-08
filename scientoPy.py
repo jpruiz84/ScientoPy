@@ -64,7 +64,10 @@ parser.add_argument("--noPlot",
 help="Do not plot the results, use for large amount of topics", action="store_true")
 
 parser.add_argument("--parametric",
-help="Graph on Y the number of publications, and on X accomulative number of citations", action="store_true")
+help="Graph accomulative number of publications evolution, and graph the AGR and the h-index", action="store_true")
+
+parser.add_argument("--parametric2",
+help="Graph on X the total number of publications, and on Y the AGR", action="store_true")
 
 parser.add_argument("--wordCloud",
 help="Graph the topics word cloud", action="store_true")
@@ -430,10 +433,19 @@ if len(topicResults) > 100 and not args.wordCloud:
 if not args.noPlot:
 
   if args.parametric:
-
     graphUtils.plot_parametric(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex])
     if args.yLog:
+      plt.yscale('symlog')
+
+  elif args.parametric2:
+    graphUtils.plot_parametric2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex])
+    fig = plt.gcf()
+    fig.set_size_inches(args.plotWidth, args.plotHeight)
+    if args.yLog:
       plt.yscale('log')
+
+
+
 
   elif args.wordCloud:
     from wordcloud import WordCloud
