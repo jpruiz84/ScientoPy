@@ -255,6 +255,7 @@ def openFileToDict(ifile, papersDict):
 
         # Remove accents in author
         paperIn["author"] = unidecode.unidecode(paperIn["author"])
+        paperIn["authorFull"] = unidecode.unidecode(paperIn["authorFull"])
 
 
       # Extract country, institution and institutionWithCountry from affilation
