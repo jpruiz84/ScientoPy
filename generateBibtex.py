@@ -98,12 +98,23 @@ OUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_BIB)
 ofile = open(OUT_FILE, 'w', encoding='utf-8')
 
 for paper in papersToBib:
+  authorsNames = paper["authorFull"]
+  if paper["dataBase"] == "Scopus":
+    authorsNames = authorsNames.replace(",", ";")
+    authorsNames = authorsNames.split(";")
+    authorsNames = [x.strip() for x in authorsNames]
+    authorsNames = [x.replace(" ", ", ") for x in authorsNames]
+    authorsNames = " and ".join(authorsNames)
+
+  if paper["dataBase"] == "WoS":
+    authorsNames = authorsNames.replace("; ", " and ")
+
   if(paper["documentType"] in ["Article", "Review", "Article in Press"]):
     ofile.write('@Article{%s,\n' % paper["eid"])
-    ofile.write('  author \t=\t"%s",\n' % paper["authorFull"].replace("; "," and ").replace(", "," and "))
+    ofile.write('  author \t=\t"%s",\n' % authorsNames)
     ofile.write('  title\t\t=\t"%s",\n' % paper["title"].replace("&", "\&"))
-    ofile.write('  journal \t=\t"%s",\n' % paper["sourceTitle"])
-    ofile.write('  numpages\t=\t"%s",\n' % paper["pageCount"])
+    ofile.write('  journal \t=\t"%s",\n' % paper["sourceTitle"].replace("&","\&"))
+    ofile.write('  numpages\t=\t"%s",\n' % paper["pageCount"].replace("&","\&"))
     ofile.write('  volume \t=\t"%s",\n' % paper["volume"])
     ofile.write('  number \t=\t"%s",\n' % paper["artNo"])
     ofile.write('  year \t\t=\t"%s",\n' % paper["year"])
@@ -112,10 +123,10 @@ for paper in papersToBib:
 
   if (paper["documentType"] in ["Conference Paper", "Proceedings Paper",]):
     ofile.write('@Inproceedings{%s,\n'% paper["eid"])
-    ofile.write('  author \t=\t"%s",\n' % paper["authorFull"].replace("; "," and ").replace(", "," and "))
+    ofile.write('  author \t=\t"%s",\n' % authorsNames)
     ofile.write('  title\t\t=\t"%s",\n' % paper["title"].replace("&","\&"))
-    ofile.write('  booktitle \t=\t"%s",\n' % paper["sourceTitle"])
-    ofile.write('  publisher \t=\t"%s",\n' % paper["publisher"])
+    ofile.write('  booktitle \t=\t"%s",\n' % paper["sourceTitle"].replace("&","\&"))
+    ofile.write('  publisher \t=\t"%s",\n' % paper["publisher"].replace("&","\&"))
     ofile.write('  numpages\t=\t"%s",\n' % paper["pageCount"])
     ofile.write('  volume \t=\t"%s",\n' % paper["volume"])
     ofile.write('  number \t=\t"%s",\n' % paper["artNo"])
