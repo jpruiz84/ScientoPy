@@ -89,7 +89,7 @@ for paper in papersDict:
   #count += 1
   if paper["eid"] in citesDict.keys():
     if citesDict[paper["eid"]] == False:
-      print("******* Added paper: %s" % paper["title"])
+      print("Added paper(%s): %s" % (paper["eid"], paper["title"]))
       papersToBib.append(paper)
       citesDict[paper["eid"]] = True
 
@@ -109,7 +109,7 @@ for paper in papersToBib:
   if paper["dataBase"] == "WoS":
     authorsNames = authorsNames.replace("; ", " and ")
 
-  if(paper["documentType"] in ["Article", "Review", "Article in Press"]):
+  if(paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
     ofile.write('@Article{%s,\n' % paper["eid"])
     ofile.write('  author \t=\t"%s",\n' % authorsNames)
     ofile.write('  title\t\t=\t"%s",\n' % paper["title"].replace("&", "\&"))
@@ -121,7 +121,7 @@ for paper in papersToBib:
     ofile.write('  doi \t\t=\t"%s",\n' % paper["doi"])
     ofile.write('}\n\n\n')
 
-  if (paper["documentType"] in ["Conference Paper", "Proceedings Paper",]):
+  if (paper["documentType"].split(";")[0] in ["Conference Paper", "Proceedings Paper",]):
     ofile.write('@Inproceedings{%s,\n'% paper["eid"])
     ofile.write('  author \t=\t"%s",\n' % authorsNames)
     ofile.write('  title\t\t=\t"%s",\n' % paper["title"].replace("&","\&"))
@@ -136,3 +136,5 @@ for paper in papersToBib:
 
 print("Total references generated: %d" % len(papersToBib))
 ofile.close()
+
+
