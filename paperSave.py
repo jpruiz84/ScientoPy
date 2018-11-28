@@ -182,8 +182,8 @@ def saveExtendedResults(topicResults, criterionIn):
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.tsv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
-  fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "EID2", "Year", "Title", "Authors",
-                "Author keywords", "Both keywords", "Abstract", "Country", "Document type"]
+  fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "Year", "Title", "Abstract", "Document type",  "Authors",
+                "Author keywords", "Both keywords", "Country", "EID2",]
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
