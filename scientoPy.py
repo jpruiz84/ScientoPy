@@ -425,7 +425,7 @@ if filterSubTopic != "":
 
 
 # If more than 100 results and not wordCloud, no plot.
-if len(topicResults) > 100 and not args.wordCloud:
+if len(topicResults) > 100 and not args.wordCloud and not args.noPlot:
   args.noPlot = True
   print("\nERROR: Not allowed to graph more than 100 results")
 
@@ -433,19 +433,12 @@ if len(topicResults) > 100 and not args.wordCloud:
 if not args.noPlot:
 
   if args.parametric:
-    graphUtils.plot_parametric(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex])
-    if args.yLog:
-      plt.yscale('symlog')
+    graphUtils.plot_parametric(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
 
   elif args.parametric2:
-    graphUtils.plot_parametric2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex])
+    graphUtils.plot_parametric2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
     fig = plt.gcf()
     fig.set_size_inches(args.plotWidth, args.plotHeight)
-    if args.yLog:
-      plt.yscale('log')
-
-
-
 
   elif args.wordCloud:
     from wordcloud import WordCloud
@@ -483,6 +476,7 @@ if not args.noPlot:
 
     if args.yLog:
       plt.yscale('log')
+      plt.gca().yaxis.set_minor_formatter(mticker.ScalarFormatter())
 
     if args.pYear:
       plt.ylabel("% of documents per year")

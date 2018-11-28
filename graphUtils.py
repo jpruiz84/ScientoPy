@@ -27,6 +27,7 @@ from matplotlib import gridspec
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 from scipy import interpolate
 from matplotlib.ticker import MaxNLocator
+import matplotlib.ticker
 
 LABEL_COLOR = "#dddddd"
 BUBBLE_COLOR = "#63d065"
@@ -191,7 +192,7 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
 
 
 # This is the used for parametric right now ********************************************
-def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
+def plot_parametric(plt, topicResults, agrStartYear, agrEndYear, args):
   my_dpi = 80
   plt.figure(figsize=(800 / my_dpi, 500 / my_dpi), dpi=my_dpi)
 
@@ -321,9 +322,14 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear):
   legend1.get_frame().set_alpha(1)
   legend1.set_zorder(count)  # put the legend on top
 
-
   plt.xlabel("Publication year")
   plt.ylabel("Accumulative Number of Documents")
+
+  if args.yLog:
+    ax0.set_yscale("symlog", nonposy='clip')
+    ax0.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax0.get_yaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
+
 
 def plot_time_line(plt, topicResults, fSecundary):
     count = 0
@@ -398,7 +404,7 @@ def zero_to_nan2(values, valuesAcum):
 
 
 # This is the used for parametric right now ********************************************
-def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear):
+def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear, args):
   #my_dpi = 80
   #plt.figure(figsize=(640 / my_dpi, 380 / my_dpi), dpi=my_dpi)
 
@@ -473,6 +479,10 @@ def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear):
   ax.ticklabel_format(useOffset=False)
   legend1 = ax.legend(fontsize=10, scatterpoints=1, loc = "center left", bbox_to_anchor = (1, 0.5), numpoints = 1)
 
+  if args.yLog:
+    ax.set_xscale("symlog", nonposy='clip')
+    ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax.get_xaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
 
 
 
