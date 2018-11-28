@@ -297,7 +297,7 @@ for topics in topicList:
   topicResults.append(topicItem)
 #print(topicResults)
 
-# Find papers within the arguments, and fill the topicResults fileds per year.
+# Find papers within the arguments, and fill the topicResults fields per year.
 print("Calcualting papers sum...")
 # For each paper
 for paper in papersDict:
@@ -341,6 +341,19 @@ for topicItem in topicResults:
       print("")
 
 
+print("Calculating accumulatives...")
+# Extract accumulative
+for topicItem in topicResults:
+  citedAccumValue = 0
+  papersAccumValue = 0
+  for i in range(0,len(topicItem["CitedByCountAccum"])):
+    citedAccumValue += topicItem["CitedByCount"][i]
+    topicItem["CitedByCountAccum"][i] = citedAccumValue
+
+    papersAccumValue += topicItem["PapersCount"][i]
+    topicItem["PapersCountAccum"][i] = papersAccumValue
+
+
 print("Calculating AGR...")
 # Extract the Average Growth Rate (AGR)
 for topicItem in topicResults:
@@ -357,18 +370,6 @@ for topicItem in topicResults:
 
   topicItem["agr"] = \
     np.mean(topicItem["PapersCountRate"][startYearIndex : endYearIndex + 1])
-
-print("Calculating accumulatives...")
-# Extract accumulative
-for topicItem in topicResults:
-  citedAccumValue = 0
-  papersAccumValue = 0
-  for i in range(0,len(topicItem["CitedByCountAccum"])):
-    citedAccumValue += topicItem["CitedByCount"][i]
-    topicItem["CitedByCountAccum"][i] = citedAccumValue
-
-    papersAccumValue += topicItem["PapersCount"][i]
-    topicItem["PapersCountAccum"][i] = papersAccumValue
 
 # Scale in percentage per year
 if args.pYear:
