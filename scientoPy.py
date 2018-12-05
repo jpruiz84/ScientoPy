@@ -40,34 +40,43 @@ validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexK
 parser.add_argument("criterion", choices = validCriterion,
 help="Select the criterion to analyze the topics")
 
-parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to present, default 10")
+parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to analyze, default 10")
 
 parser.add_argument("-s", "--start", type=int, default=0,  help="To filter the \
-first elements, ex to filter the first 2 elements on the list use -s 2")
+first top elements. Ex: to filter the first 2 elements on the list use -s 2")
 
-parser.add_argument("-t", "--topics", help='Topics to analyze according to critera,\n\r'
-                                           'ex: authorKeywords -t "internet of things,iot;bluetooth" \n\r'
+parser.add_argument("-t", "--topics", help='Specific topics to analyze according to critera,\n\r'
+                                           'group topics with "," and divide the topics with ";" \n\r'
+                                           'Ex: authorKeywords -t "internet of things, iot; bluetooth" \n\r'
                                            'asterisk wildcard ex: authorKeywords -t "device*"')
 
-parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,  help="Start year to limit the search")
-parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,  help="End year year to limit the search")
+parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,
+                    help="Start year to limit the search, default: " + str(globalVar.DEFAULT_START_YEAR))
+parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,
+                    help="End year year to limit the search, default: " + str(globalVar.DEFAULT_END_YEAR))
 
-parser.add_argument("--savePlot", default="",  help='Save plot to a file, ex: --savePlot "topKeywords.eps"')
+parser.add_argument("--savePlot", default="",  help='Save plot to a file. Ex: --savePlot "topKeywords.eps"')
 
 parser.add_argument("--pYear", 
-help="To present the results in percentage per year", action="store_true")
+help="To present the results in percentage per year instead of documents per year", action="store_true")
 
 parser.add_argument("--yLog", 
-help="Plot with Y axes on log scale", action="store_true")
+help="Plot Y axes in log scale", action="store_true")
 
 parser.add_argument("--noPlot",
 help="Do not plot the results, use for large amount of topics", action="store_true")
 
 parser.add_argument("--parametric",
-help="Graph accomulative number of publications evolution, and graph the AGR and the h-index", action="store_true")
+help="Graph accomulative number of publications evolution, and graph the average documents per year vs the h-index",
+                    action="store_true")
 
 parser.add_argument("--parametric2",
-help="Graph on X the total number of publications, and on Y the AGR", action="store_true")
+help="Graph on X the total number of publications, and on Y the average documents per year", action="store_true")
+
+parser.add_argument("--agrForGraph",
+help="To use average growth rate (AGR) instead average documents per year (ADY) in parametric and parametric 2 graphs",
+                    action="store_true")
+
 
 parser.add_argument("--wordCloud",
 help="Graph the topics word cloud", action="store_true")
@@ -77,21 +86,17 @@ parser.add_argument("--wordCloudMask", default="",  help='PNG mask image to use 
 parser.add_argument("--bar",
 help="Graph the topics in horizontal bar", action="store_true")
 
-
-parser.add_argument("--useCitedBy",
-help="Short the top results based on times cited", action="store_true")
-
-parser.add_argument("--agrWidth",
-help="Average growth rate window width in years",type=int, default=1)
+parser.add_argument("--windowWidth",
+help="Window width in years for average growth rate and average documents per year",type=int, default=1)
 
 parser.add_argument("-r", "--previousResults",
 help="Analyze based on the previous results", action="store_true")
 
 parser.add_argument("--onlyFirst",
-help="Only look on the first topic, for example to analize only the first aurhor name, "
+help="Only look in the first elemet of the topic, for example to analyze only the first author name, "
      "country or institution", action="store_true")
 
-parser.add_argument("--title",
+parser.add_argument("--graphTitle",
 help="To put a title in your graph", type=str)
 
 parser.add_argument("--plotWidth", type=int, default=globalVar.DEFAULT_PLOT_WIDTH,
@@ -101,10 +106,11 @@ parser.add_argument("--plotHeight", type=int, default=globalVar.DEFAULT_PLOT_HEI
                     help="Set the plot heigth size in inches, default: " + str(globalVar.DEFAULT_PLOT_HEIGHT))
 
 parser.add_argument("--trend",
-help="Get the top trending topics, with the highest last AGR", action="store_true")
+help="Get and graph the top trending topics, with the highest average growth rate", action="store_true")
 
-parser.add_argument("-f", "--filter", help='Filter to be aplied on a sub topic.'
+parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.'
   'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
+
 
 
 
@@ -135,7 +141,7 @@ if args.previousResults:
 else:
   INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
-# Start paper list empty
+# Start the list empty
 papersDict = []
 papersDictOut = []
 topicList = []
@@ -166,7 +172,9 @@ papersDict = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDict))
 print("Total papers in range (%s - %s): %s" %
       (args.startYear, args.endYear , len(papersDict)))
 
+# If no papers in the range exit
 if(len(papersDict) == 0):
+  print("ERROR: no papers found in the range.")
   exit()
 
 # Find the number of total papers per year
@@ -210,11 +218,12 @@ else:
 
   topicDic = {}
 
-  # For each paper
+  # For each paper, get the full topicDic
   for paper in papersDict:
-    # For each item in paper critera
+
+    # For each item in paper criteria
     for item in paper[args.criterion].split(";"):
-      # Strip paper item and upper
+      # Strip paper item and upper case
       item = item.strip()
       item = item.upper()
 
@@ -227,33 +236,24 @@ else:
         if(item.split(",")[1].strip().upper() != filterSubTopic.upper()):
           continue
 
-      try:
-        # If topic already in topicDic
-        if item in topicDic:
-          if not args.useCitedBy:
-            topicDic[item] += 1
-          else:
-            topicDic[item] += int(paper["citedBy"])
-        # If topic is not in topicDic
-        else:
-          if not args.useCitedBy:
-            topicDic[item] = 1
-          else:
-            topicDic[item] = int(paper["citedBy"])
-      # If citedBy has problem converting to int
-      except:
-        noWithCitedBy = 1
+      # If topic already in topicDic
+      if item in topicDic:
+        topicDic[item] += 1
+      # If topic is not in topicDic, create this in topicDic
+      else:
+        topicDic[item] = 1
+
       # If onlyFirst, only keep the firt processesing
       if args.onlyFirst:
         break
 
+  # If trending analysis, the top topic list to analyse is bigger
   if args.trend:
     topicListLength = globalVar.TOP_TREND_SIZE
     startList = 0
   else:
     topicListLength = args.length
     startList = args.start
-
 
   # Get the top topics by the topDic count
   topTopcis = sorted(topicDic.items(),
@@ -267,16 +267,15 @@ else:
     print("\nFINISHED : There is not results with your inputs criteria or filter")
     exit()
 
-#print("Topic list:")
-#print(topicList)
+# print("Topic list:")
+# print(topicList)
 
-# Create results data dictionary list and init fields
+# Create a dictonary in topicResults list per element in topicList
 topicResults = []
-
-# Create a dictonary in topicResults per element in topicList
 for topics in topicList:
   topicItem = {}
   topicItem["upperName"] = topics[0].upper()
+  # If the topic name was given as an argument, use the first one given, else keep empty to use the first one found
   if args.topics:
     topicItem["name"] = topics[0]
   else:
@@ -287,6 +286,7 @@ for topics in topicList:
   topicItem["PapersCountAccum"] = [0] * len(yearArray)
   topicItem["PapersCountRate"] = [0] * len(yearArray)
   topicItem["PapersTotal"] = 0
+  topicItem["AverageDocPerYear"] = 0
   topicItem["CitedByCount"] = [0] * len(yearArray)
   topicItem["CitedByCountAccum"] = [0] * len(yearArray)
   topicItem["CitedByTotal"] = 0
@@ -295,20 +295,23 @@ for topics in topicList:
   topicItem["hIndex"] = 0
   topicItem["agr"] = 0
   topicResults.append(topicItem)
-#print(topicResults)
 
 # Find papers within the arguments, and fill the topicResults fields per year.
-print("Calcualting papers sum...")
+print("Calculating papers sum...")
 # For each paper
 for paper in papersDict:
-  # For each item in paper critera
+  # For each item in paper criteria
   for item in paper[args.criterion].split(";"):
     # Strip paper item and upper
     item = item.strip()
     itemUp = item.upper()
 
+    # For each topic in topic results
     for topicItem in topicResults:
+      # for each sub topic
       for subTopic in topicItem["allTopics"]:
+
+        # Check if the sub topic match with the paper item
         if args.topics and "*" in subTopic.upper():
           subTopicRegex = subTopic.upper().replace("*", ".*")
           p = re.compile(subTopicRegex)
@@ -316,19 +319,24 @@ for paper in papersDict:
         else:
           match = subTopic.upper() == itemUp
 
+        # If match, sum it to the topicItem
         if match:
           yearIndex = topicItem["year"].index(int(paper["year"]))
           topicItem["PapersCount"][yearIndex] += 1
           topicItem["PapersTotal"] += 1
           topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
           topicItem["CitedByTotal"] += int(paper["citedBy"])
+          # If no name in the topicItem, put the first one that was found
           if topicItem["name"] == "":
             topicItem["name"] = item
           topicItem["papers"].append(paper)
+          # Add the matched paper to the papersDictOut
           papersDictOut.append(paper)
 
+          # If it is a new topic, add it to topicItem["topicsFound"]
           if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
             topicItem["topicsFound"].append(item)
+    # Only process one (the first one) if args.onlyFirst
     if args.onlyFirst:
       break
 
@@ -341,7 +349,7 @@ for topicItem in topicResults:
       print("")
 
 
-print("Calculating accumulatives...")
+print("Calculating accumulative ...")
 # Extract accumulative
 for topicItem in topicResults:
   citedAccumValue = 0
@@ -354,7 +362,7 @@ for topicItem in topicResults:
     topicItem["PapersCountAccum"][i] = papersAccumValue
 
 
-print("Calculating AGR...")
+print("Calculating Average Growth Rate (AGR)...")
 # Extract the Average Growth Rate (AGR)
 for topicItem in topicResults:
   # Calculate rates
@@ -366,10 +374,21 @@ for topicItem in topicResults:
 
   # Calculate AGR from rates
   endYearIndex = len(topicItem["year"]) - 1
-  startYearIndex = endYearIndex - args.agrWidth
+  startYearIndex = endYearIndex - args.windowWidth
 
   topicItem["agr"] = \
     np.mean(topicItem["PapersCountRate"][startYearIndex : endYearIndex + 1])
+
+print("Calculating Average Documents per Year (ADY)...")
+# Extract the Average Documents per Year (ADY)
+for topicItem in topicResults:
+
+  # Calculate ADY from rates
+  endYearIndex = len(topicItem["year"]) - 1
+  startYearIndex = endYearIndex - args.windowWidth
+
+  topicItem["AverageDocPerYear"] = \
+    np.mean(topicItem["PapersCount"][startYearIndex : endYearIndex + 1])
 
 # Scale in percentage per year
 if args.pYear:
@@ -400,30 +419,34 @@ for topicItem in topicResults:
     topicItem["hIndex"] = hIndex
 
 
-# Sort by PapersTotal, then by hIndex, and then by name.
+# Sort by PapersTotal, and then by name.
 topicResults = sorted(topicResults, key=lambda x: x["name"], reverse=False)
-topicResults = sorted(topicResults, key=lambda x: int(x["hIndex"]), reverse=True)
 topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
 
+# If trend analysis, sort by agr, and get the first ones
 if args.trend:
   topicResults = sorted(topicResults, key=lambda x: int(x["agr"]), reverse=True)
-  topicResults =  topicResults[args.start:(args.start+args.length)]
+  topicResults = topicResults[args.start:(args.start + args.length)]
 
 # Print top topics
 print("\nTop topics:")
-print("Average Growth Rate period: %d - %d" % (yearArray[startYearIndex], yearArray[endYearIndex]))
-print("Pos. " + args.criterion + ", Total, AGR, h-index")
+print("Average Growth Rate (AGR) and Average Documents per Year (ADY) period: %d - %d\n\r"
+      % (yearArray[startYearIndex], yearArray[endYearIndex]))
+print('-' * 72)
+print("{:<4s}{:<25s}{:>10s}{:>10s}{:>10s}{:>12s}".format("Pos", args.criterion, "Total", "AGR", "ADY", "h-index"))
+print('-' * 72)
 count = 0
 for topicItem in topicResults:
-  print("%s. %s:, %d, %.1f, %d" %
-        (count + 1, topicItem["name"], topicItem["PapersTotal"], topicItem["agr"], topicItem["hIndex"]))
+  print("{:<4d}{:<25s}{:>10d}{:>10.1f}{:>10.1f}{:>10d}".format(
+    count + 1, topicItem["name"], topicItem["PapersTotal"], topicItem["agr"],
+         topicItem["AverageDocPerYear"], topicItem["hIndex"]))
   count += 1
+print('-' * 72)
 print("")
 
 if filterSubTopic != "":
   for topicItem in topicResults:
     topicItem["name"] = topicItem["name"].split(",")[0].strip()
-
 
 # If more than 100 results and not wordCloud, no plot.
 if len(topicResults) > 100 and not args.wordCloud and not args.noPlot:
@@ -432,7 +455,6 @@ if len(topicResults) > 100 and not args.wordCloud and not args.noPlot:
 
 # Plot
 if not args.noPlot:
-
   if args.parametric:
     graphUtils.plot_parametric(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
 
@@ -453,9 +475,6 @@ if not args.noPlot:
     else:
       wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10")
 
-
-
-
     freq = {}
     for topicItem in topicResults:
       freq[topicItem["name"]] = topicItem["PapersTotal"]
@@ -465,6 +484,7 @@ if not args.noPlot:
     # show
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
+
   elif args.bar:
     graphUtils.plot_bar_horizontal(plt, topicResults)
     fig = plt.gcf()
@@ -482,8 +502,8 @@ if not args.noPlot:
     if args.pYear:
       plt.ylabel("% of documents per year")
 
-  if args.title:
-    plt.title(args.title)
+  if args.graphTitle:
+    plt.title(args.graphTitle)
 
   plt.tight_layout()
 

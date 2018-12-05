@@ -205,7 +205,10 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear, args):
   count = 0
   for topicItem in topicResults:
     x = topicItem["hIndex"]
-    y = topicItem["agr"]
+    if not args.agrForGraph:
+      y = topicItem["AverageDocPerYear"]
+    else:
+      y = topicItem["agr"]
 
     xArray.append(x)
     yArray.append(y)
@@ -216,8 +219,10 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear, args):
     count += 1
 
   plt.xlabel("h-Index")
-  plt.ylabel("Average Growth Rate, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
-
+  if not args.agrForGraph:
+    plt.ylabel("Average documents per year, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+  else:
+    plt.ylabel("Average growth rate (AGR), %d - %d (doc./year)" % (agrStartYear, agrEndYear))
 
   # Calculate plot max and min
   xMax = max(xArray)
@@ -417,7 +422,10 @@ def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear, args):
   legendArray = []
   for topicItem in topicResults:
     x = topicItem["PapersTotal"]
-    y = topicItem["agr"]
+    if not args.agrForGraph:
+      y = topicItem["AverageDocPerYear"]
+    else:
+      y = topicItem["agr"]
     legendArray.append(topicItem["name"])
 
 
@@ -430,8 +438,10 @@ def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear, args):
     count += 1
 
   plt.xlabel("Total number of documents")
-  plt.ylabel("Average Growth Rate, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
-
+  if not args.agrForGraph:
+    plt.ylabel("Average documents per year, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+  else:
+    plt.ylabel("Average growth rate (AGR), %d - %d (doc./year)" % (agrStartYear, agrEndYear))
 
   # Calculate plot max and min
   xMax = max(xArray)
