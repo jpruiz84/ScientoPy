@@ -44,6 +44,10 @@ parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,
 
 parser.add_argument("--savePlot", default="",  help='Save the pre processed graph to a file, ex: --savePlot "preProcessed.eps"')
 
+parser.add_argument("--graphTitle",
+help="To put a title in the output graph", type=str)
+
+
 args = parser.parse_args()
 
 
@@ -210,6 +214,9 @@ os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME))
 
 # Close log file
 logFile.close()
+
+if args.graphTitle:
+  plt.title(args.graphTitle)
 
 # Saving graph
 plt.tight_layout()

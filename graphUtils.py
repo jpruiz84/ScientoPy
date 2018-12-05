@@ -193,7 +193,7 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
 
 # This is the used for parametric right now ********************************************
 def plot_parametric(plt, topicResults, agrStartYear, agrEndYear, args):
-  my_dpi = 80
+  my_dpi = 100
   plt.figure(figsize=(800 / my_dpi, 500 / my_dpi), dpi=my_dpi)
 
   gs = gridspec.GridSpec(1, 2, width_ratios=[5, 3])
@@ -323,7 +323,7 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear, args):
 
 
   ax0.ticklabel_format(useOffset=False)
-  legend1 = ax0.legend(legendArray, loc=2, fontsize=12, scatterpoints=1)
+  legend1 = ax0.legend(legendArray, loc=2, fontsize=10, scatterpoints=1)
   legend1.get_frame().set_alpha(1)
   legend1.set_zorder(count)  # put the legend on top
 

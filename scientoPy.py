@@ -97,7 +97,7 @@ help="Only look in the first elemet of the topic, for example to analyze only th
      "country or institution", action="store_true")
 
 parser.add_argument("--graphTitle",
-help="To put a title in your graph", type=str)
+help="To put a title in the output graph", type=str)
 
 parser.add_argument("--plotWidth", type=int, default=globalVar.DEFAULT_PLOT_WIDTH,
                     help="Set the plot width size in inches, default: " + str(globalVar.DEFAULT_PLOT_WIDTH))
@@ -503,9 +503,12 @@ if not args.noPlot:
       plt.ylabel("% of documents per year")
 
   if args.graphTitle:
-    plt.title(args.graphTitle)
-
-  plt.tight_layout()
+    #plt.title(args.graphTitle)
+    fig = plt.gcf()
+    fig.suptitle(args.graphTitle, y=1.0)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+  else:
+    plt.tight_layout()
 
   if args.savePlot == "":
     plt.show()
