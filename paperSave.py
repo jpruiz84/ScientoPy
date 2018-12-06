@@ -22,6 +22,7 @@
 import csv
 import globalVar
 import os
+import math
 
 def saveResults(paperDict, outFileName):
 
@@ -148,7 +149,7 @@ def saveTopResults(topicResults, criterionIn):
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".tsv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
-  fieldnames = ["Pos.", criterion, "Total", "hIndex"] + list(topicResults[0]["year"])
+  fieldnames = ["Pos.", criterion, "Total", "AGR", "ADY", "hIndex"] + list(topicResults[0]["year"])
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -161,10 +162,15 @@ def saveTopResults(topicResults, criterionIn):
     dictWriter["Pos."] = str(count)
     dictWriter[criterion] = value["name"]
     dictWriter["Total"] = value["PapersTotal"]
+    dictWriter["AGR"] = value["agr"]
+    dictWriter["ADY"] = value["AverageDocPerYear"]
     dictWriter["hIndex"] = value["hIndex"]
     for yearItem in value["year"]:
       index = value["year"].index(yearItem)
-      dictWriter[yearItem] = value["PapersCount"][index]
+      if math.isnan(value["PapersCount"][index]):
+        dictWriter[yearItem] = 0
+      else:
+        dictWriter[yearItem] = value["PapersCount"][index]
 
     count += 1
     writer.writerow(dictWriter)
