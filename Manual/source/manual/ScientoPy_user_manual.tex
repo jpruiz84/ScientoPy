@@ -53,6 +53,9 @@
 }
 
 
+\usepackage{dirtree}
+
+
 
 \makeatletter 
   \renewcommand\verbatim@font{\normalfont\ttfamily\color{blue}}
@@ -91,6 +94,10 @@
 \textbf{By}: \> Juan Pablo Ruiz Rosero			\> \texttt{jpabloruiz@unicauca.edu.co} \\
 \end{tabbing}
 
+
+\tableofcontents
+
+\newpage
 
 \section{Installation}
 
@@ -291,43 +298,66 @@ $AGR$ = Average growth rate;
 To find the top trending topics on author's keywords criterion, you can run the following script: 
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --trend
+python3 scientoPy.py authorKeywords --trend --windowWidth 2 --startYear 2006 --endYear 2017 \
+-l 10 -s 3 --parametric --agrForGraph --graphTitle "Internet of things trending topics"
 \end{verbatim}
 
-This script will find the top 200 topics, then it calculates the AGR for the last 3 periods of 2 years. Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 10 AGR topics with the corresponding value per period is graphed. 
+This script will find the top 200 topics, then it calculates the AGR for the last 2 years (--windowWidth 2). Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 3 AGR topics are filtered (they correspond to the keyword Internet of thigs), and the next 10 topics are garph in a parametric plot. 
 
-\subsection{Finding trending documents}
+\subsection{Analysis based on the previous results}
 
-The trending documents are the new publications with more citations. To find these publications, this script scale the citations of each publication based on a Year Scale (YS). The YS put more weight to newer publications, by the following Equation \eqref{equation_YS}:
-\begin{equation}
-YS_i = e^{(i - Y_s)*Y_w}
-\label{equation_YS}
-\end{equation}
-where:\\
-$YS_i$ = Year scale for year $i$;
-$i$ = Year;
-$Y_s$ = Start year;
-$Y_w$ = Year weight, default 1;
-\newline
-
-The number of citations (citat) of each document is multiplicated by the corresponding $YS_i$, to get the Scaled citations (S. cita). The final publications list is sorted by this Scaled citations. The following script find the trending documents as described:
+ScientoPy generates an output file with all the results documents from the last run script. For example if we run the command:
 
 \begin{verbatim}
-python3 topCited.py
+python3 scientoPy.py country -t "Canada" --noPlot
 \end{verbatim}
 
-This script, graphs the all documents citations sum per year, this citations sum scaled (multiplied by the $YS_i$), and the scale per year ($YS_i$). If you want to put more weight to the citation than publication year, you can reduce the Year weight. On the other way, if you want to put more weight to the newer papers you can increase the year weight. The recommended values are between 0 to 5. For example, to get the most cited document of the last years you can run the script with a Year weight of 1.75:
+ScientoPy will create an output file with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on the previous results, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
 
 \begin{verbatim}
-python3 topCited.py --yearWeight 1.75
+python3 scientoPy.py authorKeywords -r --bar --graphTitle "Internet of things in Canada top author keywords" 
 \end{verbatim}
 
-
-The full document list results is saved in the file \verb|ScientoPy/results/topCitedPapers.tsv|. This script have more options like, save the plot on a file, or others. For more information you can run:
+We will obtain the top author keywords from papers where the author affiliation correspond to Canada. Also, we can run the following command to know which are the countries that have more common documents with Canada:
 
 \begin{verbatim}
-python3 topCited.py -h
+python3 scientoPy.py country -r --bar --graphTitle "Internet of things in Canada top colaboration countries" 
 \end{verbatim}
+
+\textbf{Note:} the ScientoPy's documents output file is only generated when the \verb|-r| or \verb|--previousResults| is not used. In that way, if we run many times a ScientoPy command with that option, the documents output file will not overwritten.
+
+\newpage
+\subsection{Output files and directories}
+
+After run some ScientoPy commands or after run all the commands by executing the \verb|exampleGenerateGraphs.sh| script you will find the following folder and files structure:
+
+\dirtree{% This % is required
+	.1 ScientoPy.
+	.2 dataInExample.
+	.2 dataPre.
+	.3 papersPreprocessed.tsv.
+	.3 PreprocessedBrief.tsv.
+	.2 graphs.
+	.2 Manual.
+	.2 results.
+	.3 AuthorKeywords.tsv.
+	.3 AuthorKeywords\_extended.tsv.
+	.3 papersPreprocessed.tsv.
+}
+
+\begin{itemize}
+	\item \textbf{dataInExample: } contains Scopus and WoS example data set for the search criteria "Internet of things" AND "Gateway" downloaded in 27 November 2017. This is the input example for preprocess script.
+	\item \textbf{dataPre: } output folder for the preprocess results, and input folder for scientoPy script.
+	\item \textbf{papersPreprocessed.tsv: } preprocesed papers data with all input documents integrated, filtered, and duplication removed. This is the input file that scientoPy script uses.
+	\item \textbf{PreprocessedBrief.tsv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
+	\item \textbf{graphs: } graphs output folder for preprocess and scientoPy scripts
+	\item \textbf{Manual: } folder with the pdf manual and example paper with scientoPy commands highlighted used for graph and tables generation. 
+	\item \textbf{results: } output folder for scientoPy result output files
+	\item \textbf{AuthorKeywords.tsv: } scientoPy output file for the selected criterion (in this case authorKeywords) that shows the top topics or the custom  topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the h-index, and the documents per each year. 
+	\item \textbf{AuthorKeywords\_extended.tsv: } scientoPy output file for the selected criterion that show the top or custom topics with the documents related to each one.
+	\item \textbf{papersPreprocessed.tsv: } inside the results folder, this file contains the output papers from the last scientoPy used script. This is used as an input for scientoPy script when it use the option \verb|-r| or \verb|--previousResults|
+\end{itemize}
+
 
 \section{ScientoPy graph types}
 
@@ -345,7 +375,8 @@ ScientoPy has 4 different ways to graph the results described on Table \ref{tabl
 	Time line      & No argument & Graphs the number of documents of each topic vs the publication year \\
 	Horizontal bars  & \verb|--bar| & Graphs the total number of documents of each topic in horizontal bars \\
 	Word cloud     & \verb|--wordCloud| & Generate a word cloud based on the topic total number of publications \\
-	Parametric     & \verb|--parametric| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the AGR vs the h-index\\
+	Parametric     & \verb|--parametric| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the h-index\\
+	Parametric2    & \verb|--parametric| & The total number of documents vs average papers per year\\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 \end{table}
@@ -355,7 +386,8 @@ Below are showed some examples of these graphs types, with the used command.
 \subsection{Time line graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 \
+--graphTitle "Internet of things top author keywords" 
 \end{verbatim}
 
 \begin{center}
@@ -366,7 +398,8 @@ python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016
 \subsection{Horizontal bars graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar \
+--graphTitle "Internet of things top author keywords"
 \end{verbatim}
 
 \begin{center}
@@ -377,11 +410,23 @@ python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar
 \subsection{Parametric graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric \
+--graphTitle "Internet of things top author keywords"
 \end{verbatim}
 
 \begin{center}
 	\includegraphics[width=0.75\textwidth]{./figures/graph_parametric.eps}
+\end{center}
+
+\subsection{Parametric2 graph}
+Command: 
+\begin{verbatim}
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric2 \
+--graphTitle "Internet of things top author keywords"
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_parametric2.eps}
 \end{center}
 
 
@@ -394,11 +439,6 @@ python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 -l 500 --wor
 \begin{center}
 	\includegraphics[width=0.75\textwidth]{./figures/graph_word_cloud.eps}
 \end{center}
-
-
-
-
-
 
 
 \end{document}  
