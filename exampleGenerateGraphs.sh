@@ -6,17 +6,20 @@ python3 preProcess.py dataInExample --graphTitle "Pre process results" --savePlo
 # Example time line graph
 python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --graphTitle "Internet of things top author keywords" --savePlot "graph_timeline.eps"
 
-# Example time line graph
+# Example horizontal bar graph
 python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar --graphTitle "Internet of things top author keywords" --savePlot "graph_bar.eps"
 
-# Example time line graph
+# Example word cloud graph
 python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 -l 500 --wordCloud --savePlot "graph_word_cloud.eps"
 
-# Example time line graph
+# Example parametric graph
 python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric --graphTitle "Internet of things top author keywords" --savePlot "graph_parametric.eps"
 
+# Example parametric2 graph
+python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric2 --graphTitle "Internet of things top author keywords" --savePlot "graph_parametric2.eps"
 
-python3 scientoPy.py authorKeywords --startYear 2006 --endYear 2017 -l 10 -s 8 --trend --parametric --agrForGraph --graphTitle "Internet of things trending topics" --savePlot "trend_parametric.eps"
+# Example top trending topics and graph
+python3 scientoPy.py authorKeywords --trend --windowWidth 2 --startYear 2006 --endYear 2017 -l 10 -s 3 --parametric --agrForGraph --graphTitle "Internet of things trending topics" --savePlot "trend_parametric.eps"
 
 
 # Top topics:
@@ -45,13 +48,18 @@ python3 scientoPy.py authorKeywords -t "CoAP,Constrained Application Protocol;MQ
 
 # Countries:
 python3 scientoPy.py country --startYear 2002 -l 7 --pYear --graphTitle "Internet of things top countries" --savePlot "countries.eps"
-#python3 scientoPy.py country -t "Colombia;Argentina;Ecuador"
+
 
 # Authors:
 python3 scientoPy.py author --startYear 2006 -l 5 --graphTitle "Internet of things top authors" --savePlot "authors.eps"
 
 # Subject
 python3 scientoPy.py subject --startYear 2006 -l 7 --graphTitle "Internet of things top subjects" --savePlot "subject.eps"
+
+# Analysis based on the previous results
+python3 scientoPy.py country -t "Canada" --noPlot
+python3 scientoPy.py authorKeywords -r --bar --graphTitle "Internet of things in Canada top author keywords" --savePlot "canada_top_authors_keywords.eps"
+python3 scientoPy.py country -r --bar --graphTitle "Internet of things in Canada top colaboration countries" --savePlot "canada_top_colaboration_countries.eps"
 
 
 # Parametric *************************
