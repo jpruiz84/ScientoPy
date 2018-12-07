@@ -22,3 +22,6 @@
 
 # Include eps figures
 !graphs/*.eps
+!symmetry-logo.eps
+!logo-ccby.eps
+!logo-mdpi.eps
