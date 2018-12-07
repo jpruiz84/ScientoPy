@@ -1,4 +1,5 @@
 \documentclass[10pt,letterpaper]{article}
+\renewcommand\familydefault{\sfdefault}
 
 \usepackage{amsmath}
 
@@ -12,8 +13,8 @@
 \usepackage{upquote,textcomp}
 
 %%% Margins
-\oddsidemargin=-1.00cm
-\textwidth=18.0cm
+\oddsidemargin=-0.50cm
+\textwidth=17.0cm
 \topmargin=-2.54cm
 \headheight=0cm
 \headsep=2cm
@@ -61,39 +62,25 @@
   \renewcommand\verbatim@font{\normalfont\ttfamily\color{blue}}
 \makeatother
 
+\parindent=0mm 			% Remove french indent
+\setlength{\parskip}{0.3cm}
+
 
 \title{ScientoPy - User Manual}
 
 
 \begin{document}
 
-% To fix ' no curve quotation mark
-\newcommand\upquote[1]{\textquotesingle#1\textquotesingle}
 
 
-
-\begin{tabular}{p{1.3in}p{6in}}
-\begin{flushleft}
-\noindent \includegraphics[bb = 2.5cm 0cm 10.29cm 9.78cm,scale=0.2]{./figures/escudoUnicacuaSolo.eps}
-\end{flushleft} &
-\normalsize \vspace{0.6cm}
-\textsc{Universidad del Cauca}
-
-\textsc{Facultad de Ingeniería Electrónica y Telecomunicaciones}
-
-%\textsc{Maestría en Ingeniería Telemática}
-\textsc{Programa de Ingeniería Electrónica y Telecomunicaciones}
-
-%\textsc{Desarrollo de aplicaciones para plataformas ubicuas}
-
-\textsc{ScientoPy v 1.3.3, Installation and User Manual}
-
-\end{tabular}
-\begin{tabbing}
-\hspace{3cm} \= \hspace{5.3cm} \= \hspace{6cm} \kill
-\textbf{By}: \> Juan Pablo Ruiz Rosero			\> \texttt{jpabloruiz@unicauca.edu.co} \\
-\end{tabbing}
-
+\begin{center}
+{\LARGE \textbf{ScientoPy v 1.3.5, Installation and User Manual\\}}
+\vspace*{0.5cm}
+\includegraphics[scale=0.2]{./figures/escudoUnicacuaSolo.eps}\\
+\vspace*{0.5cm}
+Juan Pablo Ruiz Rosero\\
+\texttt{jpabloruiz@unicauca.edu.co} \\
+\end{center}
 
 \tableofcontents
 
@@ -115,11 +102,10 @@ sudo apt-get install python3 python3-tk python3-pip
 python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
 \end{verbatim}
 
-\textbf{IMPORTANT NOTE:} If you have installed Python 2 and Python 3, run the previous and the following commands with \verb|python3| instead \verb|python|
 \end{enumerate}
 
 \section{Download the bibliometric dataset}
-This section describes how to download the proper dataset from Scopus and WoS. Define a search criteria, it will be used for Scopus and WoS. For this guide we are using: "Internet of thing"  AND  "Gateway" 
+This section describes how to download the proper dataset from Scopus and WoS. Define a search criteria that will be used for Scopus and WoS. For this guide and for the example dataset we are using: "Internet of thing"  AND  "Gateway" 
 
 \subsection{Download the dataset from Scopus}
 \begin{enumerate}
@@ -156,11 +142,11 @@ This section describes how to download the proper dataset from Scopus and WoS. D
 
 \section{Running the ScientoPy scripts}
 
-This section describes the ScientoPy scripts to pre-process and process the bibliometric dataset. 
+This section describes the ScientoPy scripts to preprocess and analyze the bibliometric dataset. 
 
-\subsection{Pre-processing}
+\subsection{Preprocessing}
 
-First we need to pre-process the downloaded dataset. This pre-process joint all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To pre-process the example dataset (Internet of things papers) run this command inside ScientoPy folder: 
+First we need to preprocess the downloaded dataset. This preprocess merge all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To preprocess the example dataset ("Internet of thing"  AND  "Gateway" located in dataInExample) run this command inside ScientoPy folder: 
 \begin{verbatim}
 python3 preProcess.py dataInExample
 \end{verbatim}
@@ -171,43 +157,43 @@ Then, inside the folder \verb|ScientoPy/dataPre| you will find the following fil
 \item \textbf{PreprocessedBrief.tsv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
 \end{itemize}
 
-To find more options of the pre-processing script you can run:
+To find more options of the preprocessing script you can run:
 \begin{verbatim}
 python3 preProcess.py -h
 \end{verbatim}
 
 \subsection{Extract the top topics}
 
-With this script you can extract the top topics of a selected criterion. The ScientoPy script criterion are described on Table \ref{table_criterion}:
+With this script you can extract the top topics of a selected criterion. The ScientoPy criterion are described on Table \ref{table_criterion}:
 
 \begin{table}[h]
 	\centering
 	\caption{ScientoPy criterion description}
 	\label{table_criterion}
 	
-	
-	\begin{tabular}{ p{4cm} p{10cm}}
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabular}{p{3.5cm} p{10cm}}
 	\hline\noalign{\smallskip}
 	Criteron       & Description                             \\
 	\noalign{\smallskip}\hline\noalign{\smallskip}                                                                         
-	author        & Authors last name and first name initial                                                                       \\
-	sourceTitle    & Publication or journal name                                                                                    \\
-	subject        & Research areas, only from WoS documents                                                                        \\
-	authorKeywords & Author keywords                                                                                                \\
-	indexKeywords  & Keywords generated by the index, from WoS \textit\{Keyword Plus\}, and from Scopus \textit\{Indexed keywords\} \\
-	bothKeywords   & AuthorKeywords and indexKeywords are used for this search                                                      \\
-	abstract       & Document abstract, for use with pre-defined topics and asterisk wildcard\\
-	documentType   & Type of document                                                                                               \\
-	dataBase       & Database where the document was extracted (WoS or Scopus)                                                      \\
-	country        & Country extracted from authors affiliations                                                                    \\
-	institution    & Institution extracted from authors affiliations                                                                \\
-	institutionWithCountry    & Institution with country extracted from authors affiliations                                        \\
+	\textbf{author}         & Authors last name and first name initial                                                                       \\
+	\textbf{sourceTitle}    & Publication or journal name                                                                                    \\
+	\textbf{subject}        & Research areas, only from WoS documents                                                                        \\
+	\textbf{authorKeywords} & Author keywords                                                                                                \\
+	\textbf{indexKeywords}  & Keywords generated by the index, from WoS \textit\{Keyword Plus\}, and from Scopus \textit\{Indexed keywords\} \\
+	\textbf{bothKeywords}   & AuthorKeywords and indexKeywords are used for this search                                                      \\
+	\textbf{abstract}       & Document abstract, for use with pre-defined topics and asterisk wildcard\\
+	\textbf{documentType}   & Type of document                                                                                               \\
+	\textbf{dataBase}       & Database where the document was extracted (WoS or Scopus)                                                      \\
+	\textbf{country}        & Country extracted from authors affiliations                                                                    \\
+	\textbf{institution}    & Institution extracted from authors affiliations                                                                \\
+	\textbf{institutionWithCountry}    & Institution with country extracted from authors affiliations                                        \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 	
 \end{table}
 
-For example, to find the top author's keywords you can run this script: 
+For example, to find the top author keywords you can run this script: 
 
 \begin{verbatim}
 python3 scientoPy.py authorKeywords
@@ -221,9 +207,9 @@ This script have more options like, save the plot on a file, or increase the num
 python3 scientoPy.py -h
 \end{verbatim}
 
-\subsection{Analyze pre-defined topics inside a criterion}
+\subsection{Analyze custom topics inside a criterion}
 
-If you want to make an analysis of pre-defined topics, such as the two selected countries papers evolution, you can use the \verb|scientoPy.py| script, with the option \verb|-t|, to specify the topics: 
+If you want to make an analysis of custom topics, such as the two selected countries papers evolution, you can use the \verb|scientoPy.py| script, with the option \verb|-t|, to specify the topics: 
 
 \begin{verbatim}
 python3 scientoPy.py country -t "United States; Brazil"
@@ -235,24 +221,24 @@ python3 scientoPy.py authorKeywords -t \
 "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION"
 \end{verbatim}
 
-\textbf{Note: } The command is very long, for that reason the command was divided by "\". If you have problems in Windows, remove the "\" and put the command in one single line.
+\textbf{Note: } The command is very long, for that reason the command was divided by \verb|\|. If you have problems in Windows, remove the "\" and put the command in one single line.
 
 \subsubsection{Asterisk (*) wildcard}
 
-You can use the asterisk wildcar to find phrases or words which starts or ends with the letters that you have inserted. For example, if you want to find "device", "devices", and "device integration", enter the following command: 
+You can use the asterisk wildcard to find phrases or words which starts or ends with the letters that you have inserted. For example, if you want to find "device", "devices", and "device integration", enter the following command: 
 
 \begin{verbatim}
 python3 scientoPy.py authorKeywords -t "device*"
 \end{verbatim}
 
-ScientoPy will print the topic found for the previous search using the asterisk wildcard: 
+ScientoPy will print the topics found for the previous search: 
 
 \begin{verbatim}
 Topics found for device*:
 "devices;device management;Device Interactions;Device objectification;Device;Device integration"
 \end{verbatim}
 
-You can use this information, to find the statics of each specific topic found, like this: 
+You can use this information, to analyze each specific topic found, like this: 
 
 \begin{verbatim}
 python3 scientoPy.py authorKeywords -t \
@@ -260,10 +246,9 @@ python3 scientoPy.py authorKeywords -t \
 \end{verbatim}
 
 
-
 \subsubsection{Parametric plot}
 
-Also, you can see the results with a parametric graphic (add \verb|--parametirc|). This option plot the accumulative documents, average growth rate (AGR), and h-Index of the selected topic, for example:
+Also, you can see the results with a parametric graphic (add \verb|--parametirc|). This option plot the accumulative documents, average documents per year (ADY), and h-Index of the selected topic, for example:
 
 \begin{verbatim}
 python3 scientoPy.py authorKeywords -t \
@@ -280,57 +265,56 @@ python3 scientoPy.py -h
 \subsection{Finding trending topics}
 
 This script finds the top trending topics based on the higher average growth rate (AGR) over the others. The AGR is calculated on two years periods, using the following Equation \eqref{equation_AGR}:
-\begin{equation}
+\begin{equation*}
 AGR = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i - P_{i-1}}{(Y_e - Y_s)+1},  
 \label{equation_AGR}
-\end{equation}
-where:\\
-$AGR$ = Average growth rate;
-	
-	$Y_s$ = Start year;
-	
-	$Y_e$ = End year;
-	
-	$P_i$ = Number of publications on year $i.$
-\newline
+\end{equation*}
 
+\setlength{\leftskip}{5cm}
+\hspace*{-1cm}where:\\
+$AGR$ = Average growth rate;\\
+$Y_s$ = Start year;\\
+$Y_e$ = End year;\\
+$P_i$ = Number of publications on year $i.$\\
 
-To find the top trending topics on author's keywords criterion, you can run the following script: 
+\setlength{\leftskip}{0pt}
+
+To find the top trending topics on author keywords criterion, you can run the following script: 
 
 \begin{verbatim}
 python3 scientoPy.py authorKeywords --trend --windowWidth 2 --startYear 2006 --endYear 2017 \
 -l 10 -s 3 --parametric --agrForGraph --graphTitle "Internet of things trending topics"
 \end{verbatim}
 
-This script will find the top 200 topics, then it calculates the AGR for the last 2 years (--windowWidth 2). Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 3 AGR topics are filtered (they correspond to the keyword Internet of thigs), and the next 10 topics are garph in a parametric plot. 
+This script will find the top 200 topics, then it calculates the AGR for the last 2 years (\verb|--windowWidth 2|). Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 3 AGR topics are filtered (they correspond to the keyword Internet of things), and the next 10 topics are garph in a parametric plot. 
 
 \subsection{Analysis based on the previous results}
 
-ScientoPy generates an output file with all the results documents from the last run script. For example if we run the command:
+ScientoPy generates an output file with all the output documents from the last run script. For example if we run the command:
 
 \begin{verbatim}
 python3 scientoPy.py country -t "Canada" --noPlot
 \end{verbatim}
 
-ScientoPy will create an output file with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on the previous results, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
+ScientoPy will create a documents output file (\verb|results/papersPreprocessed.tsv|) with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on this, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords -r --bar --graphTitle "Internet of things in Canada top author keywords" 
+python3 scientoPy.py authorKeywords -r --bar
 \end{verbatim}
 
-We will obtain the top author keywords from papers where the author affiliation correspond to Canada. Also, we can run the following command to know which are the countries that have more common documents with Canada:
+we will obtain the top author keywords from papers where the author affiliation correspond to Canada. Also, we can run the following command to know which are the countries that have more common documents with Canada:
 
 \begin{verbatim}
-python3 scientoPy.py country -r --bar --graphTitle "Internet of things in Canada top colaboration countries" 
+python3 scientoPy.py country -r --bar
 \end{verbatim}
 
-\textbf{Note:} the ScientoPy's documents output file is only generated when the \verb|-r| or \verb|--previousResults| is not used. In that way, if we run many times a ScientoPy command with that option, the documents output file will not overwritten.
+\textbf{Note:} the ScientoPy documents output file is only generated when the \verb|-r| or \verb|--previousResults| is not used. In that way, if we run many times a ScientoPy command with this option, the documents output file will not overwritten.
 
-\newpage
 \subsection{Output files and directories}
 
-After run some ScientoPy commands or after run all the commands by executing the \verb|exampleGenerateGraphs.sh| script you will find the following folder and files structure:
+After run some ScientoPy commands or after run all the example commands by executing the script \verb|exampleGenerateGraphs.sh| you will find the following folder and files structure:
 
+\vspace*{0.5cm}
 \dirtree{% This % is required
 	.1 ScientoPy.
 	.2 dataInExample.
@@ -345,29 +329,41 @@ After run some ScientoPy commands or after run all the commands by executing the
 	.3 papersPreprocessed.tsv.
 }
 
+These folders and output files are described bellow:
+
 \begin{itemize}
 	\item \textbf{dataInExample: } contains Scopus and WoS example data set for the search criteria "Internet of things" AND "Gateway" downloaded in 27 November 2017. This is the input example for preprocess script.
+	
 	\item \textbf{dataPre: } output folder for the preprocess results, and input folder for scientoPy script.
-	\item \textbf{papersPreprocessed.tsv: } preprocesed papers data with all input documents integrated, filtered, and duplication removed. This is the input file that scientoPy script uses.
+	
+	\item \textbf{papersPreprocessed.tsv: } preprocesed papers data with all input documents merged, filtered, and duplication removed. This is the input file that scientoPy script uses.
+	
 	\item \textbf{PreprocessedBrief.tsv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
+	
 	\item \textbf{graphs: } graphs output folder for preprocess and scientoPy scripts
+	
 	\item \textbf{Manual: } folder with the pdf manual and example paper with scientoPy commands highlighted used for graph and tables generation. 
+	
 	\item \textbf{results: } output folder for scientoPy result output files
+	
 	\item \textbf{AuthorKeywords.tsv: } scientoPy output file for the selected criterion (in this case authorKeywords) that shows the top topics or the custom  topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the h-index, and the documents per each year. 
-	\item \textbf{AuthorKeywords\_extended.tsv: } scientoPy output file for the selected criterion that show the top or custom topics with the documents related to each one.
+	
+	\item \textbf{AuthorKeywords\_extended.tsv: } scientoPy output file for the selected criterion (in this case authorKeywords) that show the top or custom topics with the documents related to each one.
+	
 	\item \textbf{papersPreprocessed.tsv: } inside the results folder, this file contains the output papers from the last scientoPy used script. This is used as an input for scientoPy script when it use the option \verb|-r| or \verb|--previousResults|
 \end{itemize}
 
-
+\newpage
 \section{ScientoPy graph types}
 
-ScientoPy has 4 different ways to graph the results described on Table \ref{table_graph_types}.
+ScientoPy has 5 different ways to graph the results described on Table \ref{table_graph_types}.
 
-\begin{table}[h]
+\begin{table}[!h]
 	\centering
 	\caption{ScientoPy output graphs types}
 	\label{table_graph_types}
 
+	\renewcommand{\arraystretch}{1.5}
 	\begin{tabular}{ p{4cm} p{3cm} p{10cm}}
 	\hline\noalign{\smallskip}
 	Graph type     &  Argument & Description                             \\
@@ -376,12 +372,12 @@ ScientoPy has 4 different ways to graph the results described on Table \ref{tabl
 	Horizontal bars  & \verb|--bar| & Graphs the total number of documents of each topic in horizontal bars \\
 	Word cloud     & \verb|--wordCloud| & Generate a word cloud based on the topic total number of publications \\
 	Parametric     & \verb|--parametric| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the h-index\\
-	Parametric2    & \verb|--parametric| & The total number of documents vs average papers per year\\
+	Parametric2    & \verb|--parametric2| & Graphs the total number of documents vs average papers per year\\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 \end{table}
 
-Below are showed some examples of these graphs types, with the used command.
+Below are showed some examples of these graphs types, with the command used.
 
 \subsection{Time line graph}
 Command: 
@@ -406,7 +402,6 @@ python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar \
 	\includegraphics[width=0.5\textwidth]{./figures/graph_bar.eps}
 \end{center}
 
-\newpage
 \subsection{Parametric graph}
 Command: 
 \begin{verbatim}
