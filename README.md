@@ -1,7 +1,6 @@
 # ScientoPy
 
-ScientoPy is a new open-source scientometric tool called ScientoPy. 
-This is a Python script tool specialized in temporal scientometric analysis. 
+ScientoPy is a open-source Python based scientometric analysis tool.
 It has the following main characteristics: 
 
  
@@ -16,7 +15,7 @@ It has the following main characteristics:
 - Top topics and specific topics analysis
 - Wildcard topics search
 - Trending topics using the top average growth rate (AGR)
-- Four different visualization graphs: timeline, bar, parametric, and word cloud
+- Five different visualization graphs: timeline, bar, parametric, and word cloud
 
 
 Installation
