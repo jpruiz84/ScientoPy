@@ -115,20 +115,20 @@ def labeled_scatter_plot(data, labels, plt_in):
 
   # Set the graphs limits
   if (xMin > 0):
-    plt_in.xlim(xmin=0)
+    plt_in.xlim(left=0)
   else:
-    plt_in.xlim(xmin=xMin * 1.2)
-  plt_in.xlim(xmax=xMax * 1.2)
+    plt_in.xlim(left=xMin * 1.2)
+  plt_in.xlim(right=xMax * 1.2)
 
   if (yMin > 0):
-    plt_in.ylim(ymin=0)
+    plt_in.ylim(bottom=0)
   else:
-    plt_in.ylim(ymin=yMin - (yMax * 0.1))
+    plt_in.ylim(bottom=yMin - (yMax * 0.1))
 
   if (yMax > 0):
-    plt_in.ylim(ymax=yMax * 1.2)
+    plt_in.ylim(top=yMax * 1.2)
   else:
-    plt_in.ylim(ymax=yMax * (-1.2))
+    plt_in.ylim(top=yMax * (-1.2))
 
 
 def labeled_scatter_plot_colors(data, labels, plt_in):
@@ -175,20 +175,20 @@ def labeled_scatter_plot_colors(data, labels, plt_in):
 
   # Set the graphs limits
   if (xMin > 0):
-    plt_in.xlim(xmin=0)
+    plt_in.xlim(left=0)
   else:
-    plt_in.xlim(xmin=xMin * 1.2)
-  plt_in.xlim(xmax=xMax * 1.2)
+    plt_in.xlim(left=xMin * 1.2)
+  plt_in.xlim(right=xMax * 1.2)
 
   if (yMin > 0):
-    plt_in.ylim(ymin=0)
+    plt_in.ylim(bottom=0)
   else:
-    plt_in.ylim(ymin=yMin - (yMax * 0.1))
+    plt_in.ylim(bottom=yMin - (yMax * 0.1))
 
   if (yMax > 0):
-    plt_in.ylim(ymax=yMax * 1.4)
+    plt_in.ylim(top=yMax * 1.4)
   else:
-    plt_in.ylim(ymax=yMax * (-1.2))
+    plt_in.ylim(top=yMax * (-1.2))
 
 
 # This is the used for parametric right now ********************************************
@@ -235,21 +235,21 @@ def plot_parametric(plt, topicResults, agrStartYear, agrEndYear, args):
 
   # Set the graphs limits
   if (xMin > 0):
-    plt.xlim(xmin=0)
+    plt.xlim(left=0)
   else:
-    plt.xlim(xmin=-0.5)
+    plt.xlim(left=-0.5)
 
-  plt.xlim(xmax=xMax * 1.2)
+  plt.xlim(right=xMax * 1.2)
 
   if (yMin > 0):
-    plt.ylim(ymin=0)
+    plt.ylim(bottom=0)
   else:
-    plt.ylim(ymin=yMin - (yMaxMax * 0.1))
+    plt.ylim(bottom=yMin - (yMaxMax * 0.1))
 
   if (yMax > 0):
-    plt.ylim(ymax=yMax + (yMaxMax * 0.1))
+    plt.ylim(top=yMax + (yMaxMax * 0.1))
   else:
-    plt.ylim(ymax=yMax * (-1.2))
+    plt.ylim(top=yMax * (-1.2))
 
 
   ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10), zorder = 1)
@@ -454,21 +454,21 @@ def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear, args):
 
   # Set the graphs limits
   if (xMin > 0):
-    plt.xlim(xmin=0)
+    plt.xlim(left=0)
   else:
-    plt.xlim(xmin=-0.5)
+    plt.xlim(left=-0.5)
 
-  plt.xlim(xmax=xMax * 1.2)
+  plt.xlim(right=xMax * 1.2)
 
   if (yMin > 0):
-    plt.ylim(ymin=0)
+    plt.ylim(bottom=0)
   else:
-    plt.ylim(ymin=yMin - (yMaxMax * 0.1))
+    plt.ylim(bottom=yMin - (yMaxMax * 0.1))
 
   if (yMax > 0):
-    plt.ylim(ymax=yMax + (yMaxMax * 0.1))
+    plt.ylim(top=yMax + (yMaxMax * 0.1))
   else:
-    plt.ylim(ymax=yMax * (-1.2))
+    plt.ylim(top=yMax * (-1.2))
 
 
   ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10), zorder = 1)
