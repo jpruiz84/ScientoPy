@@ -28,8 +28,8 @@ if sys.version_info[0] < 3:
   exit()
 
 # Default start and end year
-DEFAULT_START_YEAR = 2000
-DEFAULT_END_YEAR = 2018
+DEFAULT_START_YEAR = 1990
+DEFAULT_END_YEAR = 2019
 
 # Default plot width and height in inches
 DEFAULT_PLOT_WIDTH = 6.4
