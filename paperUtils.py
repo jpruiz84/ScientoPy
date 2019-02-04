@@ -474,6 +474,7 @@ def removeDuplicates(paperDict, logWriter):
  
   print("Removing duplicates...")
 
+  countMatch2 = 0
   # Run on paper list
   for i in range(0, len(paperDict)):
 
@@ -489,6 +490,11 @@ def removeDuplicates(paperDict, logWriter):
       # Compare first author last name and titleB in uppercase
       match = (paperDict[i]["author"].split(" ")[0].upper() == paperDict[i+1]["author"].split(" ")[0].upper())
       match &=  (paperDict[i]["titleB"] == paperDict[i+1]["titleB"])
+
+      match2 = (paperDict[i]["year"] != paperDict[i + 1]["year"]) & match
+      if (match2 == True):
+        countMatch2 += 1
+        print(countMatch2)
 
       # If the criterion match
       if(match == True):
@@ -563,15 +569,15 @@ def removeDuplicates(paperDict, logWriter):
   logWriter.writerow({'Info': ''})
   logWriter.writerow({'Info': 'Duplication removal statics'})
 
-  logWriter.writerow({'Info': 'Duplicated papers found',
+  logWriter.writerow({'Info': 'Total duplicated papers found',
                       'Number':("%d" % (duplicatedPapersCount)),
                       'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
 
-  logWriter.writerow({'Info': 'Removed papers WoS',
+  logWriter.writerow({'Info': 'Removed duplicated papers from WoS',
                       'Number':("%d" % (removedPapersWoS)),
                       'Percentage': ("%.1f%%" % (percentajeRemovedPapersWoS))})
 
-  logWriter.writerow({'Info': 'Removed papers Scopus',
+  logWriter.writerow({'Info': 'Removed duplicated papers from Scopus',
                       'Number':("%d" % (removedPapersScopus)),
                       'Percentage': ("%.1f%%" % (percentajeRemovedPapersScopus))})
 

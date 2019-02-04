@@ -151,14 +151,14 @@ logWriter.writeheader()
 
 globalVar.OriginalTotalPapers = len(paperDict)
 logWriter.writerow({'Info': '***** Original data *****'})
-logWriter.writerow({'Info': 'Loaded papers', 'Number' : str(globalVar.loadedPapers)})
+logWriter.writerow({'Info': 'Total loaded papers', 'Number' : str(globalVar.loadedPapers)})
 
-logWriter.writerow({'Info': 'Omitted papers',
+logWriter.writerow({'Info': 'Omitted papers by document type',
                     'Number': ("%d" % (globalVar.omitedPapers)),
                     'Percentage': ("%.1f%%" % (100.0 * globalVar.omitedPapers / globalVar.loadedPapers))})
 
 
-logWriter.writerow({'Info': 'Total papers', 'Number' : str(globalVar.OriginalTotalPapers)})
+logWriter.writerow({'Info': 'Total papers after omitted papers removed', 'Number' : str(globalVar.OriginalTotalPapers)})
 logWriter.writerow({'Info': 'Papers from WoS',
                     'Number': ("%d" % (globalVar.papersWoS)),
                     'Percentage': ("%.1f%%" % (100.0 * globalVar.papersWoS / globalVar.OriginalTotalPapers))})
@@ -182,7 +182,7 @@ grapPreprocess(plt, paperDict, True)
 if args.noRemDupl:
   paperDict = paperUtils.removeDuplicates(paperDict, logWriter)
   logWriter.writerow({'Info': ''})
-  logWriter.writerow({'Info': 'After duplication removal'})
+  logWriter.writerow({'Info': 'Output papers after duplication removal filter'})
   paperUtils.sourcesStatics(paperDict, logWriter)
 
   grapPreprocess(plt, paperDict, False)
@@ -195,7 +195,7 @@ papersDictYear = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDic
 
 totalPapersInRagne = len(papersDictYear)
 
-print("Total papers in range (%s - %s): %s" %
+print("Output papers in range %s - %s: %s" %
       (args.startYear, args.endYear , totalPapersInRagne))
 
 if(totalPapersInRagne > 0):
@@ -203,7 +203,7 @@ if(totalPapersInRagne > 0):
 else:
   totalPapersInRagnePercentaje = 100.0
 
-logWriter.writerow({'Info': "Total papers in range (%s - %s)" % (args.startYear, args.endYear),
+logWriter.writerow({'Info': "Output papers in years range (%s - %s)" % (args.startYear, args.endYear),
                     'Number': ("%d" % (totalPapersInRagne)),
                     'Percentage': ("%.1f%%" % totalPapersInRagnePercentaje)})
 
