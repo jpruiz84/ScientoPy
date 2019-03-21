@@ -1,11 +1,12 @@
 # Ignore everything
-*
+/*
+
 
 # But not these files...
 !.gitignore
 !*.py
 !*.md
 !LICENSE.txt
-exampleGenerateGraphs.sh
+!exampleGenerateGraphs.sh
+!/dataInExample
 
-!dataInExample\*
