@@ -143,6 +143,12 @@ for file in os.listdir(os.path.join(args.dataInFolder, '')):
 # Filter papers with invalid year
 paperDict = list(filter(lambda x: x["year"].isdigit(), paperDict))
 
+
+if(globalVar.loadedPapers == 0):
+  print("ERROR: 0 documents found from " + os.path.join(args.dataInFolder, ''))
+  print("")
+  exit()
+
 # Open the file to write the preprocessing log in CSV
 logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
 fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]

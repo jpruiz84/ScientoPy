@@ -467,6 +467,10 @@ def removeDuplicates(paperDict, logWriter):
   # Remove whitespace at the end and start of the tile
   for paper in paperDict:
     paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["title"].upper()).strip()
+    paper["titleB"] = re.sub("[^a-zA-Z0-9]+", "",  paper["titleB"])
+    paper["firstAuthorLastName"] = re.sub(";|\.|,", " ", paper["author"]).split(" ")[0]
+    paper["firstAuthorLastName"] = re.sub("[^a-zA-Z]+", "", paper["firstAuthorLastName"])
+
 
   # Short by database, to put WoS first over Scopus, reverse True
   paperDict = sorted(paperDict, key=lambda x: x["dataBase"], reverse=True)
@@ -477,8 +481,6 @@ def removeDuplicates(paperDict, logWriter):
   countMatch2 = 0
   # Run on paper list
   for i in range(0, len(paperDict)):
-
-
     match = True
     while(match):
 
@@ -488,13 +490,15 @@ def removeDuplicates(paperDict, logWriter):
         continue
 
       # Compare first author last name and titleB in uppercase
-      match = (paperDict[i]["author"].split(" ")[0].upper() == paperDict[i+1]["author"].split(" ")[0].upper())
+      match = (paperDict[i]["firstAuthorLastName"] == paperDict[i+1]["firstAuthorLastName"])
       match &=  (paperDict[i]["titleB"] == paperDict[i+1]["titleB"])
+      match |= (paperDict[i]["doi"] == paperDict[i + 1]["doi"])
+
 
       match2 = (paperDict[i]["year"] != paperDict[i + 1]["year"]) & match
       if (match2 == True):
         countMatch2 += 1
-        print(countMatch2)
+        #print(countMatch2)
 
       # If the criterion match
       if(match == True):
