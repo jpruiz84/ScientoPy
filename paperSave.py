@@ -37,7 +37,7 @@ def saveResults(paperDict, outFileName):
                   "Page end", "Page count", "Cited by", "DOI", "Link", "Affiliations", "Authors with affiliations",
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
-                  "Abbreviated Source Title", "Document Type", "Source", "EID", "Subject", "duplicatedIn",
+                  "Abbreviated Source Title", "Document Type", "Source", "Subject", "EID", "duplicatedIn",
                   "country", "emailHost", "institution", "institutionWithCountry", "authorFull"]
 
 
@@ -83,7 +83,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["EID"] = paperOut["eid"]
 
       paperDicWrite["Subject"] = paperOut["subject"]
-      paperDicWrite["duplicatedIn"] = paperOut["duplicatedIn"]
+      paperDicWrite["duplicatedIn"] = ";".join(paperOut["duplicatedIn"])
       paperDicWrite["country"] = paperOut["country"]
       paperDicWrite["emailHost"] = paperOut["emailHost"]
       paperDicWrite["institution"] = paperOut["institution"]
@@ -130,7 +130,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["CR"] = paperOut["cr"]
       paperDicWrite["UT"] = paperOut["eid"]
 
-      paperDicWrite["duplicatedIn"] = paperOut["duplicatedIn"]
+      paperDicWrite["duplicatedIn"] = ";".join(paperOut["duplicatedIn"])
       paperDicWrite["country"] = paperOut["country"]
 
       writer.writerow(paperDicWrite)
@@ -222,7 +222,7 @@ def saveExtendedResults(topicResults, criterionIn):
       dictWriter["Document type"] = paper["documentType"]
       dictWriter["Cited by"] = paper["citedBy"]
       dictWriter["EID"] = paper["eid"]
-      dictWriter["EID2"] = paper["duplicatedIn"]
+      dictWriter["EID2"] = ";".join(paperOut["duplicatedIn"])
       writer.writerow(dictWriter)
 
   ofile.close()

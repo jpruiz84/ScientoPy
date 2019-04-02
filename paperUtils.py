@@ -90,7 +90,7 @@ def openFileToDict(ifile, papersDict):
       paperIn["citedReferences"] = ""
 
       paperIn["citedBy"] = ""
-      paperIn["duplicatedIn"] = ""
+      paperIn["duplicatedIn"] = []
 
       paperIn["emailHost"] = ""
       paperIn["country"] = ""
@@ -213,7 +213,7 @@ def openFileToDict(ifile, papersDict):
 
         # Own fields
         if headerCol == "Subject": paperIn["subject"] = col
-        if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col
+        if headerCol == "duplicatedIn": paperIn["duplicatedIn"] = col.split(";")
         if headerCol == "country": paperIn["country"] = col
         if headerCol == "institution": paperIn["institution"] = col
         if headerCol == "institutionWithCountry": paperIn["institutionWithCountry"] = col
@@ -520,7 +520,11 @@ def removeDuplicates(paperDict, logWriter):
           removedPapersScopus += 1
           
         #print("Removing: %s" % paperDict[i+1]["dataBase"])
-        paperDict[i]["duplicatedIn"] = paperDict[i+1]["eid"]
+
+        # Add all duplicated in duplicatedIn
+        #paperDict[i]["duplicatedIn"] = ";".join(paperDict[i]["duplicatedIn"].split(";") + [paperDict[i+1]["eid"]])
+        #paperDict[i]["duplicatedIn"] += (paperDict[i + 1]["eid"] + ";")
+        paperDict[i]["duplicatedIn"].append(paperDict[i + 1]["eid"])
 
         # Find how many duplicated documents has different cited by
         if int(paperDict[i]["citedBy"]) != int(paperDict[i + 1]["citedBy"]):
