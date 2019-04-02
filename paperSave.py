@@ -222,7 +222,7 @@ def saveExtendedResults(topicResults, criterionIn):
       dictWriter["Document type"] = paper["documentType"]
       dictWriter["Cited by"] = paper["citedBy"]
       dictWriter["EID"] = paper["eid"]
-      dictWriter["EID2"] = ";".join(paperOut["duplicatedIn"])
+      dictWriter["EID2"] = ";".join(paper["duplicatedIn"])
       writer.writerow(dictWriter)
 
   ofile.close()
