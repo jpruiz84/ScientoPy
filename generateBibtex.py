@@ -28,6 +28,7 @@ import numpy as np
 import graphUtils
 import sys
 import re
+import unidecode
 
 import sys
 import os
@@ -108,6 +109,10 @@ for paper in papersToBib:
 
   if paper["dataBase"] == "WoS":
     authorsNames = authorsNames.replace("; ", " and ")
+
+  # Preprocess fields
+  paper["title"] = unidecode.unidecode(paper["title"])
+  paper["sourceTitle"] = unidecode.unidecode(paper["sourceTitle"])
 
   if(paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
     ofile.write('@Article{%s,\n' % paper["eid"])
