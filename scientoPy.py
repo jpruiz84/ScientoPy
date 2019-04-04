@@ -86,6 +86,11 @@ parser.add_argument("--wordCloudMask", default="",  help='PNG mask image to use 
 parser.add_argument("--bar",
 help="Graph the topics in horizontal bar", action="store_true")
 
+
+parser.add_argument("--bar2",
+help="Graph the topics in horizontal bar, with the documents for the last years", action="store_true")
+
+
 parser.add_argument("--windowWidth",
 help="Window width in years for average growth rate and average documents per year",type=int, default=1)
 
@@ -287,6 +292,7 @@ for topics in topicList:
   topicItem["PapersCountRate"] = [0] * len(yearArray)
   topicItem["PapersTotal"] = 0
   topicItem["AverageDocPerYear"] = 0
+  topicItem["PapersInLastYears"] = 0
   topicItem["CitedByCount"] = [0] * len(yearArray)
   topicItem["CitedByCountAccum"] = [0] * len(yearArray)
   topicItem["CitedByTotal"] = 0
@@ -390,6 +396,11 @@ for topicItem in topicResults:
   topicItem["AverageDocPerYear"] = \
     np.mean(topicItem["PapersCount"][startYearIndex : endYearIndex + 1])
 
+  topicItem["PapersInLastYears"] = \
+    np.sum(topicItem["PapersCount"][startYearIndex : endYearIndex + 1])
+
+
+
 # Scale in percentage per year
 if args.pYear:
   for topicItem in topicResults:
@@ -486,9 +497,10 @@ if not args.noPlot:
     plt.axis("off")
 
   elif args.bar:
-    graphUtils.plot_bar_horizontal(plt, topicResults)
-    fig = plt.gcf()
-    fig.set_size_inches(args.plotWidth, args.plotHeight)
+    graphUtils.plot_bar_horizontal(plt, topicResults, args)
+
+  elif args.bar2:
+    graphUtils.plot_bar_horizontal2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
 
   else:
     graphUtils.plot_time_line(plt, topicResults, False)

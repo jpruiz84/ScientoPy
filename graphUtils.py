@@ -370,7 +370,7 @@ def plot_time_line(plt, topicResults, fSecundary):
     plt.xlabel("Publication year")
     plt.ylabel("Number of documents")
 
-def plot_bar_horizontal(plt, topicResults):
+def plot_bar_horizontal(plt, topicResults, args):
   topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
 
   ax = plt.gca()
@@ -387,7 +387,54 @@ def plot_bar_horizontal(plt, topicResults):
   plt.xlabel('Total number of documents')
 
   ax.set_axisbelow(True)
-  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+  ax.xaxis.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+
+  fig = plt.gcf()
+  fig.set_size_inches(args.plotWidth, args.plotHeight)
+
+
+def plot_bar_horizontal2(plt, topicResults, agrStartYear, agrEndYear, args):
+  topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
+
+  ax = plt.gca()
+  itemsName = []
+  x = []
+  x2 = []
+  xPer = []
+  for topicItem in topicResults:
+    x.append(topicItem["PapersTotal"])
+    x2.append(topicItem["PapersInLastYears"])
+    xPer.append(100*topicItem["PapersInLastYears"]/topicItem["PapersTotal"])
+    itemsName.append(topicItem["name"])
+
+  y_pos = np.arange(len(itemsName))[::-1]
+
+  plt.barh(y_pos, x, 0.6, align='center', color=globalVar.COLORS_TAB20[0], edgecolor="black", linewidth=0.5)
+  plt.barh(y_pos, x2, 0.6, align='center', color=globalVar.COLORS_TAB20[2], edgecolor="black", linewidth=0.5, left=np.subtract(x,x2))
+
+  [xmin, xmax] = ax.get_xlim()
+  [ymin, ymax] = ax.get_ylim()
+  ax.set_xlim([xmin, xmax + (xmax-xmin)*0.1])
+
+
+  for xt, xPerT, yt in zip(x, xPer, y_pos):
+    plt.text(xt + (xmax-xmin)*0.03, yt - (ymax-ymin)*0.003, '%d%%' % xPerT, ha='left', va='center')
+
+
+  plt.yticks(y_pos, itemsName)
+  plt.xlabel('Total number of documents, with percentage of documents \npublished in the last years %d - %d' % (agrStartYear, agrEndYear))
+  #plt.ylabel("Average documents per year, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+
+  plt.legend(["Before %d" % agrStartYear, "Between %d - %d" %(agrStartYear, agrEndYear)], loc=4)
+
+  ax.set_axisbelow(True)
+  ax.xaxis.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+
+  fig = plt.gcf()
+  fig.set_size_inches(args.plotWidth, args.plotHeight)
+
+  if(len(itemsName) > 20):
+    fig.set_size_inches(args.plotWidth, args.plotHeight*(len(itemsName)/17))
 
 
 # Keep only the first zero right to left
