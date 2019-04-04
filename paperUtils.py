@@ -245,7 +245,7 @@ def openFileToDict(ifile, papersDict):
       if True:
         # For Scopus author, replace , with ;
         if paperIn["dataBase"] == "Scopus":
-          paperIn["author"] = paperIn["author"].replace(",", ";")
+          paperIn["author"] = paperIn["author"].replace(".,", ";")
 
         # Remove dots from author
         paperIn["author"] = paperIn["author"].replace(".", "")
