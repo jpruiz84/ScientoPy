@@ -466,9 +466,12 @@ def removeDuplicates(paperDict, logWriter):
   # Some journals put this the original language tile in the brakets
   # Remove whitespace at the end and start of the tile
   for paper in paperDict:
-    paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["title"].upper()).strip()
+    paper["titleB"] = unidecode.unidecode(paper["title"])
+    paper["titleB"] = re.sub("[\(\[].*?[\)\]]", "", paper["titleB"].upper()).strip()
     paper["titleB"] = re.sub("[^a-zA-Z0-9]+", "",  paper["titleB"])
-    paper["firstAuthorLastName"] = re.sub(";|\.|,", " ", paper["author"]).split(" ")[0]
+
+    paper["firstAuthorLastName"] = unidecode.unidecode(paper["author"])
+    paper["firstAuthorLastName"] = re.sub(";|\.|,", " ", paper["firstAuthorLastName"]).split(" ")[0]
     paper["firstAuthorLastName"] = re.sub("[^a-zA-Z]+", "", paper["firstAuthorLastName"])
 
 
@@ -492,8 +495,8 @@ def removeDuplicates(paperDict, logWriter):
       # Compare first author last name and titleB in uppercase
       match = (paperDict[i]["firstAuthorLastName"] == paperDict[i+1]["firstAuthorLastName"])
       match &=  (paperDict[i]["titleB"] == paperDict[i+1]["titleB"])
-      match |= (paperDict[i]["doi"] == paperDict[i + 1]["doi"])
-
+      if(paperDict[i]["doi"] != ""):
+        match |= (paperDict[i]["doi"] == paperDict[i + 1]["doi"])
 
       match2 = (paperDict[i]["year"] != paperDict[i + 1]["year"]) & match
       if (match2 == True):
