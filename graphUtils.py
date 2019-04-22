@@ -404,7 +404,7 @@ def plot_bar_horizontal2(plt, topicResults, agrStartYear, agrEndYear, args):
   for topicItem in topicResults:
     x.append(topicItem["PapersTotal"])
     x2.append(topicItem["PapersInLastYears"])
-    xPer.append(100*topicItem["PapersInLastYears"]/topicItem["PapersTotal"])
+    xPer.append(round(topicItem["PerInLastYears"]))
     itemsName.append(topicItem["name"])
 
   y_pos = np.arange(len(itemsName))[::-1]
@@ -543,3 +543,147 @@ def plot_parametric2(plt, topicResults, agrStartYear, agrEndYear, args):
 
 
 
+
+# This is the used for parametric right now ********************************************
+def plot_parametric3(plt, topicResults, agrStartYear, agrEndYear, args):
+  my_dpi = 100
+  plt.figure(figsize=(800 / my_dpi, 500 / my_dpi), dpi=my_dpi)
+
+  gs = gridspec.GridSpec(1, 2, width_ratios=[5, 3])
+
+  # Plot AGR and H-index
+  ax = plt.subplot(gs[1])
+  xArray = []
+  yArray = []
+  count = 0
+  for topicItem in topicResults:
+    x = topicItem["PerInLastYears"]
+    if not args.agrForGraph:
+      y = topicItem["AverageDocPerYear"]
+    else:
+      y = topicItem["agr"]
+
+    xArray.append(x)
+    yArray.append(y)
+
+    ax.scatter(x, y, marker=globalVar.MARKERS[count], label=topicItem["name"], zorder=(3 + len(topicResults) - count),
+               s=200, c=globalVar.COLORS_TAB10[count], edgecolors=globalVar.COLORS_TAB10[count])
+
+    count += 1
+
+  plt.xlabel("Percentage of documents \npublished in the last years %d - %d " % (agrStartYear, agrEndYear))
+  if not args.agrForGraph:
+    plt.ylabel("Average documents per year, %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+  else:
+    plt.ylabel("Average growth rate (AGR), %d - %d (doc./year)" % (agrStartYear, agrEndYear))
+
+  plt.gca().set_xticklabels(['{:.0f}%'.format(x) for x in plt.gca().get_xticks()])
+
+  # Calculate plot max and min
+  xMax = max(xArray)
+  yMax = max(yArray)
+
+  xMin = min(xArray)
+  yMin = min(yArray)
+
+  yMaxMax = max([abs(yMax), abs(yMin)])
+
+  # Set the graphs limits
+  if (xMin > 0):
+    plt.xlim(left=0)
+  else:
+    plt.xlim(left=-0.5)
+
+  plt.xlim(right=xMax * 1.2)
+
+  if (yMin > 0):
+    plt.ylim(bottom=0)
+  else:
+    plt.ylim(bottom=yMin - (yMaxMax * 0.1))
+
+  if (yMax > 0):
+    plt.ylim(top=yMax + (yMaxMax * 0.1))
+  else:
+    plt.ylim(top=yMax * (-1.2))
+
+
+  ax.grid(linestyle='--', linewidth=0.5, dashes=(5, 10), zorder = 1)
+
+  # Plot the X dash line
+  xmin, xmax = ax.get_xlim()
+  dashed_line = Line2D([xmin, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
+                       transform=ax.transData)
+  ax.lines.append(dashed_line)
+
+  # Plot the Y dash line
+  ymin, ymax = ax.get_ylim()
+  dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
+                       transform=ax.transData)
+  ax.lines.append(dashed_line)
+
+  #plt.ylabel("Average growth rate, %d - %d (doc./year)" % (
+  #  yearArray[startYearIndex], yearArray[endYearIndex]))
+  #plt.xlabel("Total documents ")
+
+
+  # Plot accumulative papers count
+  ax0 = plt.subplot(gs[0])
+
+  count = 0
+  legendArray = []
+  for topicItem in topicResults:
+    legendArray.append(topicItem["name"])
+    #zero_to_nan(topicResults[topics[0].upper()]["PapersCountAccum"])
+
+    x = topicItem["year"]
+    y = topicItem["PapersCountAccum"]
+
+    xnew = np.linspace(min(x), max(x), 300)
+
+    f = interpolate.interp1d(x, y, kind='linear')
+    ylineal = f(xnew)
+
+    s = Rbf(x, y, smooth=0.4, epsilon = 0.2)
+    ynew = s(xnew)
+
+    for i in range(0,len(ylineal)):
+      if ylineal[i] < 0.1:
+        ynew[i] = 0
+
+    zero_to_nan(ynew)
+    zero_to_nan(y)
+
+    ax0.plot(xnew, ynew,
+             linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
+             zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], markeredgewidth=0.0)
+
+
+    #ax0.plot(x, y,
+    #         linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
+    #         zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], alpha = 0.25, markeredgewidth=0.0)
+
+    ax0.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+
+    count += 1
+
+  [xmin, xmax] = ax0.get_xlim()
+  ax0.set_xlim([min(x), xmax + (xmax-xmin)*0.1])
+
+  [ymin, ymax] = ax0.get_ylim()
+  ax0.set_ylim(0, ymax)
+  ax0.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+
+
+  ax0.ticklabel_format(useOffset=False)
+  legend1 = ax0.legend(legendArray, loc=2, fontsize=10, scatterpoints=1)
+  legend1.get_frame().set_alpha(1)
+  legend1.set_zorder(count)  # put the legend on top
+
+  plt.xlabel("Publication year")
+  plt.ylabel("Accumulative Number of Documents")
+
+  if args.yLog:
+    ax0.set_yscale("symlog", nonposy='clip')
+    ax0.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax0.get_yaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())

@@ -149,7 +149,7 @@ def saveTopResults(topicResults, criterionIn):
   fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".tsv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
-  fieldnames = ["Pos.", criterion, "Total", "AGR", "ADY", "hIndex"] + list(topicResults[0]["year"])
+  fieldnames = ["Pos.", criterion, "Total", "AGR", "ADY", "PDLY", "hIndex"] + list(topicResults[0]["year"])
 
   writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
   writer.writeheader()
@@ -164,6 +164,7 @@ def saveTopResults(topicResults, criterionIn):
     dictWriter["Total"] = value["PapersTotal"]
     dictWriter["AGR"] = value["agr"]
     dictWriter["ADY"] = value["AverageDocPerYear"]
+    dictWriter["PDLY"] = value["PerInLastYears"]
     dictWriter["hIndex"] = value["hIndex"]
     for yearItem in value["year"]:
       index = value["year"].index(yearItem)

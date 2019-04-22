@@ -73,10 +73,14 @@ help="Graph accomulative number of publications evolution, and graph the average
 parser.add_argument("--parametric2",
 help="Graph on X the total number of publications, and on Y the average documents per year", action="store_true")
 
+parser.add_argument("--parametric3",
+help="Graph accomulative number of publications evolution, and graph the average documents per year vs the percentaje "
+     "of documents in the last years",
+                    action="store_true")
+
 parser.add_argument("--agrForGraph",
 help="To use average growth rate (AGR) instead average documents per year (ADY) in parametric and parametric 2 graphs",
                     action="store_true")
-
 
 parser.add_argument("--wordCloud",
 help="Graph the topics word cloud", action="store_true")
@@ -291,15 +295,16 @@ for topics in topicList:
   topicItem["PapersCountAccum"] = [0] * len(yearArray)
   topicItem["PapersCountRate"] = [0] * len(yearArray)
   topicItem["PapersTotal"] = 0
-  topicItem["AverageDocPerYear"] = 0
+  topicItem["AverageDocPerYear"] = 0      # ADY
   topicItem["PapersInLastYears"] = 0
+  topicItem["PerInLastYears"] = 0         #PDLY
   topicItem["CitedByCount"] = [0] * len(yearArray)
   topicItem["CitedByCountAccum"] = [0] * len(yearArray)
   topicItem["CitedByTotal"] = 0
   topicItem["papers"] = []
   topicItem["topicsFound"] = []
   topicItem["hIndex"] = 0
-  topicItem["agr"] = 0
+  topicItem["agr"] = 0                  # Average growth rate
   topicResults.append(topicItem)
 
 # Find papers within the arguments, and fill the topicResults fields per year.
@@ -383,7 +388,7 @@ for topicItem in topicResults:
   startYearIndex = endYearIndex - args.windowWidth
 
   topicItem["agr"] = \
-    np.mean(topicItem["PapersCountRate"][startYearIndex : endYearIndex + 1])
+    round(np.mean(topicItem["PapersCountRate"][startYearIndex : endYearIndex + 1]), 1)
 
 print("Calculating Average Documents per Year (ADY)...")
 # Extract the Average Documents per Year (ADY)
@@ -394,10 +399,13 @@ for topicItem in topicResults:
   startYearIndex = endYearIndex - args.windowWidth
 
   topicItem["AverageDocPerYear"] = \
-    np.mean(topicItem["PapersCount"][startYearIndex : endYearIndex + 1])
+    round(np.mean(topicItem["PapersCount"][startYearIndex : endYearIndex + 1]), 1)
 
   topicItem["PapersInLastYears"] = \
     np.sum(topicItem["PapersCount"][startYearIndex : endYearIndex + 1])
+
+  topicItem["PerInLastYears"] = \
+    round(100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"], 1)
 
 
 
@@ -443,16 +451,16 @@ if args.trend:
 print("\nTop topics:")
 print("Average Growth Rate (AGR) and Average Documents per Year (ADY) period: %d - %d\n\r"
       % (yearArray[startYearIndex], yearArray[endYearIndex]))
-print('-' * 72)
-print("{:<4s}{:<25s}{:>10s}{:>10s}{:>10s}{:>12s}".format("Pos", args.criterion, "Total", "AGR", "ADY", "h-index"))
-print('-' * 72)
+print('-' * 87)
+print("{:<4s}{:<30s}{:>10s}{:>10s}{:>10s}{:>10s}{:>12s}".format("Pos", args.criterion, "Total", "AGR", "ADY", "PDLY", "h-index"))
+print('-' * 87)
 count = 0
 for topicItem in topicResults:
-  print("{:<4d}{:<25s}{:>10d}{:>10.1f}{:>10.1f}{:>10d}".format(
+  print("{:<4d}{:<30s}{:>10d}{:>10.1f}{:>10.1f}{:>10.1f}{:>10d}".format(
     count + 1, topicItem["name"], topicItem["PapersTotal"], topicItem["agr"],
-         topicItem["AverageDocPerYear"], topicItem["hIndex"]))
+         topicItem["AverageDocPerYear"], topicItem["PerInLastYears"], topicItem["hIndex"]))
   count += 1
-print('-' * 72)
+print('-' * 87)
 print("")
 
 if filterSubTopic != "":
@@ -473,6 +481,9 @@ if not args.noPlot:
     graphUtils.plot_parametric2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
     fig = plt.gcf()
     fig.set_size_inches(args.plotWidth, args.plotHeight)
+
+  elif args.parametric3:
+    graphUtils.plot_parametric3(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
 
   elif args.wordCloud:
     from wordcloud import WordCloud
