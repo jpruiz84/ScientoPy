@@ -37,11 +37,6 @@ parser.add_argument("dataInFolder", help="Folder where the Scopus or WoS data is
 parser.add_argument("--noRemDupl",
 help="To do not remove the duplicated documents", action="store_false")
 
-parser.add_argument("--startYear", type=int, default=globalVar.DEFAULT_START_YEAR,
-                    help="Start year to limit the pre process graph, and to extract the number of papers in year range")
-parser.add_argument("--endYear", type=int, default=globalVar.DEFAULT_END_YEAR,
-                    help="End year year to limit the pre process graph, and to extract the number of papers in year range")
-
 parser.add_argument("--savePlot", default="",  help='Save the pre processed graph to a file, ex: --savePlot "preProcessed.eps"')
 
 parser.add_argument("--graphTitle",
@@ -50,62 +45,6 @@ help="To put a title in the output graph", type=str)
 
 args = parser.parse_args()
 
-
-def grapPreprocess(plt, papersDict, fOriginal):
-  topicResults = []
-
-  yearArray = range(args.startYear, args.endYear + 1)
-
-  # Create a dictonary in topicResults per element in topicList
-  for topic in ["Scopus", "WoS"]:
-    topicItem = {}
-    topicItem["upperName"] = topic.upper()
-    topicItem["name"] = topic
-    topicItem["allTopics"] = topic
-    topicItem["year"] = yearArray
-    topicItem["PapersCountAccum"] = [0] * len(yearArray)
-    topicItem["PapersCount"] = [0] * len(yearArray)
-    topicItem["PapersTotal"] = 0
-    topicResults.append(topicItem)
-
-  # For each paper
-  for paper in papersDict:
-    # For each item in paper critera
-    for item in paper["dataBase"].split(";"):
-      # Strip paper item and upper
-      item = item.strip()
-      itemUp = item.upper()
-
-      for topicItem in topicResults:
-        subTopic = topicItem["allTopics"]
-        if subTopic.upper() == itemUp:
-          if int(paper["year"]) in yearArray:
-            yearIndex = topicItem["year"].index(int(paper["year"]))
-            topicItem["PapersCount"][yearIndex] += 1
-            topicItem["PapersTotal"] += 1
-            topicItem["name"] = item
-
-  # Extract accumulative
-  for topicItem in topicResults:
-    papersAccumValue = 0
-    for i in range(0, len(topicItem["PapersCount"])):
-      papersAccumValue += topicItem["PapersCount"][i]
-      topicItem["PapersCountAccum"][i] = papersAccumValue
-
-  if(fOriginal == True):
-    for topic in topicResults:
-      if topic["name"] == "WoS":
-        topic["name"] = "WoS original"
-      if topic["name"] == "Scopus":
-        topic["name"] = "Scopus original"
-  else:
-    for topic in topicResults:
-      if topic["name"] == "WoS":
-        topic["name"] = "WoS dup. rem."
-      if topic["name"] == "Scopus":
-        topic["name"] = "Scopus dup. rem."
-
-  graphUtils.plot_time_line(plt,topicResults, fOriginal)
 
 # *****************  Program start ********************************************************
 print("\n\nScientoPy prerprocess")
@@ -116,6 +55,7 @@ if sys.version_info[0] < 3:
   print("ERROR, you are using Python 2, Python 3.X.X required")
   print("")
   exit()
+
 
 # Create output folders if not exist
 if not os.path.exists(globalVar.DATA_OUT_FOLDER):
@@ -133,6 +73,26 @@ globalVar.papersScopus = 0
 globalVar.papersWoS = 0
 globalVar.omitedPapers = 0
 
+
+preProcessBrief = {}
+preProcessBrief["totalLoadedPapers"] = 0
+preProcessBrief["omittedPapers"] = 0
+preProcessBrief["papersAfterRemOmitted"] = 0
+preProcessBrief["loadedPapersScopus"] = 0
+preProcessBrief["loadedPapersWoS"] = 0
+
+# After duplication removal filter
+preProcessBrief["totalAfterRemDupl"] = 0
+preProcessBrief["removedTotalPapers"] = 0
+preProcessBrief["removedPapersScopus"] = 0
+preProcessBrief["removedPapersWoS"] = 0
+preProcessBrief["papersScopus"] = 0
+preProcessBrief["papersWoS"] = 0
+
+
+
+
+
 # Read files from the dataInFolder
 for file in os.listdir(os.path.join(args.dataInFolder, '')):
   if file.endswith(".csv") or file.endswith(".txt"):
@@ -149,13 +109,27 @@ if(globalVar.loadedPapers == 0):
   print("")
   exit()
 
+globalVar.OriginalTotalPapers = len(paperDict)
+
+preProcessBrief["totalLoadedPapers"] = globalVar.loadedPapers
+preProcessBrief["omittedPapers"] = globalVar.omitedPapers
+preProcessBrief["papersAfterRemOmitted"] = globalVar.OriginalTotalPapers
+
+preProcessBrief["loadedPapersScopus"] = globalVar.papersScopus
+preProcessBrief["loadedPapersWoS"] = globalVar.papersWoS
+
+
+
+
+
+
 # Open the file to write the preprocessing log in CSV
 logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
 fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]
 logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel_tab)
 logWriter.writeheader()
 
-globalVar.OriginalTotalPapers = len(paperDict)
+
 logWriter.writerow({'Info': '***** Original data *****'})
 logWriter.writerow({'Info': 'Total loaded papers', 'Number' : str(globalVar.loadedPapers)})
 
@@ -165,14 +139,12 @@ logWriter.writerow({'Info': 'Omitted papers by document type',
 
 
 logWriter.writerow({'Info': 'Total papers after omitted papers removed', 'Number' : str(globalVar.OriginalTotalPapers)})
-logWriter.writerow({'Info': 'Papers from WoS',
+logWriter.writerow({'Info': 'Loaded papers from WoS',
                     'Number': ("%d" % (globalVar.papersWoS)),
                     'Percentage': ("%.1f%%" % (100.0 * globalVar.papersWoS / globalVar.OriginalTotalPapers))})
-logWriter.writerow({'Info': 'Papers from Scopus',
+logWriter.writerow({'Info': 'Loaded papers from Scopus',
                     'Number': ("%d" % (globalVar.papersScopus)),
                     'Percentage': ("%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
-
-
 
 
 print("Loaded papers: %s" % len(paperDict))
@@ -182,37 +154,30 @@ print("WoS papers: %s" % globalVar.papersWoS)
 print("Scopus papers: %s" % globalVar.papersScopus)
 paperUtils.sourcesStatics(paperDict, logWriter)
 
-grapPreprocess(plt, paperDict, True)
 
 # Removing duplicates
 if args.noRemDupl:
-  paperDict = paperUtils.removeDuplicates(paperDict, logWriter)
+  paperDict = paperUtils.removeDuplicates(paperDict, logWriter, preProcessBrief)
   logWriter.writerow({'Info': ''})
   logWriter.writerow({'Info': 'Output papers after duplication removal filter'})
   paperUtils.sourcesStatics(paperDict, logWriter)
 
-  grapPreprocess(plt, paperDict, False)
+# if not remove duplicates
+else:
+    preProcessBrief["totalAfterRemDupl"] = preProcessBrief["papersAfterRemOmitted"]
+    preProcessBrief["removedPapersScopus"] = 0
+    preProcessBrief["removedPapersWoS"] = 0
+    preProcessBrief["papersScopus"] = preProcessBrief["loadedPapersScopus"]
+    preProcessBrief["papersWoS"] = preProcessBrief["loadedPapersWoS"]
 
 # Filter papers with invalid year
 papersDictYear = list(filter(lambda x: x["year"].isdigit(), paperDict))
-# Filter the papers outside the year range
-papersDictYear = list(filter(lambda x: int(x["year"]) >= args.startYear, papersDictYear))
-papersDictYear = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDictYear))
 
-totalPapersInRagne = len(papersDictYear)
 
-print("Output papers in range %s - %s: %s" %
-      (args.startYear, args.endYear , totalPapersInRagne))
-
-if(totalPapersInRagne > 0):
-  totalPapersInRagnePercentaje = 100.0 * totalPapersInRagne / totalPapersInRagne
-else:
-  totalPapersInRagnePercentaje = 100.0
-
-logWriter.writerow({'Info': "Output papers in years range (%s - %s)" % (args.startYear, args.endYear),
-                    'Number': ("%d" % (totalPapersInRagne)),
-                    'Percentage': ("%.1f%%" % totalPapersInRagnePercentaje)})
-
+logWriter.writerow({'Info': 'Papers from WoS',
+                    'Number': ("%d" % (preProcessBrief["papersWoS"] ))})
+logWriter.writerow({'Info': 'Papers from Scopus',
+                    'Number': ("%d" % (preProcessBrief["papersScopus"] ))})
 
 # Save final results
 paperSave.saveResults(paperDict,
@@ -220,6 +185,9 @@ os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME))
 
 # Close log file
 logFile.close()
+
+
+graphUtils.grapPreprocess(plt, preProcessBrief)
 
 if args.graphTitle:
   plt.title(args.graphTitle)

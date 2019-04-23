@@ -687,3 +687,49 @@ def plot_parametric3(plt, topicResults, agrStartYear, agrEndYear, args):
     ax0.set_yscale("symlog", nonposy='clip')
     ax0.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax0.get_yaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
+
+
+def grapPreprocess(plt, preProcessBrief):
+  ax = plt.gca()
+  itemsName = ["WoS", "Scopus"]
+
+
+  x = []
+  x2 = []
+  xPer = []
+
+  x.append(preProcessBrief["loadedPapersWoS"])
+  x.append(preProcessBrief["loadedPapersScopus"])
+
+  x2.append(preProcessBrief["removedPapersWoS"])
+  x2.append(preProcessBrief["removedPapersScopus"])
+
+  xPer.append(round(100*preProcessBrief["removedPapersWoS"]/preProcessBrief["loadedPapersWoS"]))
+  xPer.append(round(100*preProcessBrief["removedPapersScopus"] / preProcessBrief["loadedPapersScopus"]))
+
+  y_pos = np.arange(len(itemsName))[::-1]
+
+  plt.barh(y_pos, x, 0.4, align='center', color=globalVar.COLORS_TAB20[0], edgecolor="black", linewidth=0.5)
+  plt.barh(y_pos, x2, 0.4, align='center', color=globalVar.COLORS_TAB20[2], edgecolor="black", linewidth=0.5, left=np.subtract(x,x2))
+
+  [xmin, xmax] = ax.get_xlim()
+  [ymin, ymax] = ax.get_ylim()
+  ax.set_xlim([xmin, xmax + (xmax-xmin)*0.2])
+  ax.set_ylim([ymin - (ymax - ymin) * 0.2, ymax + (ymax - ymin) * 0.2])
+
+
+  for xt, xPerT, yt in zip(x, xPer, y_pos):
+    plt.text(xt + (xmax-xmin)*0.03, yt - (ymax-ymin)*0.003, '%d%%' % xPerT, ha='left', va='center')
+
+
+  plt.yticks(y_pos, itemsName)
+  plt.xlabel("Total loaded documents, with percentage of removed documents")
+
+  plt.legend(["Documents kept", "Removed dupl."], loc=1, prop={'size': 10})
+
+  ax.set_axisbelow(True)
+  ax.xaxis.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
+
+  fig = plt.gcf()
+  fig.set_size_inches(globalVar.DEFAULT_PLOT_WIDTH, globalVar.DEFAULT_PLOT_WIDTH/2)
+

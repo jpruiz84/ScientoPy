@@ -455,7 +455,7 @@ def printPaper(paper):
   
 
   
-def removeDuplicates(paperDict, logWriter):
+def removeDuplicates(paperDict, logWriter, preProcessBrief):
   duplicatedPapersCount = 0
   removedPapersScopus = 0
   removedPapersWoS = 0
@@ -576,6 +576,13 @@ def removeDuplicates(paperDict, logWriter):
   if(duplicatedPapersCount != 0):
     print("Duplicated documents with different cited by: %s, %.1f %%\n" % (duplicatedWithDifferentCitedBy,
                                                                            percenDuplicatedWithDifferentCitedBy))
+
+  preProcessBrief["totalAfterRemDupl"] = globalVar.totalAfterRemDupl
+  preProcessBrief["removedTotalPapers"] = duplicatedPapersCount
+  preProcessBrief["removedPapersScopus"] = removedPapersScopus
+  preProcessBrief["removedPapersWoS"] = removedPapersWoS
+  preProcessBrief["papersScopus"] = preProcessBrief["loadedPapersScopus"] - preProcessBrief["removedPapersScopus"]
+  preProcessBrief["papersWoS"] = preProcessBrief["loadedPapersWoS"] - preProcessBrief["removedPapersWoS"]
 
   logWriter.writerow({'Info': ''})
   logWriter.writerow({'Info': 'Duplication removal statics'})
