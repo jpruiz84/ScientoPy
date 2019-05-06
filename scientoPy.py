@@ -404,10 +404,9 @@ for topicItem in topicResults:
   topicItem["PapersInLastYears"] = \
     np.sum(topicItem["PapersCount"][startYearIndex : endYearIndex + 1])
 
-  topicItem["PerInLastYears"] = \
-    round(100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"], 1)
-
-
+  if topicItem["PapersTotal"] > 0:
+    topicItem["PerInLastYears"] = \
+      round(100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"], 1)
 
 # Scale in percentage per year
 if args.pYear:
