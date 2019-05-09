@@ -29,16 +29,20 @@ import graphUtils
 import sys
 import re
 from PIL import Image
-
-
 import argparse
+
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
 validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract", 
                   "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
 
-parser.add_argument("criterion", choices = validCriterion,
+validGraphs = ["bar", "bar_trends", "time_line", "evolution", "word_cloud"]
+
+parser.add_argument("-c","--criterion", choices = validCriterion, default= "authorKeywords",
 help="Select the criterion to analyze the topics")
+
+parser.add_argument("-g","--graphType", choices = validGraphs, default= "bar_trends",
+help="Select the graph type to plot")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to analyze, default 10")
 
@@ -66,18 +70,6 @@ help="Plot Y axes in log scale", action="store_true")
 parser.add_argument("--noPlot",
 help="Do not plot the results, use for large amount of topics", action="store_true")
 
-parser.add_argument("--parametric",
-help="Graph accomulative number of publications evolution, and graph the average documents per year vs the h-index",
-                    action="store_true")
-
-parser.add_argument("--parametric2",
-help="Graph on X the total number of publications, and on Y the average documents per year", action="store_true")
-
-parser.add_argument("--parametric3",
-help="Graph accomulative number of publications evolution, and graph the average documents per year vs the percentaje "
-     "of documents in the last years",
-                    action="store_true")
-
 parser.add_argument("--agrForGraph",
 help="To use average growth rate (AGR) instead average documents per year (ADY) in parametric and parametric 2 graphs",
                     action="store_true")
@@ -86,14 +78,6 @@ parser.add_argument("--wordCloud",
 help="Graph the topics word cloud", action="store_true")
 
 parser.add_argument("--wordCloudMask", default="",  help='PNG mask image to use for wordCloud')
-
-parser.add_argument("--bar",
-help="Graph the topics in horizontal bar", action="store_true")
-
-
-parser.add_argument("--bar2",
-help="Graph the topics in horizontal bar, with the documents for the last years", action="store_true")
-
 
 parser.add_argument("--windowWidth",
 help="Window width in years for average growth rate and average documents per year",type=int, default=1)
@@ -467,24 +451,16 @@ if filterSubTopic != "":
     topicItem["name"] = topicItem["name"].split(",")[0].strip()
 
 # If more than 100 results and not wordCloud, no plot.
-if len(topicResults) > 100 and not args.wordCloud and not args.noPlot:
+if len(topicResults) > 100 and not args.graphType == "word_cloud" and not args.noPlot:
   args.noPlot = True
   print("\nERROR: Not allowed to graph more than 100 results")
 
 # Plot
 if not args.noPlot:
-  if args.parametric:
-    graphUtils.plot_parametric(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
+  if args.graphType == "evolution":
+    graphUtils.plot_evolution(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
 
-  elif args.parametric2:
-    graphUtils.plot_parametric2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
-    fig = plt.gcf()
-    fig.set_size_inches(args.plotWidth, args.plotHeight)
-
-  elif args.parametric3:
-    graphUtils.plot_parametric3(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
-
-  elif args.wordCloud:
+  if args.graphType == "word_cloud":
     from wordcloud import WordCloud
     my_dpi = 96
     plt.figure(figsize=(1960/my_dpi, 1080/my_dpi), dpi=my_dpi)
@@ -506,13 +482,13 @@ if not args.noPlot:
     plt.imshow(wc, interpolation="bilinear")
     plt.axis("off")
 
-  elif args.bar:
+  if args.graphType == "bar":
     graphUtils.plot_bar_horizontal(plt, topicResults, args)
 
-  elif args.bar2:
-    graphUtils.plot_bar_horizontal2(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
-
-  else:
+  if args.graphType == "bar_trends":
+    graphUtils.plot_bar_horizontal_trends(plt, topicResults,
+                                          yearArray[startYearIndex], yearArray[endYearIndex], args)
+  if args.graphType == "time_line":
     graphUtils.plot_time_line(plt, topicResults, False)
     fig = plt.gcf()
     fig.set_size_inches(args.plotWidth, args.plotHeight)
