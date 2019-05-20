@@ -1,68 +1,44 @@
 #!/bin/bash
 
 # Pre process
-python3 preProcess.py dataInExample --graphTitle "Pre process results" --savePlot "preProcessResult.eps" 
+python3 preProcess.py dataInExample --graphTitle "Pre process brief results" --savePlot "pre_process_brief.eps"
 
 # Example time line graph
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --graphTitle "Internet of things top author keywords" --savePlot "graph_timeline.eps"
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g time_line --graphTitle "Top author keywords" --savePlot "graph_time_line.eps"
 
-# Example horizontal bar graph
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar --graphTitle "Internet of things top author keywords" --savePlot "graph_bar.eps"
+# Example horizontal graph bar
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar --graphTitle "Top author keywords" --savePlot "graph_bar.eps"
+
+# Example horizontal graph bar with relative percentage growth
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar_trends --graphTitle "Top author keywords" --savePlot "graph_bar_trends.eps"
+
+# Example evolution graph
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g evolution --graphTitle "Top author keywords" --savePlot "graph_evolution.eps"
 
 # Example word cloud graph
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 -l 500 --wordCloud --savePlot "graph_word_cloud.eps"
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -l 500 -g word_cloud --savePlot "graph_word_cloud.eps"
 
-# Example parametric graph
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric --graphTitle "Internet of things top author keywords" --savePlot "graph_parametric.eps"
+# Example top trending topics with the highest AGR using evolution graph
+python3 scientoPy.py -c authorKeywords --trend --startYear 2008 --endYear 2018 -g evolution --agrForGraph --graphTitle "Trending top author keywords" --savePlot "graph_trending_with_agr.eps"
 
-# Example parametric2 graph
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric2 --graphTitle "Internet of things top author keywords" --savePlot "graph_parametric2.eps"
+# Example custom topics in authorKeywords
+python3 scientoPy.py -c authorKeywords -t "Smart City;Smart-Guide;Smart Library;Smart device;Smart Home;smart clothing system;smartphone;smart museum;Smart Environments;Smart devices;smart community;Smart cities;smart grid;smart sensors" -g bar --startYear 2008 --endYear 2018 --graphTitle "Smart applications in BLE" --savePlot "graph_smart_applications.eps"
 
-# Example top trending topics and graph
-python3 scientoPy.py authorKeywords --trend --windowWidth 2 --startYear 2006 --endYear 2017 -l 10 -s 3 --parametric --agrForGraph --graphTitle "Internet of things trending topics" --savePlot "trend_parametric.eps"
-
-
-# Top topics:
-python3 scientoPy.py authorKeywords -t "WSN,Wireless sensor network,Wireless sensor networks;RFID,RADIO FREQUENCY IDENTIFICATION;Cloud computing;Security;Big data;Privacy;Smart City;6LoWPAN;Sensors;Zigbee" --startYear 2006 --graphTitle "Internet of things top topics" --savePlot "keywords.eps"
-
-# Applications:
-python3 scientoPy.py authorKeywords -t "Cyber-physical systems,CYBER PHYSICAL SYSTEMS,CPS;Healthcare,E-Health;Energy efficiency;Social networks,Social networks,Social media;Education,Learning,E-Learning,mobile learning" --startYear 2006 --graphTitle "Internet of things top applications" --savePlot "applications.eps"
-
-# Smart things
-python3 scientoPy.py authorKeywords -t "Smart city,Smart cities;Smart home,Smart homes;Smart grid,Smart grids;Smart objects,Smart object,Smart enviroments,Smart enviroment;Smart buildings,Smart Building;Smart devices;Smart factory" --startYear 2006 --graphTitle "Internet of things top smart things" --savePlot "smart_things.eps"
-
-# Software processing:
-python3 scientoPy.py authorKeywords -t "Machine learning;Data mining;Complex event processing,CEP;Hadoop" --startYear 2006 --graphTitle "Internet of things top software processing"  --savePlot "software.eps"
-
-# Operating systems:
-python3 scientoPy.py authorKeywords -t "Android,Android OS;Contiki,Contiki OS;Linux,Linux OS;iOS,iPhone Operating System,iPhone Operating System (iOS);Windows,Windows OS" --startYear 2006 --graphTitle "Internet of things top operating systems" --savePlot "operating.eps"
-
-# Hardware processing:
-python3 scientoPy.py authorKeywords -t "Raspberry Pi;Arduino,Arduino board;Smartphone,Smartphones,Smart phone,Smart phones;FPGA,Field-programmable gate array,Field programmable gate array;Microcontroller,Microcontrollers" --startYear 2006 --graphTitle "Internet of things top hardware devices" --savePlot "hardware.eps"
-
-# Media layers:
-python3 scientoPy.py authorKeywords -t "RFID,RADIO FREQUENCY IDENTIFICATION;6LoWPAN;ZigBee;BLE,Bluetooth Low Energy;WiFi,Wi-Fi;5G;RPL" --startYear 2006 --graphTitle "Internet of things media layer protocols" --savePlot "media_layers.eps"
-
-# Host layers:
-python3 scientoPy.py authorKeywords -t "CoAP,Constrained Application Protocol;MQTT,Message Queue Telemetry Transport;DTLS,Datagram Transport Layer Security;TCP;iBeacon;JSON;UDP" --startYear 2006 --graphTitle "Internet of things host layer protocols" --savePlot "host_layers.eps"
-
-# Countries:
-python3 scientoPy.py country --startYear 2002 -l 7 --pYear --graphTitle "Internet of things top countries" --savePlot "countries.eps"
+# Example custom grouped topics in authorKeyrwords
+python3 scientoPy.py -c authorKeywords -t "Internet of Things, IoT,Internet of Things (IoT); Indoor positioning, indoor localization; Beacon, iBeacon, Beacons; low power; wireless sensor networks, wireless sensor network, WSN" -g bar --startYear 2008 --endYear 2018 --graphTitle "Group of author keywords" --savePlot "graph_group_topics.eps"
 
 
-# Authors:
-python3 scientoPy.py author --startYear 2006 -l 5 --graphTitle "Internet of things top authors" --savePlot "authors.eps"
+# Example top countries graph
+python3 scientoPy.py -c country --startYear 2008 --endYear 2018 -g evolution --graphTitle "Top countries" --savePlot "graph_top_countries.eps"
 
-# Subject
-python3 scientoPy.py subject --startYear 2006 -l 7 --graphTitle "Internet of things top subjects" --savePlot "subject.eps"
+# Example top author graph
+python3 scientoPy.py -c author --startYear 2008 --endYear 2018 -g evolution --graphTitle "Top authors" --savePlot "graph_top_authors.eps"
 
-# Analysis based on the previous results
-python3 scientoPy.py country -t "Canada" --noPlot
-python3 scientoPy.py authorKeywords -r --bar --graphTitle "Internet of things in Canada top author keywords" --savePlot "canada_top_authors_keywords.eps"
-python3 scientoPy.py country -r --bar --graphTitle "Internet of things in Canada top colaboration countries" --savePlot "canada_top_colaboration_countries.eps"
+# Example of analysis based on the previous results, to get Canada's top authorKeywords and top collaboration countries
+python3 scientoPy.py -c country -t "Canada" --noPlot
+python3 scientoPy.py -c authorKeywords -r -g bar --graphTitle "Top Canada's author keywords" --savePlot "graph_canada_top_authors_keywords.eps"
+python3 scientoPy.py -c country -r -g bar --graphTitle "Top Canada's collaboration countries" --savePlot "graph_canada_top_collaboration_countries.eps"
 
+# Example of the filter to get the top institution of a specific country
+python3 scientoPy.py -c institutionWithCountry -f "Colombia" --startYear 2008 --endYear 2018 -g bar --graphTitle "Top Colombia's institutions" --savePlot "graph_institutions_from_colombia.eps"
 
-# Parametric *************************
-python3 scientoPy.py authorKeywords -t "WSN,Wireless sensor network,Wireless sensor networks;RFID,RADIO FREQUENCY IDENTIFICATION;Cloud computing;Security;Big data;Privacy;Smart City;6LoWPAN;Sensors;Zigbee" --endYear 2016 --parametric --startYear 2014 --graphTitle "Internet of things top topics" --savePlot "keywords_parametric.eps"
-
-python3 scientoPy.py authorKeywords -t "Android,Android OS;Contiki,Contiki OS;Linux,Linux OS;iOS,iPhone Operating System,iPhone Operating System (iOS);Windows,Windows OS" --endYear 2016 --parametric --graphTitle "Internet of things top operating systems" --savePlot "operating_parametric.eps"

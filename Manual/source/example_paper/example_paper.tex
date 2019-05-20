@@ -153,7 +153,7 @@ The search string for this analysis was ``Internet of Things''. This string was 
 
 \noindent
 \textcolor{brown}{To get the previous table, run the following script, and find the results on ScientoPy/dataPre/PreprocessedBrief}\\
-\hspace*{0.5cm}\verb|python preProcess.py dataIn|
+\hspace*{0.5cm}\verb|python3 preProcess.py dataIn_IoT|
 
 
 \subsection{Pre-Processing}
@@ -217,30 +217,14 @@ The yearly growth of IoT related documents were observed as in Figure \ref{fig_d
 
 \begin{figure}[h]
 	\centering
-	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure1a.eps}
-		\caption{}
-		\label{fig_database_org}
-	\end{subfigure}
-	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure1b.eps}
-		\caption{}
-		\label{fig_database_filtered}
-	\end{subfigure}
-	\vspace{-12pt}
-
-	\caption{Documents per year published (WoS and Scopus) with the search string ``Internet of Things'' (IoT) for the period 2000 to 2016. (\textbf{a}) before the duplicates-removal filter; (\textbf{b}) after duplicates-removal filter.}\label{fig_database}
+	\includegraphics[width=\textwidth]{./graphs/IoT_preProcessed.eps}
+	\label{fig_database}
 \end{figure}
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for before the duplicates-removal filter graph:}\\
-\hspace*{0.5cm}\verb|python preProcess.py dataIn --noRemDupl|\\
-\hspace*{0.5cm}\verb|python scientoPy.py dataBase -t "Scopus;WoS" --savePlot "dataBase_preFilter.eps"|\\
+\hspace*{0.5cm}\verb|python3 preProcess.py dataIn_IoT --savePlot "IoT_preProcessed.eps"|\\
 
-\noindent
-\textcolor{brown}{To get the previous figure, run the following script for after duplicates-removal filter graph:}\\
-\hspace*{0.5cm}\verb|python preProcess.py dataIn|\\
-\hspace*{0.5cm}\verb|python scientoPy.py dataBase -t "Scopus;WoS" --savePlot "dataBase_postFilter.eps"|\\
 
 
 The first mention of the ``Internet of Things'' was an article published in March 2002 reported by WoS. Published by Forbes, Schoenberger, and Upbin, this article described how the IoT could be a standardized way to help the computers understand the world \cite{ISI:000174207300032}. In 2003, Scopus reported a paper from the Institute of Electrical and Electronics Engineers (IEEE) International Conference on Systems, Man and Cybernetic, in which Qui and Zhang showed the design of enterprise web servers supporting instant data retrieval for a product labeled with an Radio-frequency identification (RFID) based smart tag \cite{Qiu20032661}. Scopus reported a second conference paper in 2003 for the 36th Annual Hawaii International Conference on System Sciences, Traversat et al. on the stated the JXTA (abbreviation of Juxtapose) protocols as a foundation of the upcoming Web of Things\cite{Traversat2003}. 
@@ -257,14 +241,17 @@ A list of the countries with the most associated publications was generated. Fig
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\figuresWidth]{./graphs/figure2.eps}
+	\includegraphics[width=\figuresWidth]{./graphs/IoT_countries_pYear.eps}
 	\caption{Internet of Things percentage of documents published per year by the top 7 first author's corresponding address country for the period 2002 to 2016.}
 	\label{fig_countries}
 \end{figure}
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
-\hspace*{0.5cm}\verb|python scientoPy.py country --startYear 2002 -l 7 --pYear --savePlot "countries.eps"|\\
+\begin{verbatim}
+python3 scientoPy.py -c country --startYear 2002 --endYear 2017 -l 10 \
+--pYear -g time_line --savePlot "IoT_countries_pYear.eps"
+\end{verbatim}
 
 Germany \cite{Bose2005} and Malaysia \cite{Norman2005} first appear in 2005, joined by the United States  \cite{Djassemi2005}. These three conference papers demonstrated how the RFID can boost Internet of Things for manufacturing, packing, tracking, and automobile logistics. In 2006, the total publications grew from 3 to 12, with~more countries participating, such as France \cite{4022056,1698342}, Switzerland \cite{Adelmann2006366,Lehtonen200677}, and Japan \cite{Futatsumori2006258}. From 2006 to 2009, Germany led the number of publications with 2, 3, 9, and 11, respectively. During that period, the~German author Broll led the citations count with a proposed framework for integrating web services and mobile interaction with physical objects \cite{5262929}.
 
@@ -344,7 +331,7 @@ Expanding the results from Figure \ref{fig_countries}, Table \ref{table_countrie
 
 \noindent
 \textcolor{brown}{To get the previous table, run the following script, and find the results in results/Country.csv:}\\
-\hspace*{0.5cm}\verb|python scientoPy.py country --startYear 2002 -l 50 --noPlot|\\
+\hspace*{0.5cm}\verb|python3 scientoPy.py -c country --startYear 2002 -l 50 --noPlot|\\
 
 
 The  International Data Corporation (IDC) predicts that, by 2019, 20\% of local and regional governments in Indonesia will use the Internet of Things to turn infrastructure such as roads, street lights, and~traffic signals into assets instead of liabilities \cite{Estopace2017}. In addition, the Dutch IoT start-up, Xeelas (Arnhem, Netherlands), and~Turkish group, Sade (Ankara, Turkey), partnered to build Turkey's largest LoRaWAN (LoRa, Long Range Wide-area network network) in Istanbul to enable business, local governments, and conservation groups to collect and analyze from connected devices \cite{turkey2017}. In Russia, the Internet of Things market is expected to reach USD 74 Billion by 2023, where the Russian government's Internet start-up fund (FRII) has joined forces with tech giants GS Group (Saint-Petersburg, Russia) and mobile operators to launch a national Internet of Things (IoT) consortium \cite{russia2017}. In Pakistan, by~January~2017, 17~Internet of Things start-ups were launched, on their own or incubated, at Plan9 (Lahore, Pakistan), NEST i/o (Karachi, Pakistan), and~i2i~(Islamabad, Pakistan) \cite{ignite2017}.
@@ -359,14 +346,17 @@ RFID, security, electric vehicle, artificial immune system, smart grid, and clou
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\figuresWidth]{./graphs/figure3.eps}
+	\includegraphics[width=\figuresWidth]{./graphs/IoT_authors.eps}
 	\caption{Internet of Things top 5 authors with most documents published per year, for the period 2006 to 2016.}
 	\label{fig_authors}
 \end{figure}  
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
-\hspace*{0.5cm}\verb|python scientoPy.py authors --startYear 2006 -l 5 --savePlot "authors.eps"|\\
+\begin{verbatim}
+python3 scientoPy.py -c author -g time_line \
+--startYear 2006 --endYear 2017 -l 5 --savePlot "IoT_authors.eps"
+\end{verbatim}
 
 
 Y. Liu is positioned second with 115 documents, of which 36 list him as the primary author. His~publications are more focused on hardware such as Raspberry Pi, test bed, optical communications, ZigBee, and RFID. The article titled ``IOT gateway: Bridging wireless sensor networks into Internet of Things'' is his most cited document with 134 citations \cite{Zhu2010347}. Y. Liu shares the authorship in four~publications with the first author in this list, Y. Zhang.
@@ -409,7 +399,7 @@ Table \ref{table_top_20_authors} shows the top 20 authors with the most publishe
 
 \noindent
 \textcolor{brown}{To get the previous table, run the following script, find the results in results/Authors\_extended.csv and results/Authors.csv, read the keywords and some papers to extract manually the top author topics}\\
-\hspace*{0.5cm}\verb|python scientoPy.py authors --startYear 2006 -l 20 --noPlot|\\
+\hspace*{0.5cm}\verb|python3 scientoPy.py -c author --startYear 2006 --endYear 2017 -l 20 --noPlot|\\
 
 
 Table \ref{table_times_cited} shows the most cited papers for three document types (articles, conference/proceedings and reviews). Atzori et al. surveys IoT vision and enabling technologies \cite{Atzori20102787}. Second in articles, Gubbi~et~al. describe a cloud-centered vision for the worldwide implementation of IoT \cite{Gubbi20131645}. Miorandi~et~al.'s article surveys on technologies, applications and research challenges for IoT \cite{Miorandi20121497}. 
@@ -475,7 +465,7 @@ IoT has a broad spectrum of research fields such as applications, smart objects,
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\figuresWidth]{./graphs/figure4.eps}
+	\includegraphics[width=\figuresWidth]{./graphs/IoT_keywords.eps}
 	\caption{Internet of Things top authors' keywords documents published per year, excluding the keywords: Internet of Things, IoT, Internet of Things (IoT), and The Internet of Things, for the period 2006 to 2016.}
 	\label{fig_keywords}
 \end{figure} 
@@ -483,10 +473,11 @@ IoT has a broad spectrum of research fields such as applications, smart objects,
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "WSN,Wireless sensor network,Wireless sensor networks; \
 RFID,RADIO FREQUENCY IDENTIFICATION;Cloud computing;Security;Big data; \
-Privacy;Smart City;6LoWPAN;Sensors;Zigbee" --startYear 2006 --savePlot "keywords.eps"
+Privacy;Smart City;6LoWPAN;Sensors;Zigbee" -g time_line \
+--startYear 2006 --endYear 2017 --savePlot "IoT_keywords.eps"
 \end{verbatim}
 
   
@@ -497,12 +488,12 @@ There are several application fields related to IoT research and development. In
 \begin{figure}[H]
 	\centering
 	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure5a.eps}
+		\includegraphics[width=\textwidth]{./graphs/IoT_smart_things.eps}
 		\caption{}
 		\label{fig_smart_things}
 	\end{subfigure}
 	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure5b.eps}
+		\includegraphics[width=\textwidth]{./graphs/IoT_applications.eps}
 		\caption{}
 		\label{fig_applications_a}
 	\end{subfigure}
@@ -515,22 +506,22 @@ There are several application fields related to IoT research and development. In
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for smart applications:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "Smart city,Smart cities;Smart home,Smart homes;Smart grid,Smart grids;\
 Smart objects,Smart object,Smart enviroments,Smart enviroment;\
 Smart buildings,Smart Building;Smart devices;Smart factory" \
---startYear 2006 --savePlot "smart_things.eps"
+-g time_line --startYear 2006 --endYear 2017 --savePlot "IoT_smart_things.eps"
 \end{verbatim}
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for not start smart applications:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "Cyber-physical systems,CYBER PHYSICAL SYSTEMS,CPS;\
 Healthcare,E-Health;Energy efficiency;\
 Social networks,Social networks,Social media;\
 Education,Learning,E-Learning,mobile learning" \
---startYear 2006 --savePlot "applications.eps"
+-g time_line --startYear 2006 --endYear 2017 --savePlot "IoT_applications.eps"
 \end{verbatim}
 
 In the data set, 1052 documents were found for applications that start with ``smart''. Smart~city is the top one in this list, with 413 documents, and a sigmoid growth in exponential phase, 95\%~more publications in 2016 vs. 2015. A.J. Jara has the most number of documents in this field with 12~publications. His most cited document \cite{7406686} refers to Smart and Connected Communities as a concept that is evolving from Smart cities. The leading country in this application is Italy with 50~publications, and the most important correlated topics are Big data \cite{Li2014631,Moreno-Cano2015418,GomezRomero2016}, Cloud computing~\cite{Kaur2016,Chang201642}, and Smart grid~\cite{Longo2014458,Longo2015281}. Similarly, Smart home has a linear growth, with 230 documents, and~111 in the last year, with China as the leading country. The most important related topics for Smart home are security~\cite{UlRehman2016,Alohali2014115,Peter2017}, ZigBee \cite{Peng2016335,Yiqi2014114,Gong201689}, and activity recognition \cite{Cicirelli2016,Bourobou201511953,Fortino2015}.
@@ -575,12 +566,12 @@ Regarding telecommunications systems, the  Open Systems Interconnection model (O
 \begin{figure}[H]
 	\centering
 	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure6a.eps}
+		\includegraphics[width=\textwidth]{./graphs/IoT_media_layers.eps}
 		\caption{}
 		\label{fig_media_layers}
 	\end{subfigure}
 	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure6b.eps}
+		\includegraphics[width=\textwidth]{./graphs/IoT_host_layers.eps}
 		\caption{}
 		\label{fig_host_layers}
 	\end{subfigure}
@@ -592,19 +583,19 @@ Regarding telecommunications systems, the  Open Systems Interconnection model (O
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for media layers' communications protocols:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "RFID,RADIO FREQUENCY IDENTIFICATION;6LoWPAN;\
 ZigBee;BLE,Bluetooth Low Energy;WiFi,Wi-Fi;5G;RPL" \
---startYear 2006 --savePlot "media_layers.eps"
+--startYear 2006 --endYear 2017 -g time_line --savePlot "IoT_media_layers.eps"
 \end{verbatim}
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for host layers' communication protocols:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "CoAP,Constrained Application Protocol;MQTT,Message Queue Telemetry Transport;\
 DTLS,Datagram Transport Layer Security;TCP;iBeacon;JSON;UDP" \
---startYear 2006 --savePlot "host_layers.eps"
+--startYear 2006 --endYear 2017 -g time_line --savePlot "IoT_host_layers.eps"
 \end{verbatim}
 
 
@@ -625,7 +616,7 @@ The proliferation of IoT has significantly increased the data collection and the
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=\figuresWidth]{./graphs/figure7.eps}
+	\includegraphics[width=\figuresWidth]{./graphs/IoT_software.eps}
 	\caption{Internet of Things software processing techniques based on authors' keywords in documents per year, for the period 2006 to 2016.}
 	\label{fig_software_processing}
 \end{figure} 
@@ -633,9 +624,9 @@ The proliferation of IoT has significantly increased the data collection and the
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "Machine learning;Data mining;Complex event processing,CEP;Hadoop" \
---startYear 2006 --savePlot "software.eps"
+--startYear 2006 --endYear 2017 -g time_line --savePlot "IoT_software.eps"
 \end{verbatim}
 
 Complex event processing is a method of tracking and analyzing streams of data surrounding events or anomalies and basing a conclusion from them \cite{Luckham:2001:PEI:515781}. It was found that 63 documents are related to this processing  technique with applications such as supply chain \cite{Li20131481,li2013,Liu2015} and health care \cite{Mohamedali201650,Sheriff2015}. Apache Hadoop (or Hadoop) is a software framework used for distributed storage and big data processing using the MapReduce programming model \cite{White:2009:HDG:1717298}, appearing with 42 documents and applications including smart cities \cite{Ji201422372,Hans2016352,TahmassebpourS1442}, and Social Internet of Things \cite{Ahmad20161101}.
@@ -648,12 +639,12 @@ The data set analyzed here shows that the investigations used different IoT devi
 \begin{figure}[H]
 	\centering
 	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure8a.eps}
+		\includegraphics[width=\textwidth]{./graphs/IoT_operating.eps}
 		\caption{}
 		\label{fig_operating_systems}
 	\end{subfigure}
 	\begin{subfigure}[b]{0.49\textwidth}
-		\includegraphics[width=\textwidth]{./graphs/figure8b.eps}
+		\includegraphics[width=\textwidth]{./graphs/IoT_hardware.eps}
 		\caption{}
 		\label{fig_hardware}
 	\end{subfigure}
@@ -666,19 +657,21 @@ The data set analyzed here shows that the investigations used different IoT devi
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for operating systems:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "Android,Android OS;Contiki,Contiki OS;Linux,Linux OS;\
 iOS,iPhone Operating System,iPhone Operating System (iOS);\
-Windows,Windows OS" --startYear 2006 --savePlot "operating.eps"
+Windows,Windows OS" --startYear 2006 --endYear 2017 -g time_line \
+--savePlot "IoT_operating.eps"
 \end{verbatim}
 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for hardware:}\\
 \begin{verbatim}
-python scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "Raspberry Pi;Arduino,Arduino board;Smartphone,Smartphones,Smart phone,Smart phones;\
 FPGA,Field-programmable gate array,Field programmable gate array;\
-Microcontroller,Microcontrollers" --startYear 2006 --savePlot "hardware.eps"
+Microcontroller,Microcontrollers" -g time_line --startYear 2006 --endYear 2017 \
+--savePlot "IoT_hardware.eps"
 \end{verbatim}
 
 Other operating systems, such as Linux, are used in IoT for image processing \cite{Dinesh2016} and gateway services \cite{Xu20164713}. The iPhone Operating System (iOS) is used as user interface for presentation, configuration, and remote controlling for IoT environments \cite{Kovalcik2016}. Finally, last year, Culic et al. demonstrated the potential of Windows 10 IoT Core (Redmond, WA, United States), a light-weight version of Windows 10, as an IoT operating system optimized to run on small devices that have no display \cite{7753246}.
@@ -714,7 +707,7 @@ Figure \ref{fig_trending} shows the top eight trending topics with the AGR time 
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.8\textwidth]{./graphs/figure9.eps}
+	\includegraphics[width=0.8\textwidth]{./graphs/IoT_trending.eps}
 	\caption{Internet of Things top trending topics based on authors' keywords, with average growth rate (AGR) for different times periods (2011--2012, 2013--2014, and 2015--2016).}
 	\label{fig_trending}
 \end{figure} 
@@ -722,9 +715,9 @@ Figure \ref{fig_trending} shows the top eight trending topics with the AGR time 
 \noindent
 \textcolor{brown}{To get the previous figure, run the following script for hardware:}\\
 \begin{verbatim}
-python trendResults.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "Cloud computing;Security;Big Data;Wireless sensor networks;\
-Privacy;Industry 4.0;Fog computing;SDN" --savePlot "trending.eps"
+Privacy;Industry 4.0;Fog computing;SDN" -g bar_trends --savePlot "IoT_trending.eps"
 \end{verbatim}
 
 

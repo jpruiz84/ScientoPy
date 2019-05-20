@@ -74,7 +74,7 @@
 
 
 \begin{center}
-{\LARGE \textbf{ScientoPy v 1.3.5, Installation and User Manual\\}}
+{\LARGE \textbf{ScientoPy v 1.4.0, Installation and User Manual\\}}
 \vspace*{0.5cm}
 \includegraphics[scale=0.2]{./figures/escudoUnicacuaSolo.eps}\\
 \vspace*{0.5cm}
@@ -146,7 +146,7 @@ This section describes the ScientoPy scripts to preprocess and analyze the bibli
 
 \subsection{Preprocessing}
 
-First we need to preprocess the downloaded dataset. This preprocess merge all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To preprocess the example dataset ("Internet of thing"  AND  "Gateway" located in dataInExample) run this command inside ScientoPy folder: 
+First we need to preprocess the downloaded dataset. This preprocess merge all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To preprocess the example dataset ("Bluetooth low energy"  downloaded in March 21, 2019, located in dataInExample) run this command inside ScientoPy folder: 
 \begin{verbatim}
 python3 preProcess.py dataInExample
 \end{verbatim}
@@ -196,10 +196,10 @@ With this script you can extract the top topics of a selected criterion. The Sci
 For example, to find the top author keywords you can run this script: 
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords
+python3 scientoPy.py -c authorKeywords
 \end{verbatim}
 
-This will generate a list with the top 10 topics on the selected criterion (in this case authorKeywords), with the number of documents per topic, and the h-index associated to each one. Also, this script graphs the evolution of each topic per year, and saves the quantitative results on the folder \verb|ScientoPy/results|. 
+This will generate a list with the top 10 topics on the selected criterion (in this case authorKeywords), with the number of documents per topic. Also, this script show the bar graph with the percentage of documents in the last years, and saves the quantitative results on the folder \verb|ScientoPy/results|. 
 
 This script have more options like, save the plot on a file, or increase the number of topic results. For more information you can run:
 
@@ -212,12 +212,12 @@ python3 scientoPy.py -h
 If you want to make an analysis of custom topics, such as the two selected countries papers evolution, you can use the \verb|scientoPy.py| script, with the option \verb|-t|, to specify the topics: 
 
 \begin{verbatim}
-python3 scientoPy.py country -t "United States; Brazil"
+python3 scientoPy.py -c country -t "United States; Brazil"
 \end{verbatim}
 
 You can analyze any topic in any criterion. Put the topics on the \verb|-t| argument. Divide the topics with the \verb|;|. Also, you can integrate two or more topics in one, by dividing it with \verb|,|. This is very useful for abbreviations and plural singulars, for example: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION"
 \end{verbatim}
 
@@ -228,32 +228,33 @@ python3 scientoPy.py authorKeywords -t \
 You can use the asterisk wildcard to find phrases or words which starts or ends with the letters that you have inserted. For example, if you want to find "device", "devices", and "device integration", enter the following command: 
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords -t "device*"
+python3 scientoPy.py -c authorKeywords -t "device*"
 \end{verbatim}
 
 ScientoPy will print the topics found for the previous search: 
 
 \begin{verbatim}
 Topics found for device*:
-"devices;device management;Device Interactions;Device objectification;Device;Device integration"
+"Device Discovery;device-to-device synchronization;Device authentication;device-free;
+device to device;Device driver;Device management;Device Independence;Device Identification"
 \end{verbatim}
 
 You can use this information, to analyze each specific topic found, like this: 
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords -t \
-"devices;device management;Device Interactions;Device objectification;Device;Device integration"
+python3 scientoPy.py -c authorKeywords -t \
+"Device Discovery;device-to-device synchronization;Device authentication;device-free; \
+device to device;Device driver;Device management;Device Independence;Device Identification"
 \end{verbatim}
 
+\subsubsection{Evolution plot}
 
-\subsubsection{Parametric plot}
-
-Also, you can see the results with a parametric graphic (add \verb|--parametirc|). This option plot the accumulative documents, average documents per year (ADY), and h-Index of the selected topic, for example:
+Also, you can see the results with an evolution plot (add \verb|-g evolution|). This option plots the accumulative documents, average documents per year (ADY), and percentage of documents in the last years, for example:
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords -t \
+python3 scientoPy.py -c authorKeywords -t \
 "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION" \
---parametric
+-g evolution
 \end{verbatim}
 
 This script have more options like, save the plot on a file, or others. For more information you can run:
@@ -282,8 +283,8 @@ $P_i$ = Number of publications on year $i.$\\
 To find the top trending topics on author keywords criterion, you can run the following script: 
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --trend --windowWidth 2 --startYear 2006 --endYear 2017 \
--l 10 -s 3 --parametric --agrForGraph --graphTitle "Internet of things trending topics"
+python3 scientoPy.py -c authorKeywords --trend --startYear 2008 --endYear 2018 \
+--windowWidth 2  --agrForGraph -g evolution
 \end{verbatim}
 
 This script will find the top 200 topics, then it calculates the AGR for the last 2 years (\verb|--windowWidth 2|). Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 3 AGR topics are filtered (they correspond to the keyword Internet of things), and the next 10 topics are garph in a parametric plot. 
@@ -293,19 +294,19 @@ This script will find the top 200 topics, then it calculates the AGR for the las
 ScientoPy generates an output file with all the output documents from the last run script. For example if we run the command:
 
 \begin{verbatim}
-python3 scientoPy.py country -t "Canada" --noPlot
+python3 scientoPy.py -c country -t "Canada" --noPlot
 \end{verbatim}
 
 ScientoPy will create a documents output file (\verb|results/papersPreprocessed.tsv|) with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on this, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords -r --bar
+python3 scientoPy.py -c authorKeywords -r -g bar
 \end{verbatim}
 
 we will obtain the top author keywords from papers where the author affiliation correspond to Canada. Also, we can run the following command to know which are the countries that have more common documents with Canada:
 
 \begin{verbatim}
-python3 scientoPy.py country -r --bar
+python3 scientoPy.py -c country -r -g bar
 \end{verbatim}
 
 \textbf{Note:} the ScientoPy documents output file is only generated when the \verb|-r| or \verb|--previousResults| is not used. In that way, if we run many times a ScientoPy command with this option, the documents output file will not overwritten.
@@ -368,11 +369,11 @@ ScientoPy has 5 different ways to graph the results described on Table \ref{tabl
 	\hline\noalign{\smallskip}
 	Graph type     &  Argument & Description                             \\
 	\noalign{\smallskip}\hline\noalign{\smallskip}                                                                         
-	Time line      & No argument & Graphs the number of documents of each topic vs the publication year \\
-	Horizontal bars  & \verb|--bar| & Graphs the total number of documents of each topic in horizontal bars \\
-	Word cloud     & \verb|--wordCloud| & Generate a word cloud based on the topic total number of publications \\
-	Parametric     & \verb|--parametric| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the h-index\\
-	Parametric2    & \verb|--parametric2| & Graphs the total number of documents vs average papers per year\\
+	Time line      & \verb|-g time_line| & Graphs the number of documents of each topic vs the publication year \\
+	Horizontal bars  & \verb|-g bar| & Graphs the total number of documents of each topic in horizontal bars \\
+	Horizontal bars trends  & \verb|-g bar| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years \\
+	Evolution     & \verb|-g evolution| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the percentage of documents in the last years\\
+	Word cloud     & \verb|-g word_cloud| & Generate a word cloud based on the topic total number of publications \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 \end{table}
@@ -382,57 +383,52 @@ Below are showed some examples of these graphs types, with the command used.
 \subsection{Time line graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 \
---graphTitle "Internet of things top author keywords" 
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g time_line
 \end{verbatim}
 
 \begin{center}
-	\includegraphics[width=0.5\textwidth]{./figures/graph_timeline.eps}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_time_line.eps}
 \end{center}
-
 
 \subsection{Horizontal bars graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --bar \
---graphTitle "Internet of things top author keywords"
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar
 \end{verbatim}
 
 \begin{center}
-	\includegraphics[width=0.5\textwidth]{./figures/graph_bar.eps}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_bar.eps}
 \end{center}
 
-\subsection{Parametric graph}
+\subsection{Horizontal bars trends}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric \
---graphTitle "Internet of things top author keywords"
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar_trends
 \end{verbatim}
 
 \begin{center}
-	\includegraphics[width=0.75\textwidth]{./figures/graph_parametric.eps}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_bar_trends.eps}
 \end{center}
 
-\subsection{Parametric2 graph}
+\subsection{Evolution graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 --parametric2 \
---graphTitle "Internet of things top author keywords"
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g evolution
 \end{verbatim}
 
 \begin{center}
-	\includegraphics[width=0.75\textwidth]{./figures/graph_parametric2.eps}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_evolution.eps}
 \end{center}
 
 
 \subsection{Word cloud graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py authorKeywords --startYear 2010 --endYear 2016 -l 500 --wordCloud
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -l 500 -g word_cloud
 \end{verbatim}
 
 \begin{center}
-	\includegraphics[width=0.75\textwidth]{./figures/graph_word_cloud.eps}
+	\includegraphics[width=0.9\textwidth]{./figures/graph_word_cloud.eps}
 \end{center}
 
 

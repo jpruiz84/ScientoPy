@@ -80,7 +80,8 @@ help="Graph the topics word cloud", action="store_true")
 parser.add_argument("--wordCloudMask", default="",  help='PNG mask image to use for wordCloud')
 
 parser.add_argument("--windowWidth",
-help="Window width in years for average growth rate and average documents per year",type=int, default=1)
+help="Window width in years for average growth rate and average documents per year, minimum 1",
+                    type=int, default=2)
 
 parser.add_argument("-r", "--previousResults",
 help="Analyze based on the previous results", action="store_true")
@@ -121,6 +122,16 @@ if sys.version_info[0] < 3:
 
 # Parse arguments
 args = parser.parse_args()
+
+# Validate window Width
+if args.windowWidth < 1:
+  print("ERROR: minimum windowWidth 1")
+  exit()
+
+# Validate start and end years
+if args.startYear > args.endYear:
+  print("ERROR: startYear > endYear")
+  exit()
 
 # Create output folders if not exist
 if not os.path.exists(globalVar.GRAPHS_OUT_FOLDER):
@@ -369,7 +380,7 @@ for topicItem in topicResults:
 
   # Calculate AGR from rates
   endYearIndex = len(topicItem["year"]) - 1
-  startYearIndex = endYearIndex - args.windowWidth
+  startYearIndex = endYearIndex - (args.windowWidth - 1)
 
   topicItem["agr"] = \
     round(np.mean(topicItem["PapersCountRate"][startYearIndex : endYearIndex + 1]), 1)
@@ -380,7 +391,7 @@ for topicItem in topicResults:
 
   # Calculate ADY from rates
   endYearIndex = len(topicItem["year"]) - 1
-  startYearIndex = endYearIndex - args.windowWidth
+  startYearIndex = endYearIndex - (args.windowWidth - 1)
 
   topicItem["AverageDocPerYear"] = \
     round(np.mean(topicItem["PapersCount"][startYearIndex : endYearIndex + 1]), 1)

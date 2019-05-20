@@ -64,8 +64,6 @@ def plot_time_line(plt, topicResults, fSecundary):
     plt.ylabel("Number of documents")
 
 def plot_bar_horizontal(plt, topicResults, args):
-  topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
-
   ax = plt.gca()
   itemsName = []
   x = []
@@ -75,7 +73,7 @@ def plot_bar_horizontal(plt, topicResults, args):
 
   y_pos = np.arange(len(itemsName))[::-1]
 
-  plt.barh(y_pos, x, 0.6, align='center', color=globalVar.COLORS_TAB20, edgecolor="black", linewidth=0.5)
+  plt.barh(y_pos, x, 0.6, align='center', color=globalVar.COLORS_TAB20[0], edgecolor="black", linewidth=0.5)
   plt.yticks(y_pos, itemsName)
   plt.xlabel('Total number of documents')
 
@@ -87,8 +85,6 @@ def plot_bar_horizontal(plt, topicResults, args):
 
 
 def plot_bar_horizontal_trends(plt, topicResults, agrStartYear, agrEndYear, args):
-  topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
-
   ax = plt.gca()
   itemsName = []
   x = []
