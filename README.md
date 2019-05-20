@@ -110,7 +110,7 @@ authors affiliations
 
 For example, to find the top author keywords you can run this script:
 
-    python3 scientoPy.py authorKeywords
+    python3 scientoPy.py -c authorKeywords
 
 This will generate a list with the top 10 topics on the selected
 criterion (in this case authorKeywords), with the number of documents
@@ -130,14 +130,14 @@ If you want to make an analysis of custom topics, such as the two
 selected countries papers evolution, you can use the `scientoPy.py`
 script, with the option `-t`, to specify the topics:
 
-    python3 scientoPy.py country -t "United States; Brazil"
+    python3 scientoPy.py -c country -t "United States; Brazil"
 
 You can analyze any topic in any criterion. Put the topics on the `-t`
 argument. Divide the topics with the `;`. Also, you can integrate two or
 more topics in one, by dividing it with `,`. This is very useful for
 abbreviations and plural singulars, for example:
 
-    python3 scientoPy.py authorKeywords -t \
+    python3 scientoPy.py -c authorKeywords -t \
     "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION"
 
 **Note:** The command is very long, for that reason the command was
@@ -151,7 +151,7 @@ or ends with the letters that you have inserted. For example, if you
 want to find “device”, “devices”, and “device integration”, enter the
 following command:
 
-    python3 scientoPy.py authorKeywords -t "device*"
+    python3 scientoPy.py -c authorKeywords -t "device*"
 
 ScientoPy will print the topics found for the previous search:
 
@@ -161,7 +161,7 @@ ScientoPy will print the topics found for the previous search:
 You can use this information, to analyze each specific topic found, like
 this:
 
-    python3 scientoPy.py authorKeywords -t \
+    python3 scientoPy.py -c authorKeywords -t \
     "devices;device management;Device Interactions;Device objectification;Device;Device integration"
 
 ### Parametric plot
@@ -171,7 +171,7 @@ Also, you can see the results with a parametric graphic (add
 documents per year (ADY), and h-Index of the selected topic, for
 example:
 
-    python3 scientoPy.py authorKeywords -t \
+    python3 scientoPy.py -c authorKeywords -t \
     "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION" \
     --parametric
 
@@ -190,8 +190,8 @@ periods.
 To find the top trending topics on author keywords criterion, you can
 run the following script:
 
-    python3 scientoPy.py authorKeywords --trend --windowWidth 2 --startYear 2006 --endYear 2017 \
-    -l 10 -s 3 --parametric --agrForGraph --graphTitle "Internet of things trending topics"
+    python3 scientoPy.py -c authorKeywords --trend --startYear 2008 --endYear 2018 \
+    --windowWidth 2  --agrForGraph -g evolution
 
 This script will find the top 200 topics, then it calculates the AGR for
 the last 2 years (`--windowWidth 2`). Finally, the 200 top topics are
@@ -212,7 +212,7 @@ Analysis based on the previous results
 ScientoPy generates an output file with all the output documents from
 the last run script. For example if we run the command:
 
-    python3 scientoPy.py country -t "Canada" --noPlot
+    python3 scientoPy.py -c country -t "Canada" --noPlot
 
 ScientoPy will create a documents output file
 (`results/papersPreprocessed.tsv`) with all documents that have authors
@@ -221,14 +221,14 @@ perform an analysis based on this, in that way if we run the following
 command with the option `-r` or `--previousResults` after the previous
 one to analyze based on the previous results:
 
-    python3 scientoPy.py authorKeywords -r --bar
+    python3 scientoPy.py -c authorKeywords -r --bar
 
 we will obtain the top author keywords from papers where the author
 affiliation correspond to Canada. Also, we can run the following command
 to know which are the countries that have more common documents with
 Canada:
 
-    python3 scientoPy.py country -r --bar
+    python3 scientoPy.py -c country -r --bar
 
 **Note:** the ScientoPy documents output file is only generated when the
 `-r` or `--previousResults` is not used. In that way, if we run many
@@ -290,11 +290,12 @@ ScientoPy has 5 different ways to graph the results described bellow:
 
 | Graph type      | Argument        | Description                                                                                                                                       |
 |-----------------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| Time line       | No argument     | Graphs the number of documents of each topic vs the publication year                                                                              |
-| Horizontal bars | `--bar`         | Graphs the total number of documents of each topic in horizontal bars                                                                             |
-| Word cloud      | `--wordCloud`   | Generate a word cloud based on the topic total number of publications                                                                             |
-| Parametric      | `--parametric`  | Graphs two plots, one with the accumulative number of documents vs the publication year, and other withthe average papers per year vs the h-index |
-| Parametric2     | `--parametric2` | Graphs the total number of documents vs average papers per year                                                                                   |
+| Time line       | `-g time_line`     | Graphs the number of documents of each topic vs the publication year                                                                              |
+| Horizontal bars | `-g bar`         | Graphs the total number of documents of each topic in horizontal bars                                                                             |
+| Horizontal bars trends | `-g bar_trends`         | Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years     |
+| Word cloud      | `-g wordCloud`   | Generate a word cloud based on the topic total number of publications                                                                             |
+| Evolution      | `-g evolution`  | Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the percentage of documents in the last years |
+
 
 
 To see graph examples refer to the PDF manual:
