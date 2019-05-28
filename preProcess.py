@@ -126,7 +126,7 @@ preProcessBrief["loadedPapersWoS"] = globalVar.papersWoS
 # Open the file to write the preprocessing log in CSV
 logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
 fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]
-logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel_tab)
+logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
 logWriter.writeheader()
 
 

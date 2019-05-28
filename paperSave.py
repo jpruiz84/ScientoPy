@@ -42,7 +42,7 @@ def saveResults(paperDict, outFileName):
 
 
 
-    writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
+    writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
 
     writer.writeheader()
 
@@ -109,7 +109,7 @@ def saveResults(paperDict, outFileName):
                   "AR", "DI", "D2", "PG", "WC", "SC", "GA", "UT", "PM", "OA", "HC",
                   "HP", "DA", "duplicatedIn", "country"]
 
-    writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
+    writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
 
     writer.writeheader()
 
@@ -146,12 +146,12 @@ def saveTopResults(topicResults, criterionIn):
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".tsv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".csv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", criterion, "Total", "AGR", "ADY", "PDLY", "hIndex"] + list(topicResults[0]["year"])
 
-  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
+  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
   writer.writeheader()
 
   sortedResults = sorted(topicResults, key=lambda x: x["PapersTotal"], reverse=True)
@@ -186,13 +186,13 @@ def saveExtendedResults(topicResults, criterionIn):
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.tsv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.csv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "Year", "Title", "Abstract", "Document type",  "Authors",
                 "Author keywords", "Both keywords", "Country", "EID2",]
 
-  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
+  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
   writer.writeheader()
 
   sortedResults = sorted(topicResults, key=lambda x: x["PapersTotal"], reverse=True)
@@ -232,12 +232,12 @@ def saveExtendedResults(topicResults, criterionIn):
 
 def saveTopCited(papersDic):
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.tsv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.csv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", "Year", "Cited by", "Cited by scaled", "Title", "Authors", "Author keywords"]
 
-  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel_tab)
+  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
   writer.writeheader()
 
   count = 1

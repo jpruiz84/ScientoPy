@@ -225,7 +225,6 @@ def openFileToDict(ifile, papersDict):
 
       # Omit papers without title
       if paperIn["title"] == "":
-        print("No title, continue")
         continue
 
       # Put the database ussing eid
@@ -535,7 +534,7 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
           duplicatedWithDifferentCitedBy += 1
 
         # Average the two citedBy
-        paperDict[i]["citedBy"] = (int(paperDict[i + 1]["citedBy"]) + int(paperDict[i]["citedBy"])) / 2
+        paperDict[i]["citedBy"] = int((int(paperDict[i + 1]["citedBy"]) + int(paperDict[i]["citedBy"])) / 2)
 
         # Remove paper i + 1
         paperDict.remove(paperDict[i + 1])

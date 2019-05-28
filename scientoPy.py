@@ -506,7 +506,8 @@ if not args.noPlot:
 
     if args.yLog:
       plt.yscale('log')
-      plt.gca().yaxis.set_minor_formatter(mticker.ScalarFormatter())
+      #TODO: Fix mticker
+      #plt.gca().yaxis.set_minor_formatter(mticker.ScalarFormatter())
 
     if args.pYear:
       plt.ylabel("% of documents per year")
