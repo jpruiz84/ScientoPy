@@ -106,7 +106,7 @@ parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.
   'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
 
 
-
+parser.add_argument("--intermediateFolder", default="",  help='Custom folder for input and output subfolders')
 
 # ************************* Program start ********************************************************
 # ************************************************************************************************
@@ -134,16 +134,16 @@ if args.startYear > args.endYear:
   exit()
 
 # Create output folders if not exist
-if not os.path.exists(globalVar.GRAPHS_OUT_FOLDER):
-    os.makedirs(globalVar.GRAPHS_OUT_FOLDER)
-if not os.path.exists(globalVar.RESULTS_FOLDER):
-    os.makedirs(globalVar.RESULTS_FOLDER)
+if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER)):
+    os.makedirs(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER))
+if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER)):
+    os.makedirs(os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER))
 
 # Select the input file
 if args.previousResults:
-  INPUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
+  INPUT_FILE = os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
 else:
-  INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+  INPUT_FILE = os.path.join(args.intermediateFolder, globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
 # Start the list empty
 papersDict = []
@@ -523,14 +523,14 @@ if not args.noPlot:
   if args.savePlot == "":
     plt.show()
   else:
-    plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+    plt.savefig(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
     bbox_inches = 'tight', pad_inches = 0.01)
     print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
 
 
-paperSave.saveTopResults(topicResults, args.criterion)
-paperSave.saveExtendedResults(topicResults, args.criterion)
+paperSave.saveTopResults(topicResults, args.criterion, args.intermediateFolder)
+paperSave.saveExtendedResults(topicResults, args.criterion, args.intermediateFolder)
 
 # Only save results if that is result of a not previous result
 if not args.previousResults:
-  paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))
+  paperSave.saveResults(papersDictOut, os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME))

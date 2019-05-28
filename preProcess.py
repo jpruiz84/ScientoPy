@@ -38,6 +38,7 @@ parser.add_argument("--noRemDupl",
 help="To do not remove the duplicated documents", action="store_false")
 
 parser.add_argument("--savePlot", default="",  help='Save the pre processed graph to a file, ex: --savePlot "preProcessed.eps"')
+parser.add_argument("--intermediateFolder", default="",  help='Custom folder for input and output subfolders')
 
 parser.add_argument("--graphTitle",
 help="To put a title in the output graph", type=str)
@@ -58,12 +59,12 @@ if sys.version_info[0] < 3:
 
 
 # Create output folders if not exist
-if not os.path.exists(globalVar.DATA_OUT_FOLDER):
-  os.makedirs(globalVar.DATA_OUT_FOLDER)
-if not os.path.exists(globalVar.GRAPHS_OUT_FOLDER):
-  os.makedirs(globalVar.GRAPHS_OUT_FOLDER)
-if not os.path.exists(globalVar.RESULTS_FOLDER):
-  os.makedirs(globalVar.RESULTS_FOLDER)
+if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.DATA_OUT_FOLDER)):
+  os.makedirs(os.path.join(args.intermediateFolder, globalVar.DATA_OUT_FOLDER))
+if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER)):
+  os.makedirs(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER))
+if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER)):
+  os.makedirs(os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER))
 
 # Init variables
 paperDict = []
@@ -124,7 +125,7 @@ preProcessBrief["loadedPapersWoS"] = globalVar.papersWoS
 
 
 # Open the file to write the preprocessing log in CSV
-logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
+logFile = open(os.path.join(args.intermediateFolder, globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE), 'w', encoding='utf-8')
 fieldnames = ["Info", "Number", "Percentage" ,"Source"] + globalVar.INCLUDED_TYPES + ["Total"]
 logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
 logWriter.writeheader()
@@ -181,7 +182,7 @@ logWriter.writerow({'Info': 'Papers from Scopus',
 
 # Save final results
 paperSave.saveResults(paperDict,
-os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME))
+os.path.join(args.intermediateFolder, globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME))
 
 # Close log file
 logFile.close()
@@ -198,9 +199,9 @@ plt.tight_layout()
 if args.savePlot == "":
   plt.show()
 else:
-  plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+  plt.savefig(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
               bbox_inches='tight', pad_inches=0.01)
-  print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
+  print("Plot saved on: " + os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
 
 
 
