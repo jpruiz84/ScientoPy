@@ -471,6 +471,7 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
     paper["titleB"] = re.sub("[^a-zA-Z0-9]+", "",  paper["titleB"])
 
     paper["firstAuthorLastName"] = unidecode.unidecode(paper["author"])
+    paper["firstAuthorLastName"] = paper["firstAuthorLastName"].upper().strip()
     paper["firstAuthorLastName"] = re.sub(";|\.|,", " ", paper["firstAuthorLastName"]).split(" ")[0]
     paper["firstAuthorLastName"] = re.sub("[^a-zA-Z]+", "", paper["firstAuthorLastName"])
 
@@ -533,13 +534,11 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
         if int(paperDict[i]["citedBy"]) != int(paperDict[i + 1]["citedBy"]):
           duplicatedWithDifferentCitedBy += 1
 
-        # If the cited by count from the paper to remove is bigger than the cited by count for
-        # the paper to keep, set the cited by count with the bigger one
-        if int(paperDict[i + 1]["citedBy"]) > int(paperDict[i]["citedBy"]):
-          paperDict[i]["citedBy"] = paperDict[i + 1]["citedBy"]
+        # Average the two citedBy
+        paperDict[i]["citedBy"] = (int(paperDict[i + 1]["citedBy"]) + int(paperDict[i]["citedBy"])) / 2
 
         # Remove paper i + 1
-        paperDict.remove(paperDict[i+1])
+        paperDict.remove(paperDict[i + 1])
 
         # Update progress percentage
         duplicatedPapersCount += 1
