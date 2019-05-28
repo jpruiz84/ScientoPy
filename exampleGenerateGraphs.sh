@@ -16,7 +16,7 @@ python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar_tr
 python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g evolution --graphTitle "Top author keywords" --savePlot "graph_evolution.eps"
 
 # Example word cloud graph
-python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -l 500 -g word_cloud --savePlot "graph_word_cloud.eps"
+python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -l 500 -g word_cloud --savePlot "graph_word_cloud.png"
 
 # Example top trending topics with the highest AGR using evolution graph
 python3 scientoPy.py -c authorKeywords --trend --startYear 2008 --endYear 2018 -g evolution --agrForGraph --graphTitle "Trending top author keywords" --savePlot "graph_trending_with_agr.eps"
