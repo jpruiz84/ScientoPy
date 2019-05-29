@@ -583,9 +583,9 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
   preProcessBrief["papersWoS"] = preProcessBrief["loadedPapersWoS"] - preProcessBrief["removedPapersWoS"]
 
   logWriter.writerow({'Info': ''})
-  logWriter.writerow({'Info': 'Duplication removal statics'})
+  logWriter.writerow({'Info': 'Duplicated removal results:'})
 
-  logWriter.writerow({'Info': 'Total duplicated papers found',
+  logWriter.writerow({'Info': 'Duplicated papers found',
                       'Number':("%d" % (duplicatedPapersCount)),
                       'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
 
