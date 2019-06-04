@@ -301,8 +301,15 @@ def grapPreprocess(plt, preProcessBrief):
   x2.append(preProcessBrief["removedPapersWoS"])
   x2.append(preProcessBrief["removedPapersScopus"])
 
-  xPer.append(round(100*preProcessBrief["removedPapersWoS"]/preProcessBrief["loadedPapersWoS"]))
-  xPer.append(round(100*preProcessBrief["removedPapersScopus"] / preProcessBrief["loadedPapersScopus"]))
+  if preProcessBrief["loadedPapersWoS"] != 0:
+    xPer.append(round(100*preProcessBrief["removedPapersWoS"]/preProcessBrief["loadedPapersWoS"]))
+  else:
+    xPer.append(0)
+
+  if preProcessBrief["loadedPapersWoS"] != 0:
+    xPer.append(round(100*preProcessBrief["removedPapersWoS"]/preProcessBrief["loadedPapersWoS"]))
+  else:
+    xPer.append(0)
 
   y_pos = np.arange(len(itemsName))[::-1]
 
