@@ -132,7 +132,7 @@ logWriter.writeheader()
 
 
 logWriter.writerow({'Info': '***** Original data *****'})
-logWriter.writerow({'Info': 'Total loaded papers', 'Number' : str(globalVar.loadedPapers)})
+logWriter.writerow({'Info': 'Loaded papers', 'Number' : str(globalVar.loadedPapers)})
 
 logWriter.writerow({'Info': 'Omitted papers by document type',
                     'Number': ("%d" % (globalVar.omitedPapers)),
@@ -174,11 +174,20 @@ else:
 # Filter papers with invalid year
 papersDictYear = list(filter(lambda x: x["year"].isdigit(), paperDict))
 
+# To avoid by zero division
+if preProcessBrief["totalAfterRemDupl"] > 0:
+    percentagePapersWos = 100.0 * preProcessBrief["papersWoS"] / preProcessBrief["totalAfterRemDupl"]
+    percentagePapersScopus = 100.0 * preProcessBrief["papersScopus"] / preProcessBrief["totalAfterRemDupl"]
+else:
+    percentagePapersWos = 0
+    percentagePapersScopus = 0
 
 logWriter.writerow({'Info': 'Papers from WoS',
-                    'Number': ("%d" % (preProcessBrief["papersWoS"] ))})
+                    'Number': ("%d" % (preProcessBrief["papersWoS"] )),
+                    'Percentage': ("%.1f%%" % (percentagePapersWos))})
 logWriter.writerow({'Info': 'Papers from Scopus',
-                    'Number': ("%d" % (preProcessBrief["papersScopus"] ))})
+                    'Number': ("%d" % (preProcessBrief["papersScopus"] )),
+                    'Percentage': ("%.1f%%" % (percentagePapersScopus))})
 
 # Save final results
 paperSave.saveResults(paperDict,
