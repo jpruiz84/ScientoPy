@@ -18,6 +18,25 @@ It has the following main characteristics:
 - Five different visualization graphs: timeline, bar, evolution, and word cloud
 
 
+Download ScientoPyUI
+====================
+
+Download latest release
+-----------------------
+
+To get the latest release stable version, download it from the following
+link:\
+<https://github.com/jpruiz84/ScientoPy/releases>
+
+Clone from the repository
+-------------------------
+
+To clone directly the last version from the repository run the following
+git command:
+
+    git clone https://github.com/jpruiz84/ScientoPy
+
+
 Installation
 ============
 
