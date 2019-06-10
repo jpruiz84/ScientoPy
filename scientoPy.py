@@ -151,6 +151,11 @@ papersDictOut = []
 topicList = []
 
 # Open the storage database and add to papersDict
+if not os.path.isfile(INPUT_FILE):
+  print("ERROR: %s file not found" % INPUT_FILE)
+  print("Make sure that you have run the preprocess step before run scientoPy")
+  exit()
+
 ifile = open(INPUT_FILE, "r", encoding='utf-8')
 print("Reading file: %s" % (INPUT_FILE))
 paperUtils.openFileToDict(ifile, papersDict)
