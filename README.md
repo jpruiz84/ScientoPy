@@ -15,15 +15,19 @@ It has the following main characteristics:
 - Top topics and specific topics analysis
 - Wildcard topics search
 - Trending topics using the top average growth rate (AGR)
-- Five different visualization graphs: timeline, bar, parametric, and word cloud
+- Five different visualization graphs: timeline, bar, evolution, and word cloud
 
 
 Installation
 ============
 
-1.  For Windows download and install the Python 3 latest version (for
-    example Python 3.6.5) from:\
-    <https://www.python.org/downloads/>.
+1.  For Windows download and install the Python 3 latest version (for example Python
+    3.6.5) from:\
+    <https://www.python.org/downloads/>.\
+    **IMPORTANT NOTE:** during the installation select the option “Add
+    Python 3.7 to PATH” as indicated in the following figure:
+
+    ![image](./Manual/source/manual/figures/python_path.jpg)
 
 2.  For Debian or Ubuntu run these commands to install Python3:
 
@@ -39,16 +43,17 @@ Installation
     R, cmd, and Enter), and run the installation script:
 
         python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
+        
+    **IMPORTANT NOTE:** for Windows use python instead of python3
 
 The bibliometric dataset
 =======================
 
 To download a custom dataset refer to the user manual: 
-
-    Manual/ScientoPy_user_manual.pdf
-
+    [Manual/ScientoPy_user_manual.pdf](./Manual/ScientoPy_user_manual.pdf)
+    
 In this repo we include an example dataset that was donwloaded using: 
-"Internet of thing"  AND  "Gateway" as search criteria 
+"Bluetooth low energy" as search criteria 
 
 
 Running the ScientoPy scripts
@@ -164,16 +169,15 @@ this:
     python3 scientoPy.py -c authorKeywords -t \
     "devices;device management;Device Interactions;Device objectification;Device;Device integration"
 
-### Parametric plot
+### Evolution plot
 
-Also, you can see the results with a parametric graphic (add
-`--parametirc`). This option plot the accumulative documents, average
-documents per year (ADY), and h-Index of the selected topic, for
-example:
+Also, you can see the results with a evolution graphic (add
+`-g evolution`). This option plot the accumulative documents, average
+documents per year (ADY), and PDLY, for example:
 
     python3 scientoPy.py -c authorKeywords -t \
     "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION" \
-    --parametric
+    -g evolution
 
 This script have more options like, save the plot on a file, or others.
 For more information you can run:
@@ -197,7 +201,7 @@ This script will find the top 200 topics, then it calculates the AGR for
 the last 2 years (`--windowWidth 2`). Finally, the 200 top topics are
 sorted from the highest AGR in the last 2 year period to the lower. The
 first 3 AGR topics are filtered (they correspond to the keyword Internet
-of things), and the next 10 topics are garph in a parametric plot.
+of things), and the next 10 topics are garph in a evolution plot.
 
 For more information about the AGR calculation refer to the 
 PDF manual:
@@ -221,14 +225,14 @@ perform an analysis based on this, in that way if we run the following
 command with the option `-r` or `--previousResults` after the previous
 one to analyze based on the previous results:
 
-    python3 scientoPy.py -c authorKeywords -r --bar
+    python3 scientoPy.py -c authorKeywords -r -g bar
 
 we will obtain the top author keywords from papers where the author
 affiliation correspond to Canada. Also, we can run the following command
 to know which are the countries that have more common documents with
 Canada:
 
-    python3 scientoPy.py -c country -r --bar
+    python3 scientoPy.py -c country -r -g bar
 
 **Note:** the ScientoPy documents output file is only generated when the
 `-r` or `--previousResults` is not used. In that way, if we run many
@@ -300,7 +304,7 @@ ScientoPy has 5 different ways to graph the results described bellow:
 
 To see graph examples refer to the PDF manual:
 
-    Manual/ScientoPy_user_manual.pdf
+[Manual/ScientoPy_user_manual.pdf](./Manual/ScientoPy_user_manual.pdf)
 
 
 
