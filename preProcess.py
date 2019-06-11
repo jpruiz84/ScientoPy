@@ -89,6 +89,10 @@ preProcessBrief["removedPapersScopus"] = 0
 preProcessBrief["removedPapersWoS"] = 0
 preProcessBrief["papersScopus"] = 0
 preProcessBrief["papersWoS"] = 0
+preProcessBrief["percenRemPapersScopus"] = 0
+preProcessBrief["percenRemPapersWos"] = 0
+
+
 
 
 

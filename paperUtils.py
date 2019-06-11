@@ -550,13 +550,13 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
 
   # To avoid by zero division
   if globalVar.papersScopus > 0:
-    percentajeRemovedPapersScopus = 100.0*removedPapersScopus/globalVar.papersScopus
+    preProcessBrief["percenRemPapersScopus"] = 100.0*removedPapersScopus/globalVar.papersScopus
   else:
-    percentajeRemovedPapersScopus = 0
+    preProcessBrief["percenRemPapersScopus"] = 0
   if globalVar.papersWoS > 0:
-    percentajeRemovedPapersWoS = 100.0 * removedPapersWoS / globalVar.papersWoS
+    preProcessBrief["percenRemPapersWos"] = 100.0 * removedPapersWoS / globalVar.papersWoS
   else:
-    percentajeRemovedPapersWoS = 0
+    preProcessBrief["percenRemPapersWos"] = 0
   if duplicatedPapersCount > 0:
     percenDuplicatedWithDifferentCitedBy = 100.0*duplicatedWithDifferentCitedBy/duplicatedPapersCount
   else:
@@ -568,9 +568,9 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
   print("Original papers count: %s" % globalVar.OriginalTotalPapers)
   print("Actual papers count: %s" % len(paperDict))
   print("Removed papers WoS: %s, %.1f %%" %
-        (removedPapersWoS, percentajeRemovedPapersWoS))
+        (removedPapersWoS, preProcessBrief["percenRemPapersWos"]))
   print("Removed papers Scopus: %s, %.1f %%" %
-        (removedPapersScopus, percentajeRemovedPapersScopus))
+        (removedPapersScopus, preProcessBrief["percenRemPapersScopus"]))
   if(duplicatedPapersCount != 0):
     print("Duplicated documents with different cited by: %s, %.1f %%\n" % (duplicatedWithDifferentCitedBy,
                                                                            percenDuplicatedWithDifferentCitedBy))
@@ -593,11 +593,11 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
 
   logWriter.writerow({'Info': 'Removed duplicated papers from WoS',
                       'Number':("%d" % (removedPapersWoS)),
-                      'Percentage': ("%.1f%%" % (percentajeRemovedPapersWoS))})
+                      'Percentage': ("%.1f%%" % (preProcessBrief["percenRemPapersWos"]))})
 
   logWriter.writerow({'Info': 'Removed duplicated papers from Scopus',
                       'Number':("%d" % (removedPapersScopus)),
-                      'Percentage': ("%.1f%%" % (percentajeRemovedPapersScopus))})
+                      'Percentage': ("%.1f%%" % (preProcessBrief["percenRemPapersScopus"]))})
 
   logWriter.writerow({'Info': 'Duplicated documents with different cited by',
                       'Number':("%d" % (duplicatedWithDifferentCitedBy)),
