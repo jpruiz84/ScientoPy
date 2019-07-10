@@ -105,10 +105,7 @@ for file in os.listdir(os.path.join(args.dataInFolder, '')):
     ifile = open(os.path.join(args.dataInFolder, '') + file, "r", encoding='utf-8')
     paperUtils.openFileToDict(ifile, paperDict)
 
-# Filter papers with invalid year
-paperDict = list(filter(lambda x: x["year"].isdigit(), paperDict))
-
-
+# If not documents found
 if(globalVar.loadedPapers == 0):
   print("ERROR: 0 documents found from " + os.path.join(args.dataInFolder, ''))
   print("")
@@ -122,9 +119,6 @@ preProcessBrief["papersAfterRemOmitted"] = globalVar.OriginalTotalPapers
 
 preProcessBrief["loadedPapersScopus"] = globalVar.papersScopus
 preProcessBrief["loadedPapersWoS"] = globalVar.papersWoS
-
-
-
 
 
 
@@ -163,9 +157,6 @@ paperUtils.sourcesStatics(paperDict, logWriter)
 # Removing duplicates
 if args.noRemDupl:
   paperDict = paperUtils.removeDuplicates(paperDict, logWriter, preProcessBrief)
-  logWriter.writerow({'Info': ''})
-  logWriter.writerow({'Info': 'Output papers after duplication removal filter'})
-  paperUtils.sourcesStatics(paperDict, logWriter)
 
 # if not remove duplicates
 else:
@@ -192,6 +183,13 @@ logWriter.writerow({'Info': 'Papers from WoS',
 logWriter.writerow({'Info': 'Papers from Scopus',
                     'Number': ("%d" % (preProcessBrief["papersScopus"] )),
                     'Percentage': ("%.1f%%" % (percentagePapersScopus))})
+
+# Statics after removing duplicates
+if args.noRemDupl:
+  logWriter.writerow({'Info': ''})
+  logWriter.writerow({'Info': 'Statics after duplication removal filter'})
+  paperUtils.sourcesStatics(paperDict, logWriter)
+
 
 # Save final results
 paperSave.saveResults(paperDict,

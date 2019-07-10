@@ -223,6 +223,10 @@ def openFileToDict(ifile, papersDict):
 
         colnum += 1
 
+      # Omit papers with invalid year
+      if not paperIn["year"].isdigit():
+        continue
+
       # Omit papers without title
       if paperIn["title"] == "":
         continue
@@ -233,8 +237,11 @@ def openFileToDict(ifile, papersDict):
           paperIn["dataBase"] = "WoS"
           paperIn["source"] = "WoS"
 
-        if paperIn["eid"].startswith("2-"):
+        elif paperIn["eid"].startswith("2-"):
           paperIn["dataBase"] = "Scopus"
+        # If not valid eid
+        else:
+          continue
 
       # If cited by is emtpy add 0
       if paperIn["citedBy"] == "":
