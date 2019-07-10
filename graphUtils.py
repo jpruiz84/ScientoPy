@@ -272,6 +272,8 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   ax0.set_ylim(0, ymax)
   ax0.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
+  # Only integers in accomulatlive number of documents
+  ax0.yaxis.set_major_locator(MaxNLocator(integer=True))
 
   ax0.ticklabel_format(useOffset=False)
   legend1 = ax0.legend(legendArray, loc=2, fontsize=10, scatterpoints=1)
