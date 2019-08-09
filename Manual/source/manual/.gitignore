@@ -22,3 +22,4 @@
 
 # Include eps figures
 !figures/*.eps
+!figures/*.jpg
