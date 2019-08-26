@@ -104,7 +104,7 @@ for paper in papersToBib:
     authorsNames = authorsNames.replace(",", ";")
     authorsNames = authorsNames.split(";")
     authorsNames = [x.strip() for x in authorsNames]
-    authorsNames = [x.replace(" ", ", ") for x in authorsNames]
+    authorsNames = [x.replace(" ", ", ", 1) for x in authorsNames]
     authorsNames = " and ".join(authorsNames)
 
   if paper["dataBase"] == "WoS":
@@ -112,31 +112,54 @@ for paper in papersToBib:
 
   # Preprocess fields
   paper["title"] = unidecode.unidecode(paper["title"])
+  paper["title"] = paper["title"].replace("&", "\&").replace("_", "\_")
+  paper["title"] = paper["title"].replace('"', '``', 1).replace('"', "''")
+  
   paper["sourceTitle"] = unidecode.unidecode(paper["sourceTitle"])
+  paper["sourceTitle"] = paper["sourceTitle"].replace("&","\&").replace("_", "\_")
+
+  paper["pageCount"] = paper["pageCount"].replace("&","\&").replace("_", "\_")
+  paper["publisher"] = paper["publisher"].replace("&","\&").replace("_", "\_")
 
   if(paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
     ofile.write('@Article{%s,\n' % paper["eid"])
-    ofile.write('  author \t=\t"%s",\n' % authorsNames)
-    ofile.write('  title\t\t=\t"%s",\n' % paper["title"].replace("&", "\&").replace("_", "\_"))
-    ofile.write('  journal \t=\t"%s",\n' % paper["sourceTitle"].replace("&","\&").replace("_", "\_"))
-    ofile.write('  numpages\t=\t"%s",\n' % paper["pageCount"].replace("&","\&").replace("_", "\_"))
-    ofile.write('  volume \t=\t"%s",\n' % paper["volume"])
-    ofile.write('  number \t=\t"%s",\n' % paper["artNo"])
-    ofile.write('  year \t\t=\t"%s",\n' % paper["year"])
-    ofile.write('  doi \t\t=\t"%s",\n' % paper["doi"])
+    ofile.write('  Author \t=\t"%s",\n' % authorsNames)
+    ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
+    ofile.write('  Journal \t=\t"%s",\n' % paper["sourceTitle"])
+    if paper["pageCount"]:
+      ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
+    if paper["volume"]:
+      ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
+    if paper["artNo"]:
+      ofile.write('  Article-Number \t=\t"%s",\n' % paper["artNo"])
+    ofile.write('  Year \t\t=\t"%s",\n' % paper["year"])
+    if paper["issn"]:
+      ofile.write('  ISSN \t\t=\t"%s",\n' % paper["issn"])
+    if paper["isbn"]:
+      ofile.write('  ISBN \t\t=\t"%s",\n' % paper["isbn"])
+    if paper["doi"]:
+      ofile.write('  DOI \t\t=\t"%s",\n' % paper["doi"])
     ofile.write('}\n\n\n')
 
   if (paper["documentType"].split(";")[0] in ["Conference Paper", "Proceedings Paper",]):
     ofile.write('@Inproceedings{%s,\n'% paper["eid"])
-    ofile.write('  author \t=\t"%s",\n' % authorsNames)
-    ofile.write('  title\t\t=\t"%s",\n' % paper["title"].replace("&","\&").replace("_", "\_"))
-    ofile.write('  booktitle \t=\t"%s",\n' % paper["sourceTitle"].replace("&","\&").replace("_", "\_"))
-    ofile.write('  publisher \t=\t"%s",\n' % paper["publisher"].replace("&","\&").replace("_", "\_"))
-    ofile.write('  numpages\t=\t"%s",\n' % paper["pageCount"])
-    ofile.write('  volume \t=\t"%s",\n' % paper["volume"])
-    ofile.write('  number \t=\t"%s",\n' % paper["artNo"])
-    ofile.write('  year \t\t=\t"%s",\n' % paper["year"])
-    ofile.write('  doi \t\t=\t"%s",\n' % paper["doi"])
+    ofile.write('  Author \t=\t"%s",\n' % authorsNames)
+    ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
+    ofile.write('  Booktitle \t=\t"%s",\n' % paper["sourceTitle"])
+    ofile.write('  Publisher \t=\t"%s",\n' % paper["publisher"])
+    if paper["pageCount"]:
+      ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
+    if paper["volume"]:
+      ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
+    if paper["artNo"]:
+      ofile.write('  Article-Number \t=\t"%s",\n' % paper["artNo"])
+    ofile.write('  Year \t\t=\t"%s",\n' % paper["year"])
+    if paper["issn"]:
+      ofile.write('  ISSN \t\t=\t"%s",\n' % paper["issn"])
+    if paper["isbn"]:
+      ofile.write('  ISBN \t\t=\t"%s",\n' % paper["isbn"])
+    if paper["doi"]:
+      ofile.write('  DOI \t\t=\t"%s",\n' % paper["doi"])
     ofile.write('}\n\n\n')
 
 print("Total references generated: %d" % len(papersToBib))
