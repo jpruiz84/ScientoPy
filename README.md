@@ -61,6 +61,7 @@ Installation
     Python libraries. For Windows, enter in the command line (Windows +
     R, cmd, and Enter), and run the installation script:
 
+        python3 -m pip install --upgrade pip
         python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
         
     **IMPORTANT NOTE:** for Windows use python instead of python3
