@@ -249,20 +249,36 @@ def openFileToDict(ifile, papersDict):
 
       # Change to false to not preprocess author
       if True:
-        # For Scopus author, replace , with ;
-        if paperIn["dataBase"] == "Scopus":
-          paperIn["author"] = paperIn["author"].replace(".,", ";")
-
-        # Remove dots from author
-        paperIn["author"] = paperIn["author"].replace(".", "")
-
-        # Remove coma from author
-        paperIn["author"] = paperIn["author"].replace(",", "")
+        if paperIn["dataBase"] == "WoS":
+          paperIn["author"] = paperIn["author"].replace(";", ",")
 
         # Remove accents in author
         paperIn["author"] = unidecode.unidecode(paperIn["author"])
         paperIn["authorFull"] = unidecode.unidecode(paperIn["authorFull"])
 
+        # Put a dot after the name initials in uppercase
+        author = []
+        for i in range(len(paperIn["author"])):
+          author.append(paperIn["author"][i])
+
+          # if the last character and uppercase, put the dot
+          if i == len(paperIn["author"]) - 1:
+            if paperIn["author"][i].isupper():
+              author.append('.')
+              break
+
+          # if upper and the next is upper or "," put the dot
+          if paperIn["author"][i].isupper() and \
+                  (paperIn["author"][i + 1].isupper() or paperIn["author"][i + 1] == ','):
+            author.append('.')
+
+        paperIn["author"] = ''.join(author)
+
+      # Remove the "-" that is before an initial, to have coherence between WoS and Scoups
+      paperIn["author"] = paperIn["author"].replace(".-", ".")
+
+      # Replace authors separater ".," with ";" for scientopy analysis, put it back in paperSave
+      paperIn["author"] = paperIn["author"].replace(".,", ".;")
 
       # Extract country, institution and institutionWithCountry from affilation
       if paperIn["country"] == "" or paperIn["institution"] == "" or paperIn["institutionWithCountry"] == "":

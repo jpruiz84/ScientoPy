@@ -50,7 +50,9 @@ def saveResults(paperDict, outFileName):
 
       paperDicWrite = {}
 
-      paperDicWrite["Authors"] = paperOut["author"]
+      # Relpace ";" to "," to have the same Scopus format output
+      paperDicWrite["Authors"] = paperOut["author"].replace(";", ",")
+
       paperDicWrite["Title"] = paperOut["title"]
       paperDicWrite["Year"] = paperOut["year"]
       paperDicWrite["Source title"] = paperOut["sourceTitle"]
