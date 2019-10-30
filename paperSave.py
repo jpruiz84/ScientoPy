@@ -36,6 +36,7 @@ def saveResults(paperDict, outFileName):
     fieldnames = ["Authors", "Title", "Year", "Source title", "Volume", "Issue", "Art. No.", "Page start",
                   "Page end", "Page count", "Cited by", "DOI", "Link", "Affiliations", "Authors with affiliations",
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
+                  "Publisher Address", "Conference name", "Conference location", "Conference date",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
                   "Abbreviated Source Title", "Document Type", "Source", "Subject", "EID", "duplicatedIn",
                   "country", "emailHost", "institution", "institutionWithCountry", "authorFull"]
@@ -73,6 +74,12 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["Index Keywords"] = paperOut["indexKeywords"]
       paperDicWrite["Correspondence Address"] = paperOut["correspondenceAddress"]
       paperDicWrite["Editors"] = paperOut["editors"]
+
+      paperDicWrite["Publisher Address"] = paperOut["publisherAddress"]
+      paperDicWrite["Conference name"] = paperOut["conferenceTitle"]
+      paperDicWrite["Conference location"] = paperOut["conferenceLocation"]
+      paperDicWrite["Conference date"] = paperOut["conferenceDate"]
+
       paperDicWrite["Publisher"] = paperOut["publisher"]
       paperDicWrite["ISSN"] = paperOut["issn"]
       paperDicWrite["ISBN"] = paperOut["isbn"]

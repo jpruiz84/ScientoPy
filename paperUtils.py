@@ -65,6 +65,12 @@ def openFileToDict(ifile, papersDict):
       paperIn["affiliations"] = ""
       paperIn["authorsWithAffiliations"] = ""
       paperIn["correspondenceAddress"] = ""
+
+      paperIn["publisherAddress"] = ""
+      paperIn["conferenceTitle"] = ""
+      paperIn["conferenceLocation"] = ""
+      paperIn["conferenceDate"] = ""
+
       paperIn["editors"] = ""
       paperIn["publisher"] = ""
       paperIn["issn"] = ""
@@ -127,6 +133,12 @@ def openFileToDict(ifile, papersDict):
         if headerCol == "Author Keywords": paperIn["authorKeywords"] = col
         if headerCol == "Index Keywords": paperIn["indexKeywords"] = col
         if headerCol == "Correspondence Address": paperIn["correspondenceAddress"] = col
+
+        if headerCol == "Conference name": paperIn["conferenceTitle"] = col
+        if headerCol == "Conference date": paperIn["conferenceDate"] = col
+        if headerCol == "Conference location": paperIn["conferenceLocation"] = col
+        if headerCol == "Publisher Address": paperIn["publisherAddress"] = col
+
         if headerCol == "Editors": paperIn["editors"] = col
         if headerCol == "Publisher": paperIn["publisher"] = col
         if headerCol == "ISSN": paperIn["issn"] = col
@@ -154,9 +166,9 @@ def openFileToDict(ifile, papersDict):
         #if headerCol == "BS": paperIn[""] = col   # Book Series subtitle
         if headerCol == "LA": paperIn["languageOfOriginalDocument"] = col   # Language
         if headerCol == "DT": paperIn["documentType"] = col   # Language
-        #if headerCol == "CT": paperIn[""] = col    # Conference Title
-        #if headerCol == "CY": paperIn[""] = col    # Conference Date
-        #if headerCol == "CL": paperIn[""] = col    # Conference Location
+        if headerCol == "CT": paperIn["conferenceTitle"] = col    # Conference Title
+        if headerCol == "CY": paperIn["conferenceDate"] = col    # Conference Date
+        if headerCol == "CL": paperIn["conferenceLocation"] = col    # Conference Location
         #if headerCol == "SP": paperIn[""] = col    # Conference Sponsor
         #if headerCol == "HO": paperIn[""] = col    # Conference Host
         if headerCol == "DE": paperIn["authorKeywords"] = col   # Author Keywords
@@ -181,7 +193,7 @@ def openFileToDict(ifile, papersDict):
         #if headerCol == "U2": paperIn[""] = col    # Usage Count (Since 2013)
         if headerCol == "PU": paperIn["publisher"] = col    # Publisher
         #if headerCol == "PI": paperIn[""] = col    # Publisher City
-        #if headerCol == "PA": paperIn[""] = col    # Publisher Address
+        if headerCol == "PA": paperIn["publisherAddress"] = col    # Publisher Address
         if headerCol == "SN": paperIn["issn"] = col   # International Standard Serial Number (ISSN)
         #if headerCol == "EI": paperIn[""] = col    # Electronic International Standard Serial Number (eISSN)
         if headerCol == "BN": paperIn["isbn"] = col   # International Standard Book Number (ISBN)

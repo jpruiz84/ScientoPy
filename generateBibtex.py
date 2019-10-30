@@ -120,6 +120,10 @@ for paper in papersToBib:
 
   paper["pageCount"] = paper["pageCount"].replace("&","\&").replace("_", "\_")
   paper["publisher"] = paper["publisher"].replace("&","\&").replace("_", "\_")
+  paper["publisherAddress"] = paper["publisherAddress"].replace("&", "\&").replace("_", "\_")
+  paper["conferenceTitle"] = paper["conferenceTitle"].replace("&", "\&").replace("_", "\_")
+  paper["conferenceLocation"] = paper["conferenceLocation"].replace("&", "\&").replace("_", "\_")
+  paper["conferenceDate"] = paper["conferenceDate"].replace("&", "\&").replace("_", "\_")
 
   if(paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
     ofile.write('@Article{%s,\n' % paper["eid"])
@@ -128,6 +132,8 @@ for paper in papersToBib:
     ofile.write('  Journal \t=\t"%s",\n' % paper["sourceTitle"])
     if paper["pageCount"]:
       ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
+    if paper["pageSart"] and paper["pageEnd"]:
+      ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
     if paper["volume"]:
       ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
     if paper["artNo"]:
@@ -145,10 +151,22 @@ for paper in papersToBib:
     ofile.write('@Inproceedings{%s,\n'% paper["eid"])
     ofile.write('  Author \t=\t"%s",\n' % authorsNames)
     ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
-    ofile.write('  Booktitle \t=\t"%s",\n' % paper["sourceTitle"])
-    ofile.write('  Publisher \t=\t"%s",\n' % paper["publisher"])
+    if paper["sourceTitle"]:
+      ofile.write('  Booktitle \t=\t"%s",\n' % paper["sourceTitle"])
+    if paper["publisher"]:
+      ofile.write('  Publisher \t=\t"%s",\n' % paper["publisher"])
+    if paper["publisherAddress"]:
+      ofile.write('  Numpages\t=\t"%s",\n' % paper["publisherAddress"])
+    if paper["conferenceTitle"] and paper["conferenceLocation"] and paper["conferenceDate"]:
+      ofile.write('  Note\t\t=\t"%s, %s, %s",\n' %
+                  (paper["conferenceTitle"], paper["conferenceLocation"], paper["conferenceDate"]))
+    elif paper["conferenceTitle"] and paper["conferenceDate"]:
+      ofile.write('  Note\t\t=\t"%s, %s",\n' %
+                  (paper["conferenceTitle"], paper["conferenceDate"]))
     if paper["pageCount"]:
-      ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
+      ofile.write('  Address\t=\t"%s",\n' % paper["pageCount"])
+    if paper["pageSart"] and paper["pageEnd"]:
+      ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
     if paper["volume"]:
       ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
     if paper["artNo"]:
