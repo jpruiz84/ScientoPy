@@ -151,17 +151,15 @@ for paper in papersToBib:
     ofile.write('@Inproceedings{%s,\n'% paper["eid"])
     ofile.write('  Author \t=\t"%s",\n' % authorsNames)
     ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
-    if paper["sourceTitle"]:
-      ofile.write('  Booktitle \t=\t"%s",\n' % paper["sourceTitle"])
     if paper["publisher"]:
       ofile.write('  Publisher \t=\t"%s",\n' % paper["publisher"])
     if paper["publisherAddress"]:
       ofile.write('  Numpages\t=\t"%s",\n' % paper["publisherAddress"])
     if paper["conferenceTitle"] and paper["conferenceLocation"] and paper["conferenceDate"]:
-      ofile.write('  Note\t\t=\t"%s, %s, %s",\n' %
+      ofile.write('  Note\t\t=\t"In Proceedings of the %s, %s, %s",\n' %
                   (paper["conferenceTitle"], paper["conferenceLocation"], paper["conferenceDate"]))
     elif paper["conferenceTitle"] and paper["conferenceDate"]:
-      ofile.write('  Note\t\t=\t"%s, %s",\n' %
+      ofile.write('  Note\t\t=\t"In  {Proceedings of the } %s, %s",\n' %
                   (paper["conferenceTitle"], paper["conferenceDate"]))
     if paper["pageCount"]:
       ofile.write('  Address\t=\t"%s",\n' % paper["pageCount"])
