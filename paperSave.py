@@ -32,7 +32,7 @@ def saveResults(paperDict, outFileName):
 
     ofile = open(outFileName, 'w', encoding='utf-8')
 
-    # WoS Fieldnames
+    # Scopus Fieldnames
     fieldnames = ["Authors", "Title", "Year", "Source title", "Volume", "Issue", "Art. No.", "Page start",
                   "Page end", "Page count", "Cited by", "DOI", "Link", "Affiliations", "Authors with affiliations",
                   "Abstract", "Author Keywords", "Index Keywords", "bothKeywords", "Correspondence Address", "Editors",
