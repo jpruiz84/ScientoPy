@@ -79,6 +79,11 @@ class ScientoPyGui:
         self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=70, height=10)
         self.entryCustomTopics.grid(column=2, row=1, rowspan=5)
 
+        self.chkValuePreviusResults = BooleanVar()
+        self.chkValuePreviusResults.set(False)
+        checkPreviousResults = Checkbutton(process_page, var=self.chkValuePreviusResults,
+                                           text="Use previous results").grid(column=2, row=6, sticky=W, padx=15)
+
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.grid(column=0, row=7, sticky=W)
 
@@ -96,6 +101,8 @@ class ScientoPyGui:
         webbrowser.open(self.scientoPy.extResultsFileName)
 
     def scientoPyRun(self):
+        print(self.chkValuePreviusResults.get())
+
         self.scientoPy.closePlot()
 
         self.scientoPy.criterion = self.comboCriterion.get()
@@ -104,6 +111,7 @@ class ScientoPyGui:
         self.scientoPy.endYear = int(self.spinEndYear.get())
         self.scientoPy.length = int(self.spinTopicsLength.get())
         self.scientoPy.windowWidth = int(self.spinWindowWidth.get())
+        self.scientoPy.previousResults = self.chkValuePreviusResults.get()
 
         if bool(self.entryCustomTopics.get("1.0", END).strip()):
             self.scientoPy.topics = self.entryCustomTopics.get("1.0", END).replace("\n",";")

@@ -62,6 +62,7 @@ class ScientoPyClass:
         self.papersDict = []
         self.resultsFileName = ''
         self.extResultsFileName = ''
+        self.lastPreviousResults = ''
 
     def closePlot(self):
         plt.close()
@@ -101,12 +102,25 @@ class ScientoPyClass:
         else:
             INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
+
+
         # Start the output list empty
         papersDictOut = []
         topicList = []
 
+        loadDataSet = False
+
+        if len(self.papersDict) == 0 or args.previousResults:
+            loadDataSet = True
+
+        if args.previousResults == False and self.lastPreviousResults == True:
+            loadDataSet = True
+
+
         # Open the dataset only if not loaded in papersDict
-        if len(self.papersDict) == 0:
+        if loadDataSet:
+            self.papersDict = []
+            self.lastPreviousResults = args.previousResults
             # Open the storage database and add to sel.fpapersDict
             if not os.path.isfile(INPUT_FILE):
                 print("ERROR: %s file not found" % INPUT_FILE)
@@ -172,7 +186,6 @@ class ScientoPyClass:
                         topic.remove(topic[idx])
                 if not topic:
                     topicList.remove(topic)
-
 
             # Remove for each sub topic, start and end spaces
             for item1 in topicList:
