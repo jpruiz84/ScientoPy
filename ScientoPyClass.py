@@ -31,12 +31,39 @@ import re
 from PIL import Image
 
 
-
 class ScientoPyClass:
-    def __init__(self):
-        return
+    def __init__(self, from_gui=False):
 
-    def scientoPy(self, args):
+        # Parameters variables
+        self.criterion = 'authorKeywords'
+        self.graphType = 'bar_trends'
+        self.length = 10
+        self.start = 0
+        self.topics = ''
+        self.startYear = globalVar.DEFAULT_START_YEAR
+        self.endYear = globalVar.DEFAULT_END_YEAR
+        self.savePlot = ''
+        self.noPlot = False
+        self.agrForGraph = False
+        self.wordCloudMask = ''
+        self.windowWidth = 2
+        self.previousResults = False
+        self.onlyFirst = False
+        self.graphTitle = ''
+        self.pYear = False
+        self.plotWidth = globalVar.DEFAULT_PLOT_WIDTH
+        self.plotHeight = globalVar.DEFAULT_PLOT_HEIGHT
+        self.trend = False
+        self.yLog = False
+        self.filter = ""
+        self.fromGui = from_gui
+
+        # Working variables
+        self.papersDict = []
+
+    def scientoPy(self, args=''):
+        if args == '':
+            args = self
 
         print("\n\nScientoPy: %s" % (globalVar.SCIENTOPY_VERSION))
         print("================\n")
@@ -58,37 +85,38 @@ class ScientoPyClass:
             exit()
 
         # Create output folders if not exist
-        if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER)):
-            os.makedirs(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER))
-        if not os.path.exists(os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER)):
-            os.makedirs(os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER))
+        if not os.path.exists(os.path.join(globalVar.GRAPHS_OUT_FOLDER)):
+            os.makedirs(os.path.join(globalVar.GRAPHS_OUT_FOLDER))
+        if not os.path.exists(os.path.join(globalVar.RESULTS_FOLDER)):
+            os.makedirs(os.path.join(globalVar.RESULTS_FOLDER))
 
         # Select the input file
         if args.previousResults:
-            INPUT_FILE = os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
+            INPUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
         else:
-            INPUT_FILE = os.path.join(args.intermediateFolder, globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+            INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
-        # Start the list empty
-        papersDict = []
+        # Start the output list empty
         papersDictOut = []
         topicList = []
 
-        # Open the storage database and add to papersDict
-        if not os.path.isfile(INPUT_FILE):
-            print("ERROR: %s file not found" % INPUT_FILE)
-            print("Make sure that you have run the preprocess step before run scientoPy")
-            exit()
+        # Open the dataset only if not loaded in papersDict
+        if len(self.papersDict) == 0:
+            # Open the storage database and add to sel.fpapersDict
+            if not os.path.isfile(INPUT_FILE):
+                print("ERROR: %s file not found" % INPUT_FILE)
+                print("Make sure that you have run the preprocess step before run scientoPy")
+                exit()
 
-        ifile = open(INPUT_FILE, "r", encoding='utf-8')
-        print("Reading file: %s" % (INPUT_FILE))
-        paperUtils.openFileToDict(ifile, papersDict)
-        ifile.close()
+            ifile = open(INPUT_FILE, "r", encoding='utf-8')
+            print("Reading file: %s" % (INPUT_FILE))
+            paperUtils.openFileToDict(ifile, self.papersDict)
+            ifile.close()
 
-        print("Scopus papers: %s" % globalVar.papersScopus)
-        print("WoS papers: %s" % globalVar.papersWoS)
-        print("Omited papers: %s" % globalVar.omitedPapers)
-        print("Total papers: %s" % len(papersDict))
+            print("Scopus papers: %s" % globalVar.papersScopus)
+            print("WoS papers: %s" % globalVar.papersWoS)
+            print("Omited papers: %s" % globalVar.omitedPapers)
+            print("Total papers: %s" % len(self.papersDict))
 
         # Create a yearArray
         yearArray = range(args.startYear, args.endYear + 1)
@@ -97,21 +125,21 @@ class ScientoPyClass:
             yearPapers[i] = 0
 
         # Filter papers with invalid year
-        papersDict = list(filter(lambda x: x["year"].isdigit(), papersDict))
+        self.papersDict = list(filter(lambda x: x["year"].isdigit(), self.papersDict))
         # Filter the papers outside the year range
-        papersDict = list(filter(lambda x: int(x["year"]) >= args.startYear, papersDict))
-        papersDict = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDict))
+        self.papersDict = list(filter(lambda x: int(x["year"]) >= args.startYear, self.papersDict))
+        self.papersDict = list(filter(lambda x: int(x["year"]) <= args.endYear, self.papersDict))
 
         print("Total papers in range (%s - %s): %s" %
-              (args.startYear, args.endYear, len(papersDict)))
+              (args.startYear, args.endYear, len(self.papersDict)))
 
         # If no papers in the range exit
-        if (len(papersDict) == 0):
+        if (len(self.papersDict) == 0):
             print("ERROR: no papers found in the range.")
             exit()
 
         # Find the number of total papers per year
-        for paper in papersDict:
+        for paper in self.papersDict:
             if int(paper["year"]) in yearPapers.keys():
                 yearPapers[int(paper["year"])] += 1
 
@@ -151,7 +179,7 @@ class ScientoPyClass:
             topicDic = {}
 
             # For each paper, get the full topicDic
-            for paper in papersDict:
+            for paper in self.papersDict:
 
                 # For each item in paper criteria
                 for item in paper[args.criterion].split(";"):
@@ -233,7 +261,7 @@ class ScientoPyClass:
         # Find papers within the arguments, and fill the topicResults fields per year.
         print("Calculating papers sum...")
         # For each paper
-        for paper in papersDict:
+        for paper in self.papersDict:
             # For each item in paper criteria
             for item in paper[args.criterion].split(";"):
                 # Strip paper item and upper
@@ -447,16 +475,19 @@ class ScientoPyClass:
                 plt.tight_layout()
 
             if args.savePlot == "":
-                plt.show()
+                if self.fromGui:
+                    plt.show(block=False)
+                else:
+                    plt.show(block=True)
             else:
-                plt.savefig(os.path.join(args.intermediateFolder, globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+                plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
                             bbox_inches='tight', pad_inches=0.01)
                 print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
 
-        paperSave.saveTopResults(topicResults, args.criterion, args.intermediateFolder)
-        paperSave.saveExtendedResults(topicResults, args.criterion, args.intermediateFolder)
+        paperSave.saveTopResults(topicResults, args.criterion)
+        paperSave.saveExtendedResults(topicResults, args.criterion)
 
         # Only save results if that is result of a not previous result
         if not args.previousResults:
-            paperSave.saveResults(papersDictOut, os.path.join(args.intermediateFolder, globalVar.RESULTS_FOLDER,
+            paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER,
                                                               globalVar.OUTPUT_FILE_NAME))

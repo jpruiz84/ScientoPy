@@ -32,7 +32,6 @@ parser.add_argument("--noRemDupl",
 
 parser.add_argument("--savePlot", default="",
                     help='Save the pre processed graph to a file, ex: --savePlot "preProcessed.eps"')
-parser.add_argument("--intermediateFolder", default="", help='Custom folder for input and output subfolders')
 
 parser.add_argument("--graphTitle",
                     help="To put a title in the output graph", type=str)

@@ -25,15 +25,10 @@ from ScientoPyClass import ScientoPyClass
 
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
-validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract", 
-                  "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
-
-validGraphs = ["bar", "bar_trends", "time_line", "evolution", "word_cloud"]
-
-parser.add_argument("-c","--criterion", choices = validCriterion, default= "authorKeywords",
+parser.add_argument("-c","--criterion", choices=globalVar.validCriterion, default= "authorKeywords",
 help="Select the criterion to analyze the topics")
 
-parser.add_argument("-g","--graphType", choices = validGraphs, default= "bar_trends",
+parser.add_argument("-g","--graphType", choices=globalVar.validGrapTypes, default= "bar_trends",
 help="Select the graph type to plot")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to analyze, default 10")
@@ -66,9 +61,6 @@ parser.add_argument("--agrForGraph",
 help="To use average growth rate (AGR) instead average documents per year (ADY) in parametric and parametric 2 graphs",
                     action="store_true")
 
-parser.add_argument("--wordCloud",
-help="Graph the topics word cloud", action="store_true")
-
 parser.add_argument("--wordCloudMask", default="",  help='PNG mask image to use for wordCloud')
 
 parser.add_argument("--windowWidth",
@@ -97,8 +89,6 @@ help="Get and graph the top trending topics, with the highest average growth rat
 parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.'
   'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
 
-
-parser.add_argument("--intermediateFolder", default="",  help='Custom folder for input and output subfolders')
 
 # Parse arguments
 args = parser.parse_args()
