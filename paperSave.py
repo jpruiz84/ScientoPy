@@ -188,6 +188,7 @@ def saveTopResults(topicResults, criterionIn):
   ofile.close()
 
   print("Saved top results on: %s" % fileName)
+  return fileName
 
 
 def saveExtendedResults(topicResults, criterionIn):
@@ -239,6 +240,8 @@ def saveExtendedResults(topicResults, criterionIn):
 
   print("Saved extended top results on: %s" % fileName)
 
+  return fileName
+
 def saveTopCited(papersDic):
 
   fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.csv")
@@ -266,3 +269,5 @@ def saveTopCited(papersDic):
   ofile.close()
 
   print("Saved top cited results on: %s" % fileName)
+
+  return fileName

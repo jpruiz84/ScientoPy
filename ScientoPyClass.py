@@ -60,6 +60,11 @@ class ScientoPyClass:
 
         # Working variables
         self.papersDict = []
+        self.resultsFileName = ''
+        self.extResultsFileName = ''
+
+    def closePlot(self):
+        plt.close()
 
     def scientoPy(self, args=''):
         if args == '':
@@ -159,10 +164,15 @@ class ScientoPyClass:
             for x in topicsFirst:
                 topicList.append(x.split(","))
 
-            # Remove begining and ending space from topics
+            # Remove beginning and ending space from topics, and empty topics
             for topic in topicList:
                 for idx, item in enumerate(topic):
                     topic[idx] = item.strip()
+                    if not topic[idx]:
+                        topic.remove(topic[idx])
+                if not topic:
+                    topicList.remove(topic)
+
 
             # Remove for each sub topic, start and end spaces
             for item1 in topicList:
@@ -484,8 +494,8 @@ class ScientoPyClass:
                             bbox_inches='tight', pad_inches=0.01)
                 print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
 
-        paperSave.saveTopResults(topicResults, args.criterion)
-        paperSave.saveExtendedResults(topicResults, args.criterion)
+        self.resultsFileName = paperSave.saveTopResults(topicResults, args.criterion)
+        self.extResultsFileName = paperSave.saveExtendedResults(topicResults, args.criterion)
 
         # Only save results if that is result of a not previous result
         if not args.previousResults:

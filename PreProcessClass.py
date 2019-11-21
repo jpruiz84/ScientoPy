@@ -32,11 +32,13 @@ import graphUtils
 
 class PreProcessClass:
 
-    def __init__(self):
+    def __init__(self, from_gui=False):
         self.dataInFolder = ''
         self.noRemDupl = False
         self.savePlot = ''
         self.graphTitle = ''
+
+        self.fromGui = from_gui
 
     def preprocess(self, args=''):
 
@@ -51,7 +53,7 @@ class PreProcessClass:
         if sys.version_info[0] < 3:
             print("ERROR, you are using Python 2, Python 3.X.X required")
             print("")
-            exit()
+            return 0
 
         # Create output folders if not exist
         if not os.path.exists(os.path.join(globalVar.DATA_OUT_FOLDER)):
@@ -97,7 +99,7 @@ class PreProcessClass:
         if (globalVar.loadedPapers == 0):
             print("ERROR: 0 documents found from " + os.path.join(args.dataInFolder, ''))
             print("")
-            exit()
+            return 0
 
         globalVar.OriginalTotalPapers = len(paperDict)
 
@@ -192,8 +194,13 @@ class PreProcessClass:
         plt.tight_layout()
 
         if args.savePlot == "":
-            plt.show()
+            if self.fromGui:
+                plt.show(block=False)
+            else:
+                plt.show(block=True)
         else:
             plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
                         bbox_inches='tight', pad_inches=0.01)
             print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
+
+        return len(paperDict)

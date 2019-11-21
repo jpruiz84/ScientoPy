@@ -111,4 +111,4 @@ validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexK
 validGrapTypes = ["bar_trends", "bar", "time_line", "evolution", "word_cloud"]
 
 
-SCIENTOPY_VERSION = "1.4.0"
+SCIENTOPY_VERSION = "2.0.0"

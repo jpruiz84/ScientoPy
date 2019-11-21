@@ -2,11 +2,14 @@
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
+from tkinter import messagebox
+
 import tkinter.scrolledtext as scrolledtext
 from PIL import ImageTk, Image
 import globalVar
 from PreProcessClass import PreProcessClass
 from ScientoPyClass import ScientoPyClass
+import webbrowser
 
 
 class ScientoPyGui:
@@ -79,7 +82,22 @@ class ScientoPyGui:
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.grid(column=0, row=7, sticky=W)
 
+        results_button = Button(process_page, text="Open results table", command=self.open_results)
+        results_button.grid(column=1, row=7, sticky=W)
+
+        ext_results_button = Button(process_page, text="Open extended results", command=self.open_ext_results)
+        ext_results_button.grid(column=2, row=7, sticky=W)
+
+    def open_results(self):
+        webbrowser.open(self.scientoPy.resultsFileName)
+
+    def open_ext_results(self):
+        print(self.scientoPy.extResultsFileName)
+        webbrowser.open(self.scientoPy.extResultsFileName)
+
     def scientoPyRun(self):
+        self.scientoPy.closePlot()
+
         self.scientoPy.criterion = self.comboCriterion.get()
         self.scientoPy.graphType = self.comboGraphType.get()
         self.scientoPy.startYear = int(self.spinStartYear.get())
@@ -87,17 +105,25 @@ class ScientoPyGui:
         self.scientoPy.length = int(self.spinTopicsLength.get())
         self.scientoPy.windowWidth = int(self.spinWindowWidth.get())
 
+        if bool(self.entryCustomTopics.get("1.0", END).strip()):
+            self.scientoPy.topics = self.entryCustomTopics.get("1.0", END).replace("\n",";")
+        else:
+            self.scientoPy.topics = ''
+
         self.scientoPy.scientoPy()
+
 
     def open_dataset(self):
         self.root.dir_name = filedialog.askdirectory()
+        if not self.root.dir_name:
+            return
 
-        preprocess = PreProcessClass()
+        preprocess = PreProcessClass(from_gui=True)
         preprocess.dataInFolder = self.root.dir_name
-        # args2 = PreProcessArgs()
-        # args2.dataInFolder = root.dir_name
-        preprocess.preprocess()
-        print(self.root.dir_name)
+        totalPapers = preprocess.preprocess()
+        if totalPapers == 0:
+            messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
+
 
     def runGui(self):
         self.root.mainloop()
