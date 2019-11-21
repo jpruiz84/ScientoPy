@@ -105,5 +105,10 @@ papersScopus = 0
 papersWoS = 0
 totalAfterRemDupl = 0
 
+validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract",
+                  "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
+
+validGrapTypes = ["bar_trends", "bar", "time_line", "evolution", "word_cloud"]
+
 
 SCIENTOPY_VERSION = "1.4.0"
