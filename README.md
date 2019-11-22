@@ -15,21 +15,19 @@ It has the following main characteristics:
 - Top topics and specific topics analysis
 - Wildcard topics search
 - Trending topics using the top average growth rate (AGR)
-- Five different visualization graphs: timeline, bar, evolution, and word cloud
+- Five different visualization graphs: bar, bar trends, timeline, evolution, and word cloud
+- Graphical user interface
 
 
-Download ScientoPyUI
-====================
+Installation for Windows
+========================
 
-Download latest release
------------------------
+1. Download the latest stable release from: <https://github.com/jpruiz84/ScientoPy/releases>
 
-To get the latest release stable version, download it from the following
-link:\
-<https://github.com/jpruiz84/ScientoPy/releases>
+2. Unzip the downloaded file and run ScientoPyGui.exe
 
-Clone from the repository
--------------------------
+Run ScientoPy for Ubuntu (or Debian based)
+===========================================
 
 To clone directly the last version from the repository run the following
 git command:
@@ -37,34 +35,19 @@ git command:
     git clone https://github.com/jpruiz84/ScientoPy
 
 
-Installation
-============
-
-1.  For Windows download and install the Python 3 latest version (for example Python
-    3.6.5) from:\
-    <https://www.python.org/downloads/>.\
-    **IMPORTANT NOTE:** during the installation select the option “Add
-    Python 3.7 to PATH” as indicated in the following figure:
-
-    ![image](./Manual/source/manual/figures/python_path.jpg)
-
-2.  For Debian or Ubuntu run these commands to install Python3:
+Install prerequisites
+----------------------
+1.  For run these commands to install Python3:
 
         sudo apt-get install python3 python3-tk python3-pip
 
-3.  To use wordCloud in Windows, install Microsoft Visual C++
-    Redistributable para Visual Studio 2017 according to these
-    instructions:
-    <https://www.scivision.co/python-windows-visual-c++-14-required/>
-
-4.  Install the unidecode, numpy, scipy, matplotlib, and wordcloud
+2.  Install the unidecode, numpy, scipy, matplotlib, and wordcloud
     Python libraries. For Windows, enter in the command line (Windows +
     R, cmd, and Enter), and run the installation script:
 
         python3 -m pip install --upgrade pip
         python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
         
-    **IMPORTANT NOTE:** for Windows use python instead of python3
 
 The bibliometric dataset
 =======================
@@ -76,8 +59,16 @@ In this repo we include an example dataset that was donwloaded using:
 "Bluetooth low energy" as search criteria 
 
 
-Running the ScientoPy scripts
-=============================
+Running the ScientoPy Graphical User Interface GUI
+==================================================
+
+To run ScientoPy operations from the GUI, execute the following command:
+
+    python3 scientoPyGui.py
+
+
+Running the ScientoPy from console scripts
+=========================================
 
 This section describes the ScientoPy scripts to preprocess and analyze
 the bibliometric dataset.
