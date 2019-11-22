@@ -44,6 +44,8 @@ DATA_OUT_FOLDER = "dataPre"
 GRAPHS_OUT_FOLDER = "graphs"
 DEFUALT_DATA_IN_FOLDER = "dataIn"
 RESULTS_FOLDER = "results"
+LATEX_EXAMPLE_FOLDER = "latexExample"
+
 
 # Documents types to include on the script processing
 INCLUDED_TYPES = ["Conference Paper", "Article", 

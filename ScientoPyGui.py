@@ -9,6 +9,7 @@ from PIL import ImageTk, Image
 import globalVar
 from PreProcessClass import PreProcessClass
 from ScientoPyClass import ScientoPyClass
+from generateBibtex import generateBibtex
 import webbrowser
 
 
@@ -96,7 +97,13 @@ class ScientoPyGui:
         self.chkValuePreviusResults = BooleanVar()
         self.chkValuePreviusResults.set(False)
         Checkbutton(process_page, var=self.chkValuePreviusResults,
-                    text="Use previous results").grid(column=0, row=7, sticky=W, pady=15)
+                    text="Use previous results").place(relx=0.01, rely=0.6, anchor=W)
+
+        self.chkValueTrendAnalysis = BooleanVar()
+        self.chkValueTrendAnalysis.set(False)
+        Checkbutton(process_page, var=self.chkValueTrendAnalysis,
+                    text="Trend analysis").place(relx=0.3, rely=0.6, anchor=W)
+
 
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.place(relx=0.95, rely=0.9, anchor=E)
@@ -114,7 +121,6 @@ class ScientoPyGui:
         webbrowser.open(self.scientoPy.resultsFileName)
 
     def open_ext_results(self):
-        print(self.scientoPy.extResultsFileName)
         webbrowser.open(self.scientoPy.extResultsFileName)
 
     def scientoPyRun(self):
@@ -129,6 +135,7 @@ class ScientoPyGui:
         self.scientoPy.length = int(self.spinTopicsLength.get())
         self.scientoPy.windowWidth = int(self.spinWindowWidth.get())
         self.scientoPy.previousResults = self.chkValuePreviusResults.get()
+        self.scientoPy.trend = self.chkValueTrendAnalysis.get()
 
         if bool(self.entryCustomTopics.get("1.0", END).strip()):
             self.scientoPy.topics = self.entryCustomTopics.get("1.0", END).replace("\n",";")
@@ -156,9 +163,16 @@ class ScientoPyGui:
             messagebox.showinfo("Error", "No dataset folder defined")
 
     def generate_bibtex(self):
-        latexFileName = filedialog.askopenfilename(initialdir="/", title="Select the LaTeX file",
+        latexFileName = filedialog.askopenfilename(initialdir="./", title="Select the LaTeX file",
                                                    filetypes=(("Latex", "*.tex"), ("all files", "*.*")))
+
+        if not latexFileName:
+            return
+
         print(latexFileName)
+        outFileName = generateBibtex(latexFileName)
+        webbrowser.open(outFileName)
+
 
     def runGui(self):
         self.root.mainloop()

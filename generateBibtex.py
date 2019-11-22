@@ -33,152 +33,155 @@ import unidecode
 import sys
 import os
 
-filename = sys.argv[1]
-fileobject = (open(filename, 'r'))
-rawtext = fileobject.read()
-fileobject.close()
+def generateBibtex(inputLatexFile):
+    print("\n\nGenerating BibTeX")
+    print("=================\n")
 
-start = '\\begin{document}'
-end = '\\begin{thebibliography}'
-bodytext = rawtext[rawtext.find(start)+len(start):rawtext.rfind(end)]
+    fileobject = (open(inputLatexFile, 'r'))
+    rawtext = fileobject.read()
+    fileobject.close()
 
+    start = '\\begin{document}'
+    end = '\\begin{thebibliography}'
+    bodytext = rawtext[rawtext.find(start) + len(start):rawtext.rfind(end)]
 
-# Extact the cites keys
-citesDict = {}
-for char in range(0,len(bodytext) - 10):
-  if bodytext[char:char+6] == '\\cite{':
-    cite = ''
-    char += len('\\cite{')
-    while (bodytext[char] != '}'):
-      if (bodytext[char] == ' '):
-        char +=1
-      elif(bodytext[char] == ','):
-        char +=1 
-        if cite in citesDict.keys():
-          cite = ''
-        else:
-          citesDict[cite] = False
-          cite=''
-      else:
-        cite += (bodytext[char])
-        char +=1  
-    if cite in citesDict.keys():
-      pass
-    else:
-      citesDict[cite] = False
+    # Extracts the cites keys
+    citesDict = {}
+    for char in range(0, len(bodytext) - 10):
+        if bodytext[char:char + 6] == '\\cite{':
+            cite = ''
+            char += len('\\cite{')
+            while (bodytext[char] != '}'):
+                if (bodytext[char] == ' '):
+                    char += 1
+                elif (bodytext[char] == ','):
+                    char += 1
+                    if cite in citesDict.keys():
+                        cite = ''
+                    else:
+                        citesDict[cite] = False
+                        cite = ''
+                else:
+                    cite += (bodytext[char])
+                    char += 1
+            if cite in citesDict.keys():
+                pass
+            else:
+                citesDict[cite] = False
 
-print("%d cites found." % len(citesDict))
-print(citesDict)
+    print("%d cites found." % len(citesDict))
 
-# Start paper list empty
-papersDict = []
-papersToBib = []
+    # Start paper list empty
+    papersDict = []
+    papersToBib = []
 
-# Open the storage database and add to papersDict
-INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
-ifile = open(INPUT_FILE, "r", encoding='utf-8')
-print("Reading file: %s" % (INPUT_FILE))
-paperUtils.openFileToDict(ifile, papersDict)
-ifile.close()
-print("Loaded %d docuemnts" % (len(papersDict)))
+    # Open the storage database and add to papersDict
+    INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+    ifile = open(INPUT_FILE, "r", encoding='utf-8')
+    print("Reading file: %s" % (INPUT_FILE))
+    paperUtils.openFileToDict(ifile, papersDict)
+    ifile.close()
+    print("Loaded %d docuemnts" % (len(papersDict)))
 
+    # Find the number of total papers per year
+    count = 1
+    for paper in papersDict:
+        # print("%d, %s" % (count, paper["title"]))
+        # count += 1
+        if paper["eid"] in citesDict.keys():
+            if citesDict[paper["eid"]] == False:
+                print("Added paper(%s): %s" % (paper["eid"], paper["title"]))
+                papersToBib.append(paper)
+                citesDict[paper["eid"]] = True
 
-# Find the number of total papers per year
-count = 1
-for paper in papersDict:
-  #print("%d, %s" % (count, paper["title"]))
-  #count += 1
-  if paper["eid"] in citesDict.keys():
-    if citesDict[paper["eid"]] == False:
-      print("Added paper(%s): %s" % (paper["eid"], paper["title"]))
-      papersToBib.append(paper)
-      citesDict[paper["eid"]] = True
+    OUT_FILE = os.path.join(globalVar.LATEX_EXAMPLE_FOLDER, globalVar.OUTPUT_FILE_BIB)
+    ofile = open(OUT_FILE, 'w', encoding='utf-8')
 
+    for paper in papersToBib:
+        authorsNames = paper["authorFull"]
+        if paper["dataBase"] == "Scopus":
+            authorsNames = authorsNames.replace(",", ";")
+            authorsNames = authorsNames.split(";")
+            authorsNames = [x.strip() for x in authorsNames]
+            authorsNames = [x.replace(" ", ", ", 1) for x in authorsNames]
+            authorsNames = " and ".join(authorsNames)
 
-OUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_BIB)
-ofile = open(OUT_FILE, 'w', encoding='utf-8')
+        if paper["dataBase"] == "WoS":
+            authorsNames = authorsNames.replace("; ", " and ")
 
-for paper in papersToBib:
-  authorsNames = paper["authorFull"]
-  if paper["dataBase"] == "Scopus":
-    authorsNames = authorsNames.replace(",", ";")
-    authorsNames = authorsNames.split(";")
-    authorsNames = [x.strip() for x in authorsNames]
-    authorsNames = [x.replace(" ", ", ", 1) for x in authorsNames]
-    authorsNames = " and ".join(authorsNames)
+        # Preprocess fields
+        paper["title"] = unidecode.unidecode(paper["title"])
+        paper["title"] = paper["title"].replace("&", "\&").replace("_", "\_")
+        paper["title"] = paper["title"].replace('"', '``', 1).replace('"', "''")
 
-  if paper["dataBase"] == "WoS":
-    authorsNames = authorsNames.replace("; ", " and ")
+        paper["sourceTitle"] = unidecode.unidecode(paper["sourceTitle"])
+        paper["sourceTitle"] = paper["sourceTitle"].replace("&", "\&").replace("_", "\_")
 
-  # Preprocess fields
-  paper["title"] = unidecode.unidecode(paper["title"])
-  paper["title"] = paper["title"].replace("&", "\&").replace("_", "\_")
-  paper["title"] = paper["title"].replace('"', '``', 1).replace('"', "''")
-  
-  paper["sourceTitle"] = unidecode.unidecode(paper["sourceTitle"])
-  paper["sourceTitle"] = paper["sourceTitle"].replace("&","\&").replace("_", "\_")
+        paper["pageCount"] = paper["pageCount"].replace("&", "\&").replace("_", "\_")
+        paper["publisher"] = paper["publisher"].replace("&", "\&").replace("_", "\_")
+        paper["publisherAddress"] = paper["publisherAddress"].replace("&", "\&").replace("_", "\_")
+        paper["conferenceTitle"] = paper["conferenceTitle"].replace("&", "\&").replace("_", "\_")
+        paper["conferenceLocation"] = paper["conferenceLocation"].replace("&", "\&").replace("_", "\_")
+        paper["conferenceDate"] = paper["conferenceDate"].replace("&", "\&").replace("_", "\_")
 
-  paper["pageCount"] = paper["pageCount"].replace("&","\&").replace("_", "\_")
-  paper["publisher"] = paper["publisher"].replace("&","\&").replace("_", "\_")
-  paper["publisherAddress"] = paper["publisherAddress"].replace("&", "\&").replace("_", "\_")
-  paper["conferenceTitle"] = paper["conferenceTitle"].replace("&", "\&").replace("_", "\_")
-  paper["conferenceLocation"] = paper["conferenceLocation"].replace("&", "\&").replace("_", "\_")
-  paper["conferenceDate"] = paper["conferenceDate"].replace("&", "\&").replace("_", "\_")
+        if (paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
+            ofile.write('@Article{%s,\n' % paper["eid"])
+            ofile.write('  Author \t=\t"%s",\n' % authorsNames)
+            ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
+            ofile.write('  Journal \t=\t"%s",\n' % paper["sourceTitle"])
+            if paper["pageCount"]:
+                ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
+            if paper["pageSart"] and paper["pageEnd"]:
+                ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
+            if paper["volume"]:
+                ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
+            if paper["artNo"]:
+                ofile.write('  Article-Number \t=\t"%s",\n' % paper["artNo"])
+            ofile.write('  Year \t\t=\t"%s",\n' % paper["year"])
+            if paper["issn"]:
+                ofile.write('  ISSN \t\t=\t"%s",\n' % paper["issn"])
+            if paper["isbn"]:
+                ofile.write('  ISBN \t\t=\t"%s",\n' % paper["isbn"])
+            if paper["doi"]:
+                ofile.write('  DOI \t\t=\t"%s",\n' % paper["doi"])
+            ofile.write('}\n\n\n')
 
-  if(paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
-    ofile.write('@Article{%s,\n' % paper["eid"])
-    ofile.write('  Author \t=\t"%s",\n' % authorsNames)
-    ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
-    ofile.write('  Journal \t=\t"%s",\n' % paper["sourceTitle"])
-    if paper["pageCount"]:
-      ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
-    if paper["pageSart"] and paper["pageEnd"]:
-      ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
-    if paper["volume"]:
-      ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
-    if paper["artNo"]:
-      ofile.write('  Article-Number \t=\t"%s",\n' % paper["artNo"])
-    ofile.write('  Year \t\t=\t"%s",\n' % paper["year"])
-    if paper["issn"]:
-      ofile.write('  ISSN \t\t=\t"%s",\n' % paper["issn"])
-    if paper["isbn"]:
-      ofile.write('  ISBN \t\t=\t"%s",\n' % paper["isbn"])
-    if paper["doi"]:
-      ofile.write('  DOI \t\t=\t"%s",\n' % paper["doi"])
-    ofile.write('}\n\n\n')
+        if (paper["documentType"].split(";")[0] in ["Conference Paper", "Proceedings Paper", ]):
+            ofile.write('@Inproceedings{%s,\n' % paper["eid"])
+            ofile.write('  Author \t=\t"%s",\n' % authorsNames)
+            ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
+            if paper["publisher"]:
+                ofile.write('  Publisher \t=\t"%s",\n' % paper["publisher"])
+            if paper["publisherAddress"]:
+                ofile.write('  Numpages\t=\t"%s",\n' % paper["publisherAddress"])
+            if paper["conferenceTitle"] and paper["conferenceLocation"] and paper["conferenceDate"]:
+                ofile.write('  Note\t\t=\t"In Proceedings of the %s, %s, %s",\n' %
+                            (paper["conferenceTitle"], paper["conferenceLocation"], paper["conferenceDate"]))
+            elif paper["conferenceTitle"] and paper["conferenceDate"]:
+                ofile.write('  Note\t\t=\t"In  {Proceedings of the } %s, %s",\n' %
+                            (paper["conferenceTitle"], paper["conferenceDate"]))
+            if paper["pageCount"]:
+                ofile.write('  Address\t=\t"%s",\n' % paper["pageCount"])
+            if paper["pageSart"] and paper["pageEnd"]:
+                ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
+            if paper["volume"]:
+                ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
+            if paper["artNo"]:
+                ofile.write('  Article-Number \t=\t"%s",\n' % paper["artNo"])
+            ofile.write('  Year \t\t=\t"%s",\n' % paper["year"])
+            if paper["issn"]:
+                ofile.write('  ISSN \t\t=\t"%s",\n' % paper["issn"])
+            if paper["isbn"]:
+                ofile.write('  ISBN \t\t=\t"%s",\n' % paper["isbn"])
+            if paper["doi"]:
+                ofile.write('  DOI \t\t=\t"%s",\n' % paper["doi"])
+            ofile.write('}\n\n\n')
 
-  if (paper["documentType"].split(";")[0] in ["Conference Paper", "Proceedings Paper",]):
-    ofile.write('@Inproceedings{%s,\n'% paper["eid"])
-    ofile.write('  Author \t=\t"%s",\n' % authorsNames)
-    ofile.write('  Title\t\t=\t"%s",\n' % paper["title"])
-    if paper["publisher"]:
-      ofile.write('  Publisher \t=\t"%s",\n' % paper["publisher"])
-    if paper["publisherAddress"]:
-      ofile.write('  Numpages\t=\t"%s",\n' % paper["publisherAddress"])
-    if paper["conferenceTitle"] and paper["conferenceLocation"] and paper["conferenceDate"]:
-      ofile.write('  Note\t\t=\t"In Proceedings of the %s, %s, %s",\n' %
-                  (paper["conferenceTitle"], paper["conferenceLocation"], paper["conferenceDate"]))
-    elif paper["conferenceTitle"] and paper["conferenceDate"]:
-      ofile.write('  Note\t\t=\t"In  {Proceedings of the } %s, %s",\n' %
-                  (paper["conferenceTitle"], paper["conferenceDate"]))
-    if paper["pageCount"]:
-      ofile.write('  Address\t=\t"%s",\n' % paper["pageCount"])
-    if paper["pageSart"] and paper["pageEnd"]:
-      ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
-    if paper["volume"]:
-      ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
-    if paper["artNo"]:
-      ofile.write('  Article-Number \t=\t"%s",\n' % paper["artNo"])
-    ofile.write('  Year \t\t=\t"%s",\n' % paper["year"])
-    if paper["issn"]:
-      ofile.write('  ISSN \t\t=\t"%s",\n' % paper["issn"])
-    if paper["isbn"]:
-      ofile.write('  ISBN \t\t=\t"%s",\n' % paper["isbn"])
-    if paper["doi"]:
-      ofile.write('  DOI \t\t=\t"%s",\n' % paper["doi"])
-    ofile.write('}\n\n\n')
+    print("\nFinished, total references generated: %d\n" % len(papersToBib))
+    ofile.close()
 
-print("Total references generated: %d" % len(papersToBib))
-ofile.close()
+    return OUT_FILE
 
-
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    generateBibtex(filename)
