@@ -21,37 +21,51 @@ class ScientoPyGui:
         self.root.title("ScientoPy")
 
         # Starting the tabs
-        nb = ttk.Notebook(self.root)
-        preprocess_page = Frame(nb)
-        process_page = Frame(nb)
+        self.nb = ttk.Notebook(self.root)
+        preprocess_page = Frame(self.nb)
+        process_page = Frame(self.nb)
 
-        nb.add(preprocess_page, text='Pre processing')
-        nb.add(process_page, text='Analysis')
-        nb.pack(expand=1, fill="both")
-        nb.select(process_page)
+        self.nb.add(preprocess_page, text='1. Pre-processing')
+        self.nb.add(process_page, text='2. Analysis')
+        self.nb.pack(expand=1, fill="both")
+        self.nb.select(process_page)
 
         # Pre processing tab
-        img = ImageTk.PhotoImage(Image.open("scientopy_logo.png"))
-        logo_panel = Label(preprocess_page, image=img)
-        logo_panel.place(relx=0.5, rely=0.4, anchor=CENTER)
+        load = Image.open("scientopy_logo.png")
+        render = ImageTk.PhotoImage(load)
+        img = Label(preprocess_page, image=render)
+        img.image = render
+        img.place(relx=0.5, rely=0.4, anchor=CENTER)
 
         version_label = Label(preprocess_page, text=("Version %s" % globalVar.SCIENTOPY_VERSION))
         version_label.place(relx=0.5, rely=0.7, anchor=CENTER)
 
-        dataset_button = Button(preprocess_page, text="Select dataset", command=self.open_dataset)
-        dataset_button.place(relx=0.5, rely=0.9, anchor=CENTER)
+        dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
+        dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
+        Label(preprocess_page, text="Dataset folder:").place(relx=0.02, rely=0.8, anchor=W)
+        self.datasetLoc = StringVar()
+        self.datasetLocEntry = Entry(preprocess_page, width=70, bg='white', textvariable=self.datasetLoc)
+        self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
+
+        run_preprocess_button = Button(preprocess_page, text="Run preprocess", command=self.run_preprocess)
+        run_preprocess_button.place(relx=0.9, rely=0.9, anchor=CENTER)
+
+        self.chkValueRemoveDupl = BooleanVar()
+        self.chkValueRemoveDupl.set(True)
+        Checkbutton(preprocess_page, var=self.chkValueRemoveDupl,
+                    text="Remove duplicated documents").place(relx=0.015, rely=0.9, anchor=W)
 
         # Analysis tab
-
-        Label(process_page, text="Criterion:", borderwidth=10).grid(sticky=W, column=0, row=0)
+        Label(process_page, text="").grid(sticky=W, column=0, row=0)
+        Label(process_page, text="Criterion:", borderwidth=10).grid(sticky=W, column=0, row=1)
         self.comboCriterion = ttk.Combobox(process_page, values=globalVar.validCriterion, width=15)
         self.comboCriterion.current(3)
-        self.comboCriterion.grid(column=1, row=0)
+        self.comboCriterion.grid(column=1, row=1)
 
-        Label(process_page, text="Graph type:", borderwidth=10).grid(sticky=W, column=0, row=1)
+        Label(process_page, text="Graph type:", borderwidth=10).grid(sticky=W, column=0, row=2)
         self.comboGraphType = ttk.Combobox(process_page, values=globalVar.validGrapTypes, width=15)
         self.comboGraphType.current(0)
-        self.comboGraphType.grid(column=1, row=1)
+        self.comboGraphType.grid(column=1, row=2)
 
         Label(process_page, text="Start Year:", borderwidth=10).grid(sticky=W, column=0, row=3)
         self.spinStartYear = Spinbox(process_page, from_=1900, to=2100, bg='white',
@@ -75,23 +89,26 @@ class ScientoPyGui:
 
         process_page.grid_columnconfigure(2, pad=50)
 
-        Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=0, padx=15)
+        Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
         self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=70, height=10)
-        self.entryCustomTopics.grid(column=2, row=1, rowspan=5)
+        self.entryCustomTopics.grid(column=2, row=2, rowspan=5)
 
         self.chkValuePreviusResults = BooleanVar()
         self.chkValuePreviusResults.set(False)
-        checkPreviousResults = Checkbutton(process_page, var=self.chkValuePreviusResults,
-                                           text="Use previous results").grid(column=2, row=6, sticky=W, padx=15)
+        Checkbutton(process_page, var=self.chkValuePreviusResults,
+                    text="Use previous results").grid(column=0, row=7, sticky=W, pady=15)
 
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
-        run_button.grid(column=0, row=7, sticky=W)
+        run_button.place(relx=0.95, rely=0.9, anchor=E)
+
+        genbibtex_button = Button(process_page, text="Generate BibTeX", command=self.generate_bibtex)
+        genbibtex_button.place(relx=0.02, rely=0.8, anchor=W)
 
         results_button = Button(process_page, text="Open results table", command=self.open_results)
-        results_button.grid(column=1, row=7, sticky=W)
+        results_button.place(relx=0.02, rely=0.9, anchor=W)
 
         ext_results_button = Button(process_page, text="Open extended results", command=self.open_ext_results)
-        ext_results_button.grid(column=2, row=7, sticky=W)
+        ext_results_button.place(relx=0.22, rely=0.9, anchor=W)
 
     def open_results(self):
         webbrowser.open(self.scientoPy.resultsFileName)
@@ -120,18 +137,28 @@ class ScientoPyGui:
 
         self.scientoPy.scientoPy()
 
-
-    def open_dataset(self):
+    def select_dataset(self):
         self.root.dir_name = filedialog.askdirectory()
         if not self.root.dir_name:
             return
 
-        preprocess = PreProcessClass(from_gui=True)
-        preprocess.dataInFolder = self.root.dir_name
-        totalPapers = preprocess.preprocess()
-        if totalPapers == 0:
-            messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
+        self.datasetLoc.set(self.root.dir_name)
 
+    def run_preprocess(self):
+        if self.datasetLoc.get():
+            preprocess = PreProcessClass(from_gui=True)
+            preprocess.dataInFolder = self.root.dir_name
+            preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
+            totalPapers = preprocess.preprocess()
+            if totalPapers == 0:
+                messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
+        else:
+            messagebox.showinfo("Error", "No dataset folder defined")
+
+    def generate_bibtex(self):
+        latexFileName = filedialog.askopenfilename(initialdir="/", title="Select the LaTeX file",
+                                                   filetypes=(("Latex", "*.tex"), ("all files", "*.*")))
+        print(latexFileName)
 
     def runGui(self):
         self.root.mainloop()
