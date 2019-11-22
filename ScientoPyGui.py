@@ -1,4 +1,26 @@
 # !/usr/bin/python3
+
+# The MIT License (MIT)
+# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+# OR OTHER DEALINGS IN THE SOFTWARE.
+
 from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
@@ -37,9 +59,10 @@ class ScientoPyGui:
         render = ImageTk.PhotoImage(load)
         img = Label(preprocess_page, image=render)
         img.image = render
-        img.place(relx=0.5, rely=0.4, anchor=CENTER)
+        img.place(relx=0.5, rely=0.35, anchor=CENTER)
 
-        version_label = Label(preprocess_page, text=("Version %s" % globalVar.SCIENTOPY_VERSION))
+        version_label = Label(preprocess_page, text=("Universidad del Cauca, Popayán, Colombia"
+                                                     "\nMIT License \nVersion %s" % globalVar.SCIENTOPY_VERSION))
         version_label.place(relx=0.5, rely=0.7, anchor=CENTER)
 
         dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
@@ -84,39 +107,46 @@ class ScientoPyGui:
                                         width=15)
         self.spinTopicsLength.grid(column=1, row=5)
 
-        Label(process_page, text="Window (years):", borderwidth=10).grid(sticky=W, column=0, row=6)
+        Label(process_page, text="Skip first:", borderwidth=10).grid(sticky=W, column=0, row=6)
+        self.spinSkipFirst = Spinbox(process_page, from_=0, to=1000, bg='white', textvariable=DoubleVar(value=0),
+                                        width=15)
+        self.spinSkipFirst.grid(column=1, row=6)
+
+        Label(process_page, text="Window (years):", borderwidth=10).grid(sticky=W, column=0, row=7)
         self.spinWindowWidth = Spinbox(process_page, from_=0, to=100, bg='white', textvariable=DoubleVar(value=2),
                                        width=15)
-        self.spinWindowWidth.grid(column=1, row=6)
-
-        process_page.grid_columnconfigure(2, pad=50)
-
-        Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
-        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=70, height=10)
-        self.entryCustomTopics.grid(column=2, row=2, rowspan=5)
+        self.spinWindowWidth.grid(column=1, row=7)
 
         self.chkValuePreviusResults = BooleanVar()
         self.chkValuePreviusResults.set(False)
         Checkbutton(process_page, var=self.chkValuePreviusResults,
-                    text="Use previous results").place(relx=0.01, rely=0.6, anchor=W)
+                    text="Use previous results").grid(sticky=W, column=0, row=8, pady = 10)
 
         self.chkValueTrendAnalysis = BooleanVar()
         self.chkValueTrendAnalysis.set(False)
         Checkbutton(process_page, var=self.chkValueTrendAnalysis,
-                    text="Trend analysis").place(relx=0.3, rely=0.6, anchor=W)
+                    text="Trend analysis").grid(sticky=W, column=0, row=9)
+
+
+        process_page.grid_columnconfigure(2, pad=50)
+
+        Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
+        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=70, height=20)
+        self.entryCustomTopics.grid(column=2, row=2, rowspan=9)
+
 
 
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
-        run_button.place(relx=0.95, rely=0.9, anchor=E)
+        run_button.place(relx=0.96, rely=0.92, anchor=E)
 
         genbibtex_button = Button(process_page, text="Generate BibTeX", command=self.generate_bibtex)
-        genbibtex_button.place(relx=0.02, rely=0.8, anchor=W)
+        genbibtex_button.place(relx=0.008, rely=0.82, anchor=W)
 
         results_button = Button(process_page, text="Open results table", command=self.open_results)
-        results_button.place(relx=0.02, rely=0.9, anchor=W)
+        results_button.place(relx=0.008, rely=0.92, anchor=W)
 
         ext_results_button = Button(process_page, text="Open extended results", command=self.open_ext_results)
-        ext_results_button.place(relx=0.22, rely=0.9, anchor=W)
+        ext_results_button.place(relx=0.20, rely=0.92, anchor=W)
 
     def open_results(self):
         webbrowser.open(self.scientoPy.resultsFileName)
@@ -134,6 +164,7 @@ class ScientoPyGui:
         self.scientoPy.startYear = int(self.spinStartYear.get())
         self.scientoPy.endYear = int(self.spinEndYear.get())
         self.scientoPy.length = int(self.spinTopicsLength.get())
+        self.scientoPy.skipFirst = int(self.spinSkipFirst.get())
         self.scientoPy.windowWidth = int(self.spinWindowWidth.get())
         self.scientoPy.previousResults = self.chkValuePreviusResults.get()
         self.scientoPy.trend = self.chkValueTrendAnalysis.get()

@@ -1,3 +1,5 @@
+# !/usr/bin/python3
+
 # The MIT License (MIT)
 # Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
 #
@@ -33,7 +35,7 @@ help="Select the graph type to plot")
 
 parser.add_argument("-l", "--length", type=int, default=10, help="Length of the top topics to analyze, default 10")
 
-parser.add_argument("-s", "--start", type=int, default=0,  help="To filter the \
+parser.add_argument("-s", "--skipFirst", type=int, default=0,  help="To filter the \
 first top elements. Ex: to filter the first 2 elements on the list use -s 2")
 
 parser.add_argument("-t", "--topics", help='Specific topics to analyze according to critera,\n\r'

@@ -38,7 +38,7 @@ class ScientoPyClass:
         self.criterion = 'authorKeywords'
         self.graphType = 'bar_trends'
         self.length = 10
-        self.start = 0
+        self.skipFirst = 0
         self.topics = ''
         self.startYear = globalVar.DEFAULT_START_YEAR
         self.endYear = globalVar.DEFAULT_END_YEAR
@@ -236,7 +236,7 @@ class ScientoPyClass:
                 startList = 0
             else:
                 topicListLength = args.length
-                startList = args.start
+                startList = args.skipFirst
 
             # Get the top topics by the topDic count
             topTopcis = sorted(topicDic.items(),
@@ -415,7 +415,7 @@ class ScientoPyClass:
         # If trend analysis, sort by agr, and get the first ones
         if args.trend:
             topicResults = sorted(topicResults, key=lambda x: int(x["agr"]), reverse=True)
-            topicResults = topicResults[args.start:(args.start + args.length)]
+            topicResults = topicResults[args.skipFirst:(args.skipFirst + args.length)]
 
         # Print top topics
         print("\nTop topics:")
