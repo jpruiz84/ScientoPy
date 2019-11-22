@@ -19,6 +19,7 @@ class ScientoPyGui:
 
         self.root = Tk()
         self.root.geometry("853x480")
+        self.root.resizable(width=False, height=False)
         self.root.title("ScientoPy")
 
         # Starting the tabs
