@@ -125,21 +125,19 @@ class ScientoPyGui:
         self.chkValuePreviusResults = BooleanVar()
         self.chkValuePreviusResults.set(False)
         Checkbutton(process_page, var=self.chkValuePreviusResults,
-                    text="Use previous results").grid(sticky=W, column=0, row=8, pady = 10)
+                    text="Use previous results").grid(sticky=W, column=0, row=8, padx=7)
 
         self.chkValueTrendAnalysis = BooleanVar()
         self.chkValueTrendAnalysis.set(False)
         Checkbutton(process_page, var=self.chkValueTrendAnalysis,
-                    text="Trend analysis").grid(sticky=W, column=0, row=9)
+                    text="Trend analysis").grid(sticky=W, column=0, row=9, padx=7)
 
 
         process_page.grid_columnconfigure(2, pad=50)
 
         Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
-        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=70, height=20)
+        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=68, height=18)
         self.entryCustomTopics.grid(column=2, row=2, rowspan=9)
-
-
 
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.place(relx=0.96, rely=0.92, anchor=E)
