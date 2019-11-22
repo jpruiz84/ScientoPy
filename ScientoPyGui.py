@@ -33,6 +33,7 @@ from PreProcessClass import PreProcessClass
 from ScientoPyClass import ScientoPyClass
 from generateBibtex import generateBibtex
 import webbrowser
+import os.path
 
 
 class ScientoPyGui:
@@ -55,11 +56,12 @@ class ScientoPyGui:
         self.nb.select(preprocess_page)
 
         # Pre processing tab
-        load = Image.open("scientopy_logo.png")
-        render = ImageTk.PhotoImage(load)
-        img = Label(preprocess_page, image=render)
-        img.image = render
-        img.place(relx=0.5, rely=0.35, anchor=CENTER)
+        if os.path.exists('scientopy_logo.png'):
+            load = Image.open("scientopy_logo.png")
+            render = ImageTk.PhotoImage(load)
+            img = Label(preprocess_page, image=render)
+            img.image = render
+            img.place(relx=0.5, rely=0.35, anchor=CENTER)
 
         version_label = Label(preprocess_page, text=("Universidad del Cauca, Popayán, Colombia"
                                                      "\nMIT License \nVersion %s" % globalVar.SCIENTOPY_VERSION))
