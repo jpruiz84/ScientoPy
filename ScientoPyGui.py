@@ -45,6 +45,9 @@ class ScientoPyGui:
         self.root.resizable(width=False, height=False)
         self.root.title("ScientoPy")
 
+        #self.root.iconbitmap('scientopy_icon.ico')
+        self.root.iconphoto(True, PhotoImage(file="scientopy_icon.png"))
+
         # Starting the tabs
         self.nb = ttk.Notebook(self.root)
         preprocess_page = Frame(self.nb)
