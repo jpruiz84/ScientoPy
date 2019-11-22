@@ -29,7 +29,7 @@ class ScientoPyGui:
         self.nb.add(preprocess_page, text='1. Pre-processing')
         self.nb.add(process_page, text='2. Analysis')
         self.nb.pack(expand=1, fill="both")
-        self.nb.select(process_page)
+        self.nb.select(preprocess_page)
 
         # Pre processing tab
         load = Image.open("scientopy_logo.png")
