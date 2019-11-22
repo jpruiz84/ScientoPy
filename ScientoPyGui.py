@@ -147,6 +147,10 @@ class ScientoPyGui:
         genbibtex_button = Button(process_page, text="Generate BibTeX", command=self.generate_bibtex)
         genbibtex_button.place(relx=0.008, rely=0.82, anchor=W)
 
+        genbibtex_button = Button(process_page, text="Open preprocess brief", command=self.open_preprocess_brief)
+        genbibtex_button.place(relx=0.20, rely=0.82, anchor=W)
+
+
         results_button = Button(process_page, text="Open results table", command=self.open_results)
         results_button.place(relx=0.008, rely=0.92, anchor=W)
 
@@ -158,6 +162,9 @@ class ScientoPyGui:
 
     def open_ext_results(self):
         webbrowser.open(self.scientoPy.extResultsFileName)
+
+    def open_preprocess_brief(self):
+        webbrowser.open(self.scientoPy.preprocessBriefFileName)
 
     def scientoPyRun(self):
         print(self.chkValuePreviusResults.get())
