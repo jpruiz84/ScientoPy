@@ -516,3 +516,6 @@ class ScientoPyClass:
         if not args.previousResults:
             paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER,
                                                               globalVar.OUTPUT_FILE_NAME))
+        if args.savePlot == "":
+            if self.fromGui:
+                plt.show()
