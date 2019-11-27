@@ -47,6 +47,7 @@ class ScientoPyGui:
 
         default_font = font.nametofont("TkDefaultFont")
         default_font.configure(size=10)
+
         self.root.option_add( "*font", default_font)
         if os.path.exists('scientopy_icon.png'):
             self.root.iconphoto(True, PhotoImage(file="scientopy_icon.png"))
@@ -75,10 +76,20 @@ class ScientoPyGui:
                                                      "\nMIT License \nVersion %s" % globalVar.SCIENTOPY_VERSION))
         version_label.place(relx=0.5, rely=0.7, anchor=CENTER)
 
-        Label(preprocess_page, text="Dataset folder:").place(relx=0.02, rely=0.8, anchor=W)
+
+        Label(preprocess_page, text="Dataset folder:").grid(column=0, row=0, padx = 17)
+
+        preprocess_page.grid_rowconfigure(0, pad=700)
+
         self.datasetLoc = StringVar()
-        self.datasetLocEntry = Entry(preprocess_page, width=60, bg='white', textvariable=self.datasetLoc)
-        self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
+        preprocess_page.grid_columnconfigure(2, weight=1)
+        self.datasetLocEntry = Entry(preprocess_page, bg='white', textvariable=self.datasetLoc)
+        #self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
+        self.datasetLocEntry.grid(column=1, row=0, columnspan=2, sticky='we')
+
+        dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
+        #dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
+        dataset_button.grid(column=3, row=0, sticky='w', padx = 17)
 
 
         self.chkValueRemoveDupl = BooleanVar()
@@ -87,8 +98,6 @@ class ScientoPyGui:
                     text="Remove duplicated documents").place(relx=0.015, rely=0.9, anchor=W)
 
         # Buttons ****************************
-        dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
-        dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
 
         run_preprocess_button = Button(preprocess_page, text="Run preprocess", command=self.run_preprocess)
         run_preprocess_button.place(relx=0.9, rely=0.9, anchor=CENTER)
@@ -144,11 +153,11 @@ class ScientoPyGui:
         Checkbutton(process_page, var=self.chkValueTrendAnalysis,
                     text="Trend analysis").grid(sticky=W, column=0, row=9, padx=7)
 
-        process_page.grid_columnconfigure(2, pad=50)
+        process_page.grid_columnconfigure(2, weight=1)
 
         Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
-        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=50, height=19)
-        self.entryCustomTopics.grid(column=2, row=2, rowspan=9)
+        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', height=18)
+        self.entryCustomTopics.grid(column=2, row=2, rowspan=9, sticky=E, padx=25)
 
         # Buttons ****************************
 
