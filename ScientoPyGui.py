@@ -48,7 +48,7 @@ class ScientoPyGui:
         default_font = font.nametofont("TkDefaultFont")
         default_font.configure(size=10)
 
-        self.root.option_add( "*font", default_font)
+        self.root.option_add("*font", default_font)
         if os.path.exists('scientopy_icon.png'):
             self.root.iconphoto(True, PhotoImage(file="scientopy_icon.png"))
 
@@ -76,21 +76,19 @@ class ScientoPyGui:
                                                      "\nMIT License \nVersion %s" % globalVar.SCIENTOPY_VERSION))
         version_label.place(relx=0.5, rely=0.7, anchor=CENTER)
 
-
-        Label(preprocess_page, text="Dataset folder:").grid(column=0, row=0, padx = 17)
+        Label(preprocess_page, text="Dataset folder:").grid(column=0, row=0, padx=17)
 
         preprocess_page.grid_rowconfigure(0, pad=700)
 
         self.datasetLoc = StringVar()
         preprocess_page.grid_columnconfigure(2, weight=1)
         self.datasetLocEntry = Entry(preprocess_page, bg='white', textvariable=self.datasetLoc)
-        #self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
+        # self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
         self.datasetLocEntry.grid(column=1, row=0, columnspan=2, sticky='we')
 
         dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
-        #dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
-        dataset_button.grid(column=3, row=0, sticky='w', padx = 17)
-
+        # dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
+        dataset_button.grid(column=3, row=0, sticky='w', padx=17)
 
         self.chkValueRemoveDupl = BooleanVar()
         self.chkValueRemoveDupl.set(True)
@@ -102,7 +100,8 @@ class ScientoPyGui:
         run_preprocess_button = Button(preprocess_page, text="Run preprocess", command=self.run_preprocess)
         run_preprocess_button.place(relx=0.9, rely=0.9, anchor=CENTER)
 
-        open_preprocess_brief = Button(preprocess_page, text="Open preprocess brief", command=self.open_preprocess_brief)
+        open_preprocess_brief = Button(preprocess_page, text="Open preprocess brief",
+                                       command=self.open_preprocess_brief)
         open_preprocess_brief.place(relx=0.57, rely=0.9, anchor=W)
 
         # Analysis tab ************************************************************
@@ -135,7 +134,7 @@ class ScientoPyGui:
 
         Label(process_page, text="Skip first:", borderwidth=10).grid(sticky=W, column=0, row=6)
         self.spinSkipFirst = Spinbox(process_page, from_=0, to=1000, bg='white', textvariable=DoubleVar(value=0),
-                                        width=15)
+                                     width=15)
         self.spinSkipFirst.grid(column=1, row=6)
 
         Label(process_page, text="Window (years):", borderwidth=10).grid(sticky=W, column=0, row=7)
@@ -173,19 +172,29 @@ class ScientoPyGui:
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.place(relx=0.96, rely=0.92, anchor=E)
 
-
-
-
     def open_results(self):
-        webbrowser.open(self.scientoPy.resultsFileName)
+        if os.path.exists(self.scientoPy.resultsFileName):
+            webbrowser.open(self.scientoPy.resultsFileName)
+        else:
+            messagebox.showinfo("Error", "No results found, please run the analysis first")
 
     def open_ext_results(self):
-        webbrowser.open(self.scientoPy.extResultsFileName)
+        if os.path.exists(self.scientoPy.extResultsFileName):
+            webbrowser.open(self.scientoPy.extResultsFileName)
+        else:
+            messagebox.showinfo("Error", "No extended results found, please run the analysis first")
 
     def open_preprocess_brief(self):
-        webbrowser.open(self.scientoPy.preprocessBriefFileName)
+        if os.path.exists(self.scientoPy.preprocessBriefFileName):
+            webbrowser.open(self.scientoPy.preprocessBriefFileName)
+        else:
+            messagebox.showinfo("Error", "No preprocess breif found, please run the preprocess first")
 
     def scientoPyRun(self):
+        if not os.path.exists(self.scientoPy.preprocessDatasetFile):
+            messagebox.showinfo("Error", "No preprocess input dataset, please run the preprocess first")
+            return
+
         print(self.chkValuePreviusResults.get())
 
         self.scientoPy.closePlot()
@@ -201,7 +210,7 @@ class ScientoPyGui:
         self.scientoPy.trend = self.chkValueTrendAnalysis.get()
 
         if bool(self.entryCustomTopics.get("1.0", END).strip()):
-            self.scientoPy.topics = self.entryCustomTopics.get("1.0", END).replace("\n",";")
+            self.scientoPy.topics = self.entryCustomTopics.get("1.0", END).replace("\n", ";")
         else:
             self.scientoPy.topics = ''
 
@@ -216,26 +225,32 @@ class ScientoPyGui:
 
     def run_preprocess(self):
         if self.datasetLoc.get():
-            preprocess = PreProcessClass(from_gui=True)
-            preprocess.dataInFolder = self.root.dir_name
-            preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
-            totalPapers = preprocess.preprocess()
-            if totalPapers == 0:
-                messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
+            try:
+                preprocess = PreProcessClass(from_gui=True)
+                preprocess.dataInFolder = self.root.dir_name
+                preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
+                totalPapers = preprocess.preprocess()
+                if totalPapers == 0:
+                    messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
+            except:
+                messagebox.showinfo("Error", "No valid dataset folder")
         else:
             messagebox.showinfo("Error", "No dataset folder defined")
 
     def generate_bibtex(self):
+        if not os.path.exists(self.scientoPy.preprocessDatasetFile):
+            messagebox.showinfo("Error", "No preprocess input dataset, please run the preprocess first")
+            return
+
+
         latexFileName = filedialog.askopenfilename(initialdir="./", title="Select the LaTeX file",
                                                    filetypes=(("Latex", "*.tex"), ("all files", "*.*")))
-
         if not latexFileName:
             return
 
         print(latexFileName)
         outFileName = generateBibtex(latexFileName)
         webbrowser.open(outFileName)
-
 
     def runGui(self):
         self.root.mainloop()

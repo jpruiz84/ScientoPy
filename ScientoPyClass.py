@@ -64,6 +64,7 @@ class ScientoPyClass:
         self.extResultsFileName = ''
         self.lastPreviousResults = ''
         self.preprocessBriefFileName = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE)
+        self.preprocessDatasetFile = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
     def closePlot(self):
         plt.close()
