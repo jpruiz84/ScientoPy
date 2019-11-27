@@ -25,6 +25,7 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import font
 
 import tkinter.scrolledtext as scrolledtext
 from PIL import ImageTk, Image
@@ -43,9 +44,13 @@ class ScientoPyGui:
         self.root = Tk()
         self.root.geometry("853x480")
         self.root.resizable(width=False, height=False)
+
+        default_font = font.nametofont("TkDefaultFont")
+        default_font.configure(size=10)
+        self.root.option_add( "*font", default_font)
+
         self.root.title("ScientoPy")
 
-        #self.root.iconbitmap('scientopy_icon.ico')
         self.root.iconphoto(True, PhotoImage(file="scientopy_icon.png"))
 
         # Starting the tabs
@@ -70,22 +75,29 @@ class ScientoPyGui:
                                                      "\nMIT License \nVersion %s" % globalVar.SCIENTOPY_VERSION))
         version_label.place(relx=0.5, rely=0.7, anchor=CENTER)
 
-        dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
-        dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
         Label(preprocess_page, text="Dataset folder:").place(relx=0.02, rely=0.8, anchor=W)
         self.datasetLoc = StringVar()
-        self.datasetLocEntry = Entry(preprocess_page, width=70, bg='white', textvariable=self.datasetLoc)
+        self.datasetLocEntry = Entry(preprocess_page, width=60, bg='white', textvariable=self.datasetLoc)
         self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
 
-        run_preprocess_button = Button(preprocess_page, text="Run preprocess", command=self.run_preprocess)
-        run_preprocess_button.place(relx=0.9, rely=0.9, anchor=CENTER)
 
         self.chkValueRemoveDupl = BooleanVar()
         self.chkValueRemoveDupl.set(True)
         Checkbutton(preprocess_page, var=self.chkValueRemoveDupl,
                     text="Remove duplicated documents").place(relx=0.015, rely=0.9, anchor=W)
 
-        # Analysis tab
+        # Buttons ****************************
+        dataset_button = Button(preprocess_page, text="Select dataset", command=self.select_dataset)
+        dataset_button.place(relx=0.9, rely=0.8, anchor=CENTER)
+
+        run_preprocess_button = Button(preprocess_page, text="Run preprocess", command=self.run_preprocess)
+        run_preprocess_button.place(relx=0.9, rely=0.9, anchor=CENTER)
+
+        open_preprocess_brief = Button(preprocess_page, text="Open preprocess brief", command=self.open_preprocess_brief)
+        open_preprocess_brief.place(relx=0.57, rely=0.9, anchor=W)
+
+        # Analysis tab ************************************************************
+
         Label(process_page, text="").grid(sticky=W, column=0, row=0)
         Label(process_page, text="Criterion:", borderwidth=10).grid(sticky=W, column=0, row=1)
         self.comboCriterion = ttk.Combobox(process_page, values=globalVar.validCriterion, width=15)
@@ -132,28 +144,28 @@ class ScientoPyGui:
         Checkbutton(process_page, var=self.chkValueTrendAnalysis,
                     text="Trend analysis").grid(sticky=W, column=0, row=9, padx=7)
 
-
         process_page.grid_columnconfigure(2, pad=50)
 
         Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
-        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=68, height=18)
+        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', width=50, height=19)
         self.entryCustomTopics.grid(column=2, row=2, rowspan=9)
 
-        run_button = Button(process_page, text="Run", command=self.scientoPyRun)
-        run_button.place(relx=0.96, rely=0.92, anchor=E)
-
-        genbibtex_button = Button(process_page, text="Generate BibTeX", command=self.generate_bibtex)
-        genbibtex_button.place(relx=0.008, rely=0.82, anchor=W)
-
-        genbibtex_button = Button(process_page, text="Open preprocess brief", command=self.open_preprocess_brief)
-        genbibtex_button.place(relx=0.20, rely=0.82, anchor=W)
-
+        # Buttons ****************************
 
         results_button = Button(process_page, text="Open results table", command=self.open_results)
         results_button.place(relx=0.008, rely=0.92, anchor=W)
 
         ext_results_button = Button(process_page, text="Open extended results", command=self.open_ext_results)
         ext_results_button.place(relx=0.20, rely=0.92, anchor=W)
+
+        genbibtex_button = Button(process_page, text="Generate BibTeX", command=self.generate_bibtex)
+        genbibtex_button.place(relx=0.45, rely=0.92, anchor=W)
+
+        run_button = Button(process_page, text="Run", command=self.scientoPyRun)
+        run_button.place(relx=0.96, rely=0.92, anchor=E)
+
+
+
 
     def open_results(self):
         webbrowser.open(self.scientoPy.resultsFileName)
