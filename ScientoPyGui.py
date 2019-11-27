@@ -48,10 +48,10 @@ class ScientoPyGui:
         default_font = font.nametofont("TkDefaultFont")
         default_font.configure(size=10)
         self.root.option_add( "*font", default_font)
+        if os.path.exists('scientopy_icon.png'):
+            self.root.iconphoto(True, PhotoImage(file="scientopy_icon.png"))
 
         self.root.title("ScientoPy")
-
-        self.root.iconphoto(True, PhotoImage(file="scientopy_icon.png"))
 
         # Starting the tabs
         self.nb = ttk.Notebook(self.root)
@@ -63,7 +63,7 @@ class ScientoPyGui:
         self.nb.pack(expand=1, fill="both")
         self.nb.select(preprocess_page)
 
-        # Pre processing tab
+        # Pre processing tab *******************************
         if os.path.exists('scientopy_logo.png'):
             load = Image.open("scientopy_logo.png")
             render = ImageTk.PhotoImage(load)
