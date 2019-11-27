@@ -304,7 +304,36 @@ ScientoPy will create a documents output file (\verb|results/papersPreprocessed.
 
 \section{Generate BibTeX}
 
-To generate the BibTeX TODO
+With ScientoPy you can generate a \LaTeX BibTeX file for your reference. For this follow the next steps:
+
+\begin{enumerate}
+\item Open the extended results from your analysis, by clicking the \verb|Open extended results| button.
+\item Copy the EID value of the paper or papers that you want to cite to the latex document inside the \verb|\cite{}| preamble, as shown in the following figure:
+
+\begin{center}
+	\includegraphics[width=0.9\textwidth]{./figures/win_generate_bib1.eps}
+\end{center}
+
+\item Save your LaTeX document 
+
+\item Push the button \verb|Generate BibTeX| and select the LaTeX document where you have added the EID
+
+\item ScientoPy will look for all EID in the document and will generate the BibTeX information from the dataset preprocessed. Finally it will open the BibTeX file in a text editor in order, as shown in the following figure:
+
+\begin{center}
+	\includegraphics[width=0.8\textwidth]{./figures/win_generate_bib2.eps}
+\end{center}
+
+\end{enumerate}
+
+\textbf{Note:} for your reference we have included an article LaTeX file example in the location \verb|latexExample/article_example.tex|. This have cites from the example dataset. To test the Generate BibTeX capability, you can follow the next steps:
+\begin{itemize}
+\item Preprocess the example dataset located in \verb|dataInExample|, 
+\item Click in \verb|Generate BibTeX| 
+\item Select the file \verb|latexExample/article_example.tex| 
+\item Save the generated \verb|bibliography.bib| file in the \verb|latexExample| folder 
+\item Compile the \verb|latexExample/article_example.tex| file, with the command \verb|latexmk -pdf article_example.tex|
+\end{itemize}
 
 \section{Output files and directories}
 
@@ -318,6 +347,7 @@ After run ScientoPy analysisyou will find the following folder and files structu
 	.3 papersPreprocessed.tsv.
 	.3 PreprocessedBrief.tsv.
 	.2 graphs.
+	.2 latexExample.
 	.2 Manual.
 	.2 results.
 	.3 AuthorKeywords.tsv.
@@ -337,7 +367,9 @@ These folders and output files are described bellow:
 	\item \textbf{PreprocessedBrief.tsv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
 	
 	\item \textbf{graphs: } graphs output folder for preprocess and scientoPy scripts
-	
+
+	\item \textbf{latexExample: } folder with the LaTeX file article example to generate the BibTeX from the preprocess dataset. 
+
 	\item \textbf{Manual: } folder with the pdf manual and example paper with scientoPy commands highlighted used for graph and tables generation. 
 	
 	\item \textbf{results: } output folder for scientoPy result output files

@@ -26,6 +26,9 @@ Installation for Windows
 
 2. Unzip the downloaded file and run ScientoPyGui.exe
 
+For detailed instructions about ScientoPy Graphic User Interface, go to the user manual in 
+[Manual/ScientoPyGui_user_manual.pdf](./Manual/ScientoPyGui_user_manual.pdf) 
+
 Run ScientoPy for Ubuntu (or Debian based)
 ===========================================
 
