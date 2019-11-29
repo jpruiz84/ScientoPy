@@ -148,19 +148,21 @@ class ScientoPyClass:
         # Filter papers with invalid year
         self.papersDict = list(filter(lambda x: x["year"].isdigit(), self.papersDict))
         # Filter the papers outside the year range
-        self.papersDict = list(filter(lambda x: int(x["year"]) >= args.startYear, self.papersDict))
-        self.papersDict = list(filter(lambda x: int(x["year"]) <= args.endYear, self.papersDict))
+        papersDictInside = self.papersDict.copy()
+        papersDictInside = list(filter(lambda x: int(x["year"]) >= args.startYear, papersDictInside))
+        papersDictInside = list(filter(lambda x: int(x["year"]) <= args.endYear, papersDictInside))
 
         print("Total papers in range (%s - %s): %s" %
-              (args.startYear, args.endYear, len(self.papersDict)))
+              (args.startYear, args.endYear, len(papersDictInside)))
 
         # If no papers in the range exit
-        if (len(self.papersDict) == 0):
+        if (len(papersDictInside) == 0):
             print("ERROR: no papers found in the range.")
-            exit()
+            del papersDictInside
+            return
 
         # Find the number of total papers per year
-        for paper in self.papersDict:
+        for paper in papersDictInside:
             if int(paper["year"]) in yearPapers.keys():
                 yearPapers[int(paper["year"])] += 1
 
@@ -204,7 +206,7 @@ class ScientoPyClass:
             topicDic = {}
 
             # For each paper, get the full topicDic
-            for paper in self.papersDict:
+            for paper in papersDictInside:
 
                 # For each item in paper criteria
                 for item in paper[args.criterion].split(";"):
@@ -250,7 +252,8 @@ class ScientoPyClass:
 
             if len(topicList) == 0:
                 print("\nFINISHED : There is not results with your inputs criteria or filter")
-                exit()
+                del papersDictInside
+                return
 
         # print("Topic list:")
         # print(topicList)
@@ -286,7 +289,7 @@ class ScientoPyClass:
         # Find papers within the arguments, and fill the topicResults fields per year.
         print("Calculating papers sum...")
         # For each paper
-        for paper in self.papersDict:
+        for paper in papersDictInside:
             # For each item in paper criteria
             for item in paper[args.criterion].split(";"):
                 # Strip paper item and upper
@@ -519,3 +522,5 @@ class ScientoPyClass:
         if args.savePlot == "":
             if self.fromGui:
                 plt.show()
+                
+        del papersDictInside
