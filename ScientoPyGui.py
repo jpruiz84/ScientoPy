@@ -138,7 +138,7 @@ class ScientoPyGui:
         self.spinSkipFirst.grid(column=1, row=6)
 
         Label(process_page, text="Window (years):", borderwidth=10).grid(sticky=W, column=0, row=7)
-        self.spinWindowWidth = Spinbox(process_page, from_=0, to=100, bg='white', textvariable=DoubleVar(value=2),
+        self.spinWindowWidth = Spinbox(process_page, from_=1, to=100, bg='white', textvariable=DoubleVar(value=2),
                                        width=15)
         self.spinWindowWidth.grid(column=1, row=7)
 
