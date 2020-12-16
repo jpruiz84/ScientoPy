@@ -353,7 +353,7 @@ The bibtex entry for this is:
 
 ## Authors
 
-* **Juan Ruiz-Rosero** - *Initial work* 
+* **Juan Ruiz-Rosero** - *Initial work and documentation* 
 
 ## License
 
