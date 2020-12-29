@@ -82,7 +82,7 @@ class ScientoPyGui:
 
         self.datasetLoc = StringVar()
         preprocess_page.grid_columnconfigure(2, weight=1)
-        self.datasetLocEntry = Entry(preprocess_page, bg='white', textvariable=self.datasetLoc)
+        self.datasetLocEntry = Entry(preprocess_page, textvariable=self.datasetLoc)
         # self.datasetLocEntry.place(relx=0.47, rely=0.8, anchor=CENTER)
         self.datasetLocEntry.grid(column=1, row=0, columnspan=2, sticky='we')
 
@@ -118,27 +118,27 @@ class ScientoPyGui:
         self.comboGraphType.grid(column=1, row=2)
 
         Label(process_page, text="Start Year:", borderwidth=10).grid(sticky=W, column=0, row=3)
-        self.spinStartYear = Spinbox(process_page, from_=1900, to=2100, bg='white',
+        self.spinStartYear = Spinbox(process_page, from_=1900, to=2100,
                                      textvariable=DoubleVar(value=globalVar.DEFAULT_START_YEAR), width=15)
         self.spinStartYear.grid(column=1, row=3)
 
         Label(process_page, text="End Year:", borderwidth=10).grid(sticky=W, column=0, row=4)
-        self.spinEndYear = Spinbox(process_page, from_=1900, to=2100, bg='white',
+        self.spinEndYear = Spinbox(process_page, from_=1900, to=2100,
                                    textvariable=DoubleVar(value=globalVar.DEFAULT_END_YEAR), width=15)
         self.spinEndYear.grid(column=1, row=4)
 
         Label(process_page, text="Topics length:", borderwidth=10).grid(sticky=W, column=0, row=5)
-        self.spinTopicsLength = Spinbox(process_page, from_=0, to=1000, bg='white', textvariable=DoubleVar(value=10),
+        self.spinTopicsLength = Spinbox(process_page, from_=0, to=1000, textvariable=DoubleVar(value=10),
                                         width=15)
         self.spinTopicsLength.grid(column=1, row=5)
 
         Label(process_page, text="Skip first:", borderwidth=10).grid(sticky=W, column=0, row=6)
-        self.spinSkipFirst = Spinbox(process_page, from_=0, to=1000, bg='white', textvariable=DoubleVar(value=0),
+        self.spinSkipFirst = Spinbox(process_page, from_=0, to=1000, textvariable=DoubleVar(value=0),
                                      width=15)
         self.spinSkipFirst.grid(column=1, row=6)
 
         Label(process_page, text="Window (years):", borderwidth=10).grid(sticky=W, column=0, row=7)
-        self.spinWindowWidth = Spinbox(process_page, from_=1, to=100, bg='white', textvariable=DoubleVar(value=2),
+        self.spinWindowWidth = Spinbox(process_page, from_=1, to=100, textvariable=DoubleVar(value=2),
                                        width=15)
         self.spinWindowWidth.grid(column=1, row=7)
 
@@ -155,7 +155,7 @@ class ScientoPyGui:
         process_page.grid_columnconfigure(2, weight=1)
 
         Label(process_page, text="Custom topics:", borderwidth=10).grid(sticky=W, column=2, row=1, padx=15)
-        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, bg='white', height=18)
+        self.entryCustomTopics = scrolledtext.ScrolledText(process_page, undo=True, height=18)
         self.entryCustomTopics.grid(column=2, row=2, rowspan=9, sticky=E, padx=25)
 
         # Buttons ****************************
