@@ -54,7 +54,7 @@ class ScientoPyGui:
             bg_color_avg = sum(bg_color_rgb)/len(bg_color_rgb)
             if(bg_color_avg < 75):
                 self.cb_square_color = bg_color
-        except (RuntimeError, TypeError, NameError):
+        except:
             pass
 
         default_font = font.nametofont("TkDefaultFont")
@@ -245,7 +245,7 @@ class ScientoPyGui:
                 totalPapers = preprocess.preprocess()
                 if totalPapers == 0:
                     messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
-            except (RuntimeError, TypeError, NameError):
+            except:
                 messagebox.showinfo("Error", "No valid dataset folder")
         else:
             messagebox.showinfo("Error", "No dataset folder defined")
