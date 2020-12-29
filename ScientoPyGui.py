@@ -39,7 +39,7 @@ import os.path
 
 class ScientoPyGui:
 
-    checkbuttonSquareColor = 'white'
+    cb_square_color = 'white'
 
     def __init__(self):
         self.scientoPy = ScientoPyClass(from_gui=True)
@@ -48,19 +48,13 @@ class ScientoPyGui:
         self.root.geometry("853x480")
         self.root.resizable(width=False, height=False)
         
-        bg_color = self.root.cget('bg')
-
         try:
-            print(bg_color)
-            print(self.root['bg']['bg'])
-            bg_color = ImageColor.getcolor(bg_color, "RGB")
-            bg_color = sum(bg_color)/len(bg_color)
-            print(bg_color)
-
-            if(bg_color < 75):
-                self.checkbuttonSquareColor = 'black'
-
-        except:
+            bg_color = self.root.cget('bg')
+            bg_color_rgb = ImageColor.getcolor(bg_color, "RGB")
+            bg_color_avg = sum(bg_color_rgb)/len(bg_color_rgb)
+            if(bg_color_avg < 75):
+                self.cb_square_color = bg_color
+        except (RuntimeError, TypeError, NameError):
             pass
 
         default_font = font.nametofont("TkDefaultFont")
@@ -112,7 +106,7 @@ class ScientoPyGui:
         self.chkValueRemoveDupl.set(True)
         Checkbutton(preprocess_page, var=self.chkValueRemoveDupl,
                     text="Remove duplicated documents", 
-                    selectcolor=self.checkbuttonSquareColor).place(relx=0.015, rely=0.9, anchor=W)
+                    selectcolor=self.cb_square_color).place(relx=0.015, rely=0.9, anchor=W)
 
         # Buttons ****************************
 
@@ -163,12 +157,12 @@ class ScientoPyGui:
 
         self.chkValuePreviusResults = BooleanVar()
         self.chkValuePreviusResults.set(False)
-        Checkbutton(process_page, var=self.chkValuePreviusResults,
+        Checkbutton(process_page, var=self.chkValuePreviusResults, selectcolor=self.cb_square_color,
                     text="Use previous results").grid(sticky=W, column=0, row=8, padx=7)
 
         self.chkValueTrendAnalysis = BooleanVar()
         self.chkValueTrendAnalysis.set(False)
-        Checkbutton(process_page, var=self.chkValueTrendAnalysis,
+        Checkbutton(process_page, var=self.chkValueTrendAnalysis, selectcolor=self.cb_square_color,
                     text="Trend analysis").grid(sticky=W, column=0, row=9, padx=7)
 
         process_page.grid_columnconfigure(2, weight=1)
@@ -251,7 +245,7 @@ class ScientoPyGui:
                 totalPapers = preprocess.preprocess()
                 if totalPapers == 0:
                     messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
-            except:
+            except (RuntimeError, TypeError, NameError):
                 messagebox.showinfo("Error", "No valid dataset folder")
         else:
             messagebox.showinfo("Error", "No dataset folder defined")
