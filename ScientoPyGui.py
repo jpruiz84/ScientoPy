@@ -47,16 +47,21 @@ class ScientoPyGui:
         self.root = Tk()
         self.root.geometry("853x480")
         self.root.resizable(width=False, height=False)
-
         
         bg_color = self.root.cget('bg')
-        print(bg_color)
-        bg_color = ImageColor.getcolor(bg_color, "RGB")
-        bg_color = sum(bg_color)/len(bg_color)
-        print(bg_color)
 
-        if(bg_color < 75):
-            self.checkbuttonSquareColor = 'black'
+        try:
+            print(bg_color)
+            print(self.root['bg']['bg'])
+            bg_color = ImageColor.getcolor(bg_color, "RGB")
+            bg_color = sum(bg_color)/len(bg_color)
+            print(bg_color)
+
+            if(bg_color < 75):
+                self.checkbuttonSquareColor = 'black'
+
+        except:
+            pass
 
         default_font = font.nametofont("TkDefaultFont")
         default_font.configure(size=10)
