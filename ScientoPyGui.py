@@ -48,10 +48,12 @@ class ScientoPyGui:
         self.root.geometry("853x480")
         self.root.resizable(width=False, height=False)
 
-        print(self.root.cget('bg'))
+        
         bg_color = self.root.cget('bg')
+        print(bg_color)
         bg_color = tuple(int(bg_color[i:i+2], 16) for i in (1, 3, 5))
         bg_color = sum(bg_color)/len(bg_color)
+        print(bg_color)
 
         if(bg_color < 75):
             self.checkbuttonSquareColor = 'black'
