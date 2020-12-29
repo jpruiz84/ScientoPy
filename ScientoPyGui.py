@@ -28,7 +28,7 @@ from tkinter import messagebox
 from tkinter import font
 
 import tkinter.scrolledtext as scrolledtext
-from PIL import ImageTk, Image
+from PIL import ImageTk, ImageColor, Image
 import globalVar
 from PreProcessClass import PreProcessClass
 from ScientoPyClass import ScientoPyClass
@@ -51,7 +51,7 @@ class ScientoPyGui:
         
         bg_color = self.root.cget('bg')
         print(bg_color)
-        bg_color = tuple(int(bg_color[i:i+2], 16) for i in (1, 3, 5))
+        bg_color = ImageColor.getcolor(bg_color, "RGB")
         bg_color = sum(bg_color)/len(bg_color)
         print(bg_color)
 
