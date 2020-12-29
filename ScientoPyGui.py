@@ -38,12 +38,23 @@ import os.path
 
 
 class ScientoPyGui:
+
+    checkbuttonSquareColor = 'white'
+
     def __init__(self):
         self.scientoPy = ScientoPyClass(from_gui=True)
 
         self.root = Tk()
         self.root.geometry("853x480")
         self.root.resizable(width=False, height=False)
+
+        print(self.root.cget('bg'))
+        bg_color = self.root.cget('bg')
+        bg_color = tuple(int(bg_color[i:i+2], 16) for i in (1, 3, 5))
+        bg_color = sum(bg_color)/len(bg_color)
+
+        if(bg_color < 75):
+            self.checkbuttonSquareColor = 'black'
 
         default_font = font.nametofont("TkDefaultFont")
         default_font.configure(size=10)
@@ -93,7 +104,8 @@ class ScientoPyGui:
         self.chkValueRemoveDupl = BooleanVar()
         self.chkValueRemoveDupl.set(True)
         Checkbutton(preprocess_page, var=self.chkValueRemoveDupl,
-                    text="Remove duplicated documents").place(relx=0.015, rely=0.9, anchor=W)
+                    text="Remove duplicated documents", 
+                    selectcolor=self.checkbuttonSquareColor).place(relx=0.015, rely=0.9, anchor=W)
 
         # Buttons ****************************
 
