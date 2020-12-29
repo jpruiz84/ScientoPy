@@ -20,6 +20,7 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
 import sys
+import datetime
 
 # Check python version
 if sys.version_info[0] < 3:
@@ -29,7 +30,7 @@ if sys.version_info[0] < 3:
 
 # Default start and end year
 DEFAULT_START_YEAR = 1990
-DEFAULT_END_YEAR = 2020
+DEFAULT_END_YEAR = datetime.datetime.now().year
 
 # Default plot width and height in inches
 DEFAULT_PLOT_WIDTH = 6.4
