@@ -30,7 +30,7 @@ if sys.version_info[0] < 3:
 
 # Default start and end year
 DEFAULT_START_YEAR = 1990
-DEFAULT_END_YEAR = datetime.datetime.now().year
+DEFAULT_END_YEAR = datetime.datetime.now().year - 1
 
 # Default plot width and height in inches
 DEFAULT_PLOT_WIDTH = 6.4
