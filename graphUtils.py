@@ -281,7 +281,7 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   legend1.set_zorder(count)  # put the legend on top
 
   plt.xlabel("Publication year")
-  plt.ylabel("Accumulative Number of Documents")
+  plt.ylabel("Accumulative number of documents")
 
   if args.yLog:
     ax0.set_yscale("symlog", nonposy='clip')

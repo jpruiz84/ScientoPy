@@ -261,7 +261,12 @@ class ScientoPyGui:
         else:
             self.scientoPy.topics = ''
 
-        self.scientoPy.scientoPy()
+        t1 = threading.Thread(target=self.scientoPy.scientoPy)
+        t1.start()
+        self.progress_bar_fun()
+        t1.join()
+
+        self.scientoPy.plotResults()
 
     def select_dataset(self):
         self.root.dir_name = filedialog.askdirectory()
@@ -277,12 +282,12 @@ class ScientoPyGui:
                 self.preprocess.dataInFolder = self.root.dir_name
                 self.preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
 
-                t2 = threading.Thread(target=self.preprocess.preprocess)
-                t2.start()
+                t1 = threading.Thread(target=self.preprocess.preprocess)
+                t1.start()
                 
                 self.progress_bar_fun()
 
-                t2.join()
+                t1.join()
                 
                 if(globalVar.totalPapers > 0):
                     self.preprocess.graphBrief()

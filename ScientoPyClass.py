@@ -65,6 +65,10 @@ class ScientoPyClass:
         self.lastPreviousResults = ''
         self.preprocessBriefFileName = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE)
         self.preprocessDatasetFile = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+        self.topicResults = []
+        self.yearArray = []
+        self.startYearIndex = 0
+        self.endYearIndex = 0
 
     def closePlot(self):
         plt.close()
@@ -131,6 +135,9 @@ class ScientoPyClass:
 
             ifile = open(INPUT_FILE, "r", encoding='utf-8')
             print("Reading file: %s" % (INPUT_FILE))
+            globalVar.progressPer = 10
+            globalVar.progressText = "Reading dataset"
+
             paperUtils.openFileToDict(ifile, self.papersDict)
             ifile.close()
 
@@ -139,8 +146,8 @@ class ScientoPyClass:
             print("Omitted papers: %s" % globalVar.omitedPapers)
             print("Total papers: %s" % len(self.papersDict))
 
-        # Create a yearArray
-        yearArray = range(args.startYear, args.endYear + 1)
+        # Create a self.yearArray
+        self.yearArray = range(args.startYear, args.endYear + 1)
         yearPapers = {}
         for i in range(args.startYear, args.endYear + 1):
             yearPapers[i] = 0
@@ -202,6 +209,9 @@ class ScientoPyClass:
         # Find the top topics
         else:
             print("Finding the top topics...")
+            globalVar.progressPer = 30
+            globalVar.progressText = "Finding the top topics"
+
 
             topicDic = {}
 
@@ -258,8 +268,8 @@ class ScientoPyClass:
         # print("Topic list:")
         # print(topicList)
 
-        # Create a dictonary in topicResults list per element in topicList
-        topicResults = []
+        # Create a dictonary in self.topicResults list per element in topicList
+        self.topicResults = []
         for topics in topicList:
             topicItem = {}
             topicItem["upperName"] = topics[0].upper()
@@ -269,27 +279,36 @@ class ScientoPyClass:
             else:
                 topicItem["name"] = ""
             topicItem["allTopics"] = topics
-            topicItem["year"] = yearArray
-            topicItem["PapersCount"] = [0] * len(yearArray)
-            topicItem["PapersCountAccum"] = [0] * len(yearArray)
-            topicItem["PapersCountRate"] = [0] * len(yearArray)
+            topicItem["year"] = self.yearArray
+            topicItem["PapersCount"] = [0] * len(self.yearArray)
+            topicItem["PapersCountAccum"] = [0] * len(self.yearArray)
+            topicItem["PapersCountRate"] = [0] * len(self.yearArray)
             topicItem["PapersTotal"] = 0
             topicItem["AverageDocPerYear"] = 0  # ADY
             topicItem["PapersInLastYears"] = 0
             topicItem["PerInLastYears"] = 0  # PDLY
-            topicItem["CitedByCount"] = [0] * len(yearArray)
-            topicItem["CitedByCountAccum"] = [0] * len(yearArray)
+            topicItem["CitedByCount"] = [0] * len(self.yearArray)
+            topicItem["CitedByCountAccum"] = [0] * len(self.yearArray)
             topicItem["CitedByTotal"] = 0
             topicItem["papers"] = []
             topicItem["topicsFound"] = []
             topicItem["hIndex"] = 0
             topicItem["agr"] = 0  # Average growth rate
-            topicResults.append(topicItem)
+            self.topicResults.append(topicItem)
 
-        # Find papers within the arguments, and fill the topicResults fields per year.
-        print("Calculating papers sum...")
+        # Find papers within the arguments, and fill the self.topicResults fields per year.
+        print("Calculating papers statistics...")
+        globalVar.progressText = "Calculating papers statistics"
+
+        papersLen = len(papersDictInside)
+        papersCounter = 0
+
         # For each paper
         for paper in papersDictInside:
+            papersCounter += 1
+            progressPer = int(float(papersCounter) / float(papersLen) * 100)
+            globalVar.progressPer = progressPer
+
             # For each item in paper criteria
             for item in paper[args.criterion].split(";"):
                 # Strip paper item and upper
@@ -297,7 +316,7 @@ class ScientoPyClass:
                 itemUp = item.upper()
 
                 # For each topic in topic results
-                for topicItem in topicResults:
+                for topicItem in self.topicResults:
                     # for each sub topic
                     for subTopic in topicItem["allTopics"]:
 
@@ -331,7 +350,7 @@ class ScientoPyClass:
                     break
 
         # Print the topics found if the asterisk willcard was used
-        for topicItem in topicResults:
+        for topicItem in self.topicResults:
             for subTopic in topicItem["allTopics"]:
                 if args.topics and "*" in subTopic.upper():
                     print("\nTopics found for %s:" % subTopic)
@@ -340,7 +359,7 @@ class ScientoPyClass:
 
         print("Calculating accumulative ...")
         # Extract accumulative
-        for topicItem in topicResults:
+        for topicItem in self.topicResults:
             citedAccumValue = 0
             papersAccumValue = 0
             for i in range(0, len(topicItem["CitedByCountAccum"])):
@@ -352,7 +371,7 @@ class ScientoPyClass:
 
         print("Calculating Average Growth Rate (AGR)...")
         # Extract the Average Growth Rate (AGR)
-        for topicItem in topicResults:
+        for topicItem in self.topicResults:
             # Calculate rates
             pastCount = 0
             # Per year with papers count data
@@ -361,25 +380,25 @@ class ScientoPyClass:
                 pastCount = topicItem["PapersCount"][i]
 
             # Calculate AGR from rates
-            endYearIndex = len(topicItem["year"]) - 1
-            startYearIndex = endYearIndex - (args.windowWidth - 1)
+            self.endYearIndex = len(topicItem["year"]) - 1
+            self.startYearIndex = self.endYearIndex - (args.windowWidth - 1)
 
             topicItem["agr"] = \
-                round(np.mean(topicItem["PapersCountRate"][startYearIndex: endYearIndex + 1]), 1)
+                round(np.mean(topicItem["PapersCountRate"][self.startYearIndex: self.endYearIndex + 1]), 1)
 
         print("Calculating Average Documents per Year (ADY)...")
         # Extract the Average Documents per Year (ADY)
-        for topicItem in topicResults:
+        for topicItem in self.topicResults:
 
             # Calculate ADY from rates
-            endYearIndex = len(topicItem["year"]) - 1
-            startYearIndex = endYearIndex - (args.windowWidth - 1)
+            self.endYearIndex = len(topicItem["year"]) - 1
+            self.startYearIndex = self.endYearIndex - (args.windowWidth - 1)
 
             topicItem["AverageDocPerYear"] = \
-                round(np.mean(topicItem["PapersCount"][startYearIndex: endYearIndex + 1]), 1)
+                round(np.mean(topicItem["PapersCount"][self.startYearIndex: self.endYearIndex + 1]), 1)
 
             topicItem["PapersInLastYears"] = \
-                np.sum(topicItem["PapersCount"][startYearIndex: endYearIndex + 1])
+                np.sum(topicItem["PapersCount"][self.startYearIndex: self.endYearIndex + 1])
 
             if topicItem["PapersTotal"] > 0:
                 topicItem["PerInLastYears"] = \
@@ -387,7 +406,7 @@ class ScientoPyClass:
 
         # Scale in percentage per year
         if args.pYear:
-            for topicItem in topicResults:
+            for topicItem in self.topicResults:
                 for year, value in yearPapers.items():
                     index = topicItem["year"].index(year)
                     if value != 0:
@@ -395,7 +414,7 @@ class ScientoPyClass:
 
         print("Calculating h-index...")
         # Calculate h index per topic
-        for topicItem in topicResults:
+        for topicItem in self.topicResults:
 
             # print("\n" + topicName)
 
@@ -414,24 +433,24 @@ class ScientoPyClass:
                 topicItem["hIndex"] = hIndex
 
         # Sort by PapersTotal, and then by name.
-        topicResults = sorted(topicResults, key=lambda x: x["name"], reverse=False)
-        topicResults = sorted(topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
+        self.topicResults = sorted(self.topicResults, key=lambda x: x["name"], reverse=False)
+        self.topicResults = sorted(self.topicResults, key=lambda x: int(x["PapersTotal"]), reverse=True)
 
         # If trend analysis, sort by agr, and get the first ones
         if args.trend:
-            topicResults = sorted(topicResults, key=lambda x: int(x["agr"]), reverse=True)
-            topicResults = topicResults[args.skipFirst:(args.skipFirst + args.length)]
+            self.topicResults = sorted(self.topicResults, key=lambda x: int(x["agr"]), reverse=True)
+            self.topicResults = self.topicResults[args.skipFirst:(args.skipFirst + args.length)]
 
         # Print top topics
         print("\nTop topics:")
         print("Average Growth Rate (AGR) and Average Documents per Year (ADY) period: %d - %d\n\r"
-              % (yearArray[startYearIndex], yearArray[endYearIndex]))
+              % (self.yearArray[self.startYearIndex], self.yearArray[self.endYearIndex]))
         print('-' * 87)
         print("{:<4s}{:<30s}{:>10s}{:>10s}{:>10s}{:>10s}{:>12s}".format("Pos", args.criterion, "Total", "AGR", "ADY",
                                                                         "PDLY", "h-index"))
         print('-' * 87)
         count = 0
-        for topicItem in topicResults:
+        for topicItem in self.topicResults:
             print("{:<4d}{:<30s}{:>10d}{:>10.1f}{:>10.1f}{:>10.1f}{:>10d}".format(
                 count + 1, topicItem["name"], topicItem["PapersTotal"], topicItem["agr"],
                 topicItem["AverageDocPerYear"], topicItem["PerInLastYears"], topicItem["hIndex"]))
@@ -440,87 +459,94 @@ class ScientoPyClass:
         print("")
 
         if filterSubTopic != "":
-            for topicItem in topicResults:
+            for topicItem in self.topicResults:
                 topicItem["name"] = topicItem["name"].split(",")[0].strip()
 
-        # If more than 100 results and not wordCloud, no plot.
-        if len(topicResults) > 100 and not args.graphType == "word_cloud" and not args.noPlot:
-            args.noPlot = True
-            print("\nERROR: Not allowed to graph more than 100 results")
+        globalVar.progressText = "Saving results"
 
-        # Plot
-        if not args.noPlot:
-            if args.graphType == "evolution":
-                graphUtils.plot_evolution(plt, topicResults, yearArray[startYearIndex], yearArray[endYearIndex], args)
-
-            if args.graphType == "word_cloud":
-                from wordcloud import WordCloud
-                my_dpi = 96
-                plt.figure(figsize=(1960 / my_dpi, 1080 / my_dpi), dpi=my_dpi)
-
-                if args.wordCloudMask:
-                    imageMask = np.array(Image.open(args.wordCloudMask))
-                    wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10",
-                                   mask=imageMask)
-                else:
-                    wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10")
-
-                freq = {}
-                for topicItem in topicResults:
-                    freq[topicItem["name"]] = topicItem["PapersTotal"]
-                # generate word cloud
-                wc.generate_from_frequencies(freq)
-
-                # show
-                plt.imshow(wc, interpolation="bilinear")
-                plt.axis("off")
-
-            if args.graphType == "bar":
-                graphUtils.plot_bar_horizontal(plt, topicResults, args)
-
-            if args.graphType == "bar_trends":
-                graphUtils.plot_bar_horizontal_trends(plt, topicResults,
-                                                      yearArray[startYearIndex], yearArray[endYearIndex], args)
-            if args.graphType == "time_line":
-                graphUtils.plot_time_line(plt, topicResults, False)
-                fig = plt.gcf()
-                fig.set_size_inches(args.plotWidth, args.plotHeight)
-
-                if args.yLog:
-                    plt.yscale('log')
-                    # TODO: Fix mticker
-                    # plt.gca().yaxis.set_minor_formatter(mticker.ScalarFormatter())
-
-                if args.pYear:
-                    plt.ylabel("% of documents per year")
-
-            if args.graphTitle:
-                # plt.title(args.graphTitle)
-                fig = plt.gcf()
-                fig.suptitle(args.graphTitle, y=1.0)
-                plt.tight_layout(rect=[0, 0, 1, 0.95])
-            else:
-                plt.tight_layout()
-
-            if args.savePlot == "":
-                if self.fromGui:
-                    plt.show(block=False)
-                else:
-                    plt.show(block=True)
-            else:
-                plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
-                            bbox_inches='tight', pad_inches=0.01)
-                print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
-
-        self.resultsFileName = paperSave.saveTopResults(topicResults, args.criterion)
-        self.extResultsFileName = paperSave.saveExtendedResults(topicResults, args.criterion)
+        self.resultsFileName = paperSave.saveTopResults(self.topicResults, args.criterion)
+        self.extResultsFileName = paperSave.saveExtendedResults(self.topicResults, args.criterion)
 
         # Only save results if that is result of a not previous result
         if not args.previousResults:
             paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER,
                                                               globalVar.OUTPUT_FILE_NAME))
+        del papersDictInside
+        globalVar.progressPer = 101
+        print("\nAnalysis finished.")
+    
+    def plotResults(self, args=''):
+        if args == '':
+            args = self
+
+        # If more than 100 results and not wordCloud, no plot.
+        if len(self.topicResults) > 100 and not args.graphType == "word_cloud" and not args.noPlot:
+            args.noPlot = True
+            print("\nERROR: Not allowed to graph more than 100 results")
+            return
+
+        if args.graphType == "evolution":
+            graphUtils.plot_evolution(plt, self.topicResults, self.yearArray[self.startYearIndex], self.yearArray[self.endYearIndex], args)
+
+        if args.graphType == "word_cloud":
+            from wordcloud import WordCloud
+            my_dpi = 96
+            plt.figure(figsize=(1960 / my_dpi, 1080 / my_dpi), dpi=my_dpi)
+
+            if args.wordCloudMask:
+                imageMask = np.array(Image.open(args.wordCloudMask))
+                wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10",
+                                mask=imageMask)
+            else:
+                wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10")
+
+            freq = {}
+            for topicItem in self.topicResults:
+                freq[topicItem["name"]] = topicItem["PapersTotal"]
+            # generate word cloud
+            wc.generate_from_frequencies(freq)
+
+            # show
+            plt.imshow(wc, interpolation="bilinear")
+            plt.axis("off")
+
+        if args.graphType == "bar":
+            graphUtils.plot_bar_horizontal(plt, self.topicResults, args)
+
+        if args.graphType == "bar_trends":
+            graphUtils.plot_bar_horizontal_trends(plt, self.topicResults,
+                                                    self.yearArray[self.startYearIndex], self.yearArray[self.endYearIndex], args)
+        if args.graphType == "time_line":
+            graphUtils.plot_time_line(plt, self.topicResults, False)
+            fig = plt.gcf()
+            fig.set_size_inches(args.plotWidth, args.plotHeight)
+
+            if args.yLog:
+                plt.yscale('log')
+                # TODO: Fix mticker
+                # plt.gca().yaxis.set_minor_formatter(mticker.ScalarFormatter())
+
+            if args.pYear:
+                plt.ylabel("% of documents per year")
+
+        if args.graphTitle:
+            # plt.title(args.graphTitle)
+            fig = plt.gcf()
+            fig.suptitle(args.graphTitle, y=1.0)
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
+        else:
+            plt.tight_layout()
+
+        if args.savePlot == "":
+            if self.fromGui:
+                plt.show(block=False)
+            else:
+                plt.show(block=True)
+        else:
+            plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
+                        bbox_inches='tight', pad_inches=0.01)
+            print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
+
         if args.savePlot == "":
             if self.fromGui:
                 plt.show()
-                
-        del papersDictInside

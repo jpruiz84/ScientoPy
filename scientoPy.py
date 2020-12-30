@@ -98,3 +98,4 @@ args = parser.parse_args()
 # Start scientoPy
 scientoPy = ScientoPyClass()
 scientoPy.scientoPy(args)
+scientoPy.plotResults(args)
