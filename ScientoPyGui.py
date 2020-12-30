@@ -194,15 +194,17 @@ class ScientoPyGui:
         #start progress bar
         popup = Toplevel()
         popup.geometry('300x100')
+        popup.title("Progress")
         label_text = StringVar()
-        Label(popup, textvariable=label_text).grid(row=0,column=0)
-
+        
+        label = Label(popup, textvariable=label_text)
+        label.place(x=150, y=20, anchor="center")
         label_text.set(globalVar.progressText)
         
 
         progress_var = DoubleVar()
         progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=100, length = 280)
-        progress_bar.grid(row=1, column=0)#.pack(fill=tk.X, expand=1, side=tk.BOTTOM)
+        progress_bar.place(x=150, y=50, anchor="center")
         popup.pack_slaves()
 
         #print("globalVar.progressPer1: %d" % globalVar.progressPer)
