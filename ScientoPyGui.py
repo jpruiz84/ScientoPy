@@ -205,12 +205,12 @@ class ScientoPyGui:
         progress_bar.grid(row=1, column=0)#.pack(fill=tk.X, expand=1, side=tk.BOTTOM)
         popup.pack_slaves()
 
-        print("globalVar.progressPer1: %d" % globalVar.progressPer)
+        #print("globalVar.progressPer1: %d" % globalVar.progressPer)
         while globalVar.progressPer != 101:
             label_text.set(globalVar.progressText)
             popup.update()
             time.sleep(0.1)
-            print("globalVar.progressPer2: %d" % globalVar.progressPer)
+            #print("globalVar.progressPer2: %d" % globalVar.progressPer)
             progress_var.set(globalVar.progressPer)
         
         popup.destroy()
@@ -268,44 +268,29 @@ class ScientoPyGui:
 
         self.datasetLoc.set(self.root.dir_name)
 
-    def run_preprocess_fun(self, datasetLoc):
-        print("******************Starting run_preprocess_fun2")
-        print(datasetLoc)
-        if datasetLoc:
+    def run_preprocess(self):
+        print(self.datasetLoc.get())
+        if self.datasetLoc.get():
             try:
                 self.preprocess.dataInFolder = self.root.dir_name
                 self.preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
-                totalPapers = self.preprocess.preprocess()
-                if totalPapers == 0:
+
+                t2 = threading.Thread(target=self.preprocess.preprocess)
+                t2.start()
+                
+                self.progress_bar_fun()
+
+                t2.join()
+                
+                if(globalVar.totalPapers > 0):
+                    self.preprocess.graphBrief()
+        
+                if globalVar.totalPapers == 0:
                     messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
             except:
                 messagebox.showinfo("Error", "No valid dataset folder")
         else:
             messagebox.showinfo("Error", "No dataset folder defined")
-        
-        globalVar.progressPer = 101
-        
-
-
-
-    def run_preprocess(self):
-        
-        t2 = threading.Thread(target=self.run_preprocess_fun, args = (self.datasetLoc.get(),))
-        t2.start()
-        
-
-        self.progress_bar_fun()
-
-        t2.join()
-        
-
-        
-        print("*************** Graph preprocess")
-        self.preprocess.graphBrief()
-        
-
-
-
 
     def generate_bibtex(self):
         if not os.path.exists(self.scientoPy.preprocessDatasetFile):

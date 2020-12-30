@@ -57,6 +57,7 @@ class PreProcessClass:
         if sys.version_info[0] < 3:
             print("ERROR, you are using Python 2, Python 3.X.X required")
             print("")
+            globalVar.progressPer = 101
             return 0
 
         # Create output folders if not exist
@@ -109,7 +110,8 @@ class PreProcessClass:
         if (globalVar.loadedPapers == 0):
             print("ERROR: 0 documents found from " + os.path.join(args.dataInFolder, ''))
             print("")
-            return 0
+            globalVar.progressPer = 101
+            return
 
         globalVar.OriginalTotalPapers = len(paperDict)
 
@@ -197,7 +199,9 @@ class PreProcessClass:
 
         print("\nPreprocess finished.")
 
-        return len(paperDict)
+        globalVar.totalPapers = len(paperDict)
+        globalVar.progressPer = 101
+
 
     def graphBrief(self, args=''):
 
