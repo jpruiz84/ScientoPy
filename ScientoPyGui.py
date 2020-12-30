@@ -26,6 +26,9 @@ from tkinter import filedialog
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import font
+from tkinter.ttk import Progressbar
+import time
+import threading
 
 import tkinter.scrolledtext as scrolledtext
 from PIL import ImageTk, ImageColor, Image
@@ -43,6 +46,8 @@ class ScientoPyGui:
 
     def __init__(self):
         self.scientoPy = ScientoPyClass(from_gui=True)
+        self.preprocess = PreProcessClass(from_gui=True)
+
 
         self.root = Tk()
         self.root.geometry("853x480")
@@ -185,6 +190,33 @@ class ScientoPyGui:
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.place(relx=0.96, rely=0.92, anchor=E)
 
+    def progress_bar_fun(self):
+        #start progress bar
+        popup = Toplevel()
+        popup.geometry('300x100')
+        label_text = StringVar()
+        Label(popup, textvariable=label_text).grid(row=0,column=0)
+
+        label_text.set(globalVar.progressText)
+        
+
+        progress_var = DoubleVar()
+        progress_bar = ttk.Progressbar(popup, variable=progress_var, maximum=100, length = 280)
+        progress_bar.grid(row=1, column=0)#.pack(fill=tk.X, expand=1, side=tk.BOTTOM)
+        popup.pack_slaves()
+
+        print("globalVar.progressPer1: %d" % globalVar.progressPer)
+        while globalVar.progressPer != 101:
+            label_text.set(globalVar.progressText)
+            popup.update()
+            time.sleep(0.1)
+            print("globalVar.progressPer2: %d" % globalVar.progressPer)
+            progress_var.set(globalVar.progressPer)
+        
+        popup.destroy()
+
+        return 0
+
     def open_results(self):
         if os.path.exists(self.scientoPy.resultsFileName):
             webbrowser.open(self.scientoPy.resultsFileName)
@@ -236,19 +268,44 @@ class ScientoPyGui:
 
         self.datasetLoc.set(self.root.dir_name)
 
-    def run_preprocess(self):
-        if self.datasetLoc.get():
+    def run_preprocess_fun(self, datasetLoc):
+        print("******************Starting run_preprocess_fun2")
+        print(datasetLoc)
+        if datasetLoc:
             try:
-                preprocess = PreProcessClass(from_gui=True)
-                preprocess.dataInFolder = self.root.dir_name
-                preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
-                totalPapers = preprocess.preprocess()
+                self.preprocess.dataInFolder = self.root.dir_name
+                self.preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
+                totalPapers = self.preprocess.preprocess()
                 if totalPapers == 0:
                     messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
             except:
                 messagebox.showinfo("Error", "No valid dataset folder")
         else:
             messagebox.showinfo("Error", "No dataset folder defined")
+        
+        globalVar.progressPer = 101
+        
+
+
+
+    def run_preprocess(self):
+        
+        t2 = threading.Thread(target=self.run_preprocess_fun, args = (self.datasetLoc.get(),))
+        t2.start()
+        
+
+        self.progress_bar_fun()
+
+        t2.join()
+        
+
+        
+        print("*************** Graph preprocess")
+        self.preprocess.graphBrief()
+        
+
+
+
 
     def generate_bibtex(self):
         if not os.path.exists(self.scientoPy.preprocessDatasetFile):

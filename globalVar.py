@@ -107,6 +107,8 @@ OriginalTotalPapers = 0
 papersScopus = 0
 papersWoS = 0
 totalAfterRemDupl = 0
+progressPer = 0
+progressText = ''
 
 validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract",
                   "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]

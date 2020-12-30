@@ -42,3 +42,4 @@ args = parser.parse_args()
 
 preProcess = PreProcessClass()
 preProcess.preprocess(args)
+preProcess.graphBrief(args)

@@ -25,6 +25,7 @@ import re
 import unicodedata
 import sys
 import unidecode
+import time
 
 def openFileToDict(ifile, papersDict):
   firstLineTell = ifile.tell()
@@ -515,8 +516,10 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
   paperDict = sorted(paperDict, key=lambda x: x["titleB"])
  
   print("Removing duplicates...")
+  globalVar.progressText = 'Removing duplicates'
 
   countMatch2 = 0
+  progressPerPrev = 0
   # Run on paper list
   for i in range(0, len(paperDict)):
     match = True
@@ -576,12 +579,17 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
 
         # Update progress percentage
         duplicatedPapersCount += 1
-        progressPer = float(i) / float(len(paperDict)) * 100
-        if progressPer < 100:
-          #print("\r%0.1f%%" % progressPer)
-          sys.stdout.write("\r%d%%  " % (int(progressPer)))
-          sys.stdout.flush()
-        continue
+        progressPer = int(float(i) / float(len(paperDict)) * 100)
+        globalVar.progressPer = progressPer
+        
+        if progressPerPrev != progressPer:
+          progressPerPrev = progressPer
+          time.sleep(0.001)
+          if progressPer < 100:
+            #print("p: %d" % progressPer)
+            sys.stdout.write("\r%d%%  " % (int(progressPer)))
+            sys.stdout.flush()
+        
 
   # To avoid by zero division
   if globalVar.papersScopus > 0:
@@ -597,7 +605,7 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
   else:
     percenDuplicatedWithDifferentCitedBy = 0
 
-
+  globalVar.progressPer = 100
   print("\r{0:.0f}%".format(100))
   print("\nDuplicated papers found: %s" % duplicatedPapersCount)
   print("Original papers count: %s" % globalVar.OriginalTotalPapers)

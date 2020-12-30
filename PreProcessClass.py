@@ -39,6 +39,7 @@ class PreProcessClass:
         self.graphTitle = ''
 
         self.fromGui = from_gui
+        self.preProcessBrief = {}
 
     def preprocess(self, args=''):
 
@@ -48,6 +49,9 @@ class PreProcessClass:
         # *****************  Program start ********************************************************
         print("\n\nScientoPy prerprocess")
         print("======================\n")
+
+        globalVar.progressPer = 0
+        globalVar.progressText = 'Reading input files'
 
         # Check python version
         if sys.version_info[0] < 3:
@@ -71,25 +75,31 @@ class PreProcessClass:
         globalVar.papersWoS = 0
         globalVar.omitedPapers = 0
 
-        preProcessBrief = {}
-        preProcessBrief["totalLoadedPapers"] = 0
-        preProcessBrief["omittedPapers"] = 0
-        preProcessBrief["papersAfterRemOmitted"] = 0
-        preProcessBrief["loadedPapersScopus"] = 0
-        preProcessBrief["loadedPapersWoS"] = 0
+        
+        self.preProcessBrief["totalLoadedPapers"] = 0
+        self.preProcessBrief["omittedPapers"] = 0
+        self.preProcessBrief["papersAfterRemOmitted"] = 0
+        self.preProcessBrief["loadedPapersScopus"] = 0
+        self.preProcessBrief["loadedPapersWoS"] = 0
 
         # After duplication removal filter
-        preProcessBrief["totalAfterRemDupl"] = 0
-        preProcessBrief["removedTotalPapers"] = 0
-        preProcessBrief["removedPapersScopus"] = 0
-        preProcessBrief["removedPapersWoS"] = 0
-        preProcessBrief["papersScopus"] = 0
-        preProcessBrief["papersWoS"] = 0
-        preProcessBrief["percenRemPapersScopus"] = 0
-        preProcessBrief["percenRemPapersWos"] = 0
+        self.preProcessBrief["totalAfterRemDupl"] = 0
+        self.preProcessBrief["removedTotalPapers"] = 0
+        self.preProcessBrief["removedPapersScopus"] = 0
+        self.preProcessBrief["removedPapersWoS"] = 0
+        self.preProcessBrief["papersScopus"] = 0
+        self.preProcessBrief["papersWoS"] = 0
+        self.preProcessBrief["percenRemPapersScopus"] = 0
+        self.preProcessBrief["percenRemPapersWos"] = 0
 
+        files_to_read = len(os.listdir(os.path.join(args.dataInFolder, '')))
+        print("Files to read: %d" % files_to_read)
+
+        files_counter = 0
         # Read files from the dataInFolder
         for file in os.listdir(os.path.join(args.dataInFolder, '')):
+            files_counter += 1
+            globalVar.progressPer = int(float(files_counter) / float(files_to_read) * 100)
             if file.endswith(".csv") or file.endswith(".txt"):
                 print("Reading file: %s" % (os.path.join(args.dataInFolder, '') + file))
                 ifile = open(os.path.join(args.dataInFolder, '') + file, "r", encoding='utf-8')
@@ -103,12 +113,12 @@ class PreProcessClass:
 
         globalVar.OriginalTotalPapers = len(paperDict)
 
-        preProcessBrief["totalLoadedPapers"] = globalVar.loadedPapers
-        preProcessBrief["omittedPapers"] = globalVar.omitedPapers
-        preProcessBrief["papersAfterRemOmitted"] = globalVar.OriginalTotalPapers
+        self.preProcessBrief["totalLoadedPapers"] = globalVar.loadedPapers
+        self.preProcessBrief["omittedPapers"] = globalVar.omitedPapers
+        self.preProcessBrief["papersAfterRemOmitted"] = globalVar.OriginalTotalPapers
 
-        preProcessBrief["loadedPapersScopus"] = globalVar.papersScopus
-        preProcessBrief["loadedPapersWoS"] = globalVar.papersWoS
+        self.preProcessBrief["loadedPapersScopus"] = globalVar.papersScopus
+        self.preProcessBrief["loadedPapersWoS"] = globalVar.papersWoS
 
         # Open the file to write the preprocessing log in CSV
         logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE),
@@ -135,7 +145,7 @@ class PreProcessClass:
                                         "%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
 
         print("Loaded papers: %s" % len(paperDict))
-        print("Omited papers: %s" % globalVar.omitedPapers)
+        print("Omitted papers: %s" % globalVar.omitedPapers)
         print("total papers: %s" % globalVar.OriginalTotalPapers)
         print("WoS papers: %s" % globalVar.papersWoS)
         print("Scopus papers: %s" % globalVar.papersScopus)
@@ -143,32 +153,32 @@ class PreProcessClass:
 
         # Removing duplicates
         if not args.noRemDupl:
-            paperDict = paperUtils.removeDuplicates(paperDict, logWriter, preProcessBrief)
+            paperDict = paperUtils.removeDuplicates(paperDict, logWriter, self.preProcessBrief)
 
         # if not remove duplicates
         else:
-            preProcessBrief["totalAfterRemDupl"] = preProcessBrief["papersAfterRemOmitted"]
-            preProcessBrief["removedPapersScopus"] = 0
-            preProcessBrief["removedPapersWoS"] = 0
-            preProcessBrief["papersScopus"] = preProcessBrief["loadedPapersScopus"]
-            preProcessBrief["papersWoS"] = preProcessBrief["loadedPapersWoS"]
+            self.preProcessBrief["totalAfterRemDupl"] = self.preProcessBrief["papersAfterRemOmitted"]
+            self.preProcessBrief["removedPapersScopus"] = 0
+            self.preProcessBrief["removedPapersWoS"] = 0
+            self.preProcessBrief["papersScopus"] = self.preProcessBrief["loadedPapersScopus"]
+            self.preProcessBrief["papersWoS"] = self.preProcessBrief["loadedPapersWoS"]
 
         # Filter papers with invalid year
         papersDictYear = list(filter(lambda x: x["year"].isdigit(), paperDict))
 
         # To avoid by zero division
-        if preProcessBrief["totalAfterRemDupl"] > 0:
-            percentagePapersWos = 100.0 * preProcessBrief["papersWoS"] / preProcessBrief["totalAfterRemDupl"]
-            percentagePapersScopus = 100.0 * preProcessBrief["papersScopus"] / preProcessBrief["totalAfterRemDupl"]
+        if self.preProcessBrief["totalAfterRemDupl"] > 0:
+            percentagePapersWos = 100.0 * self.preProcessBrief["papersWoS"] / self.preProcessBrief["totalAfterRemDupl"]
+            percentagePapersScopus = 100.0 * self.preProcessBrief["papersScopus"] / self.preProcessBrief["totalAfterRemDupl"]
         else:
             percentagePapersWos = 0
             percentagePapersScopus = 0
 
         logWriter.writerow({'Info': 'Papers from WoS',
-                            'Number': ("%d" % (preProcessBrief["papersWoS"])),
+                            'Number': ("%d" % (self.preProcessBrief["papersWoS"])),
                             'Percentage': ("%.1f%%" % (percentagePapersWos))})
         logWriter.writerow({'Info': 'Papers from Scopus',
-                            'Number': ("%d" % (preProcessBrief["papersScopus"])),
+                            'Number': ("%d" % (self.preProcessBrief["papersScopus"])),
                             'Percentage': ("%.1f%%" % (percentagePapersScopus))})
 
         # Statics after removing duplicates
@@ -185,7 +195,16 @@ class PreProcessClass:
         # Close log file
         logFile.close()
 
-        graphUtils.grapPreprocess(plt, preProcessBrief)
+        print("\nPreprocess finished.")
+
+        return len(paperDict)
+
+    def graphBrief(self, args=''):
+
+        if args == '':
+            args = self
+
+        graphUtils.grapPreprocess(plt, self.preProcessBrief)
 
         if args.graphTitle:
             plt.title(args.graphTitle)
@@ -206,5 +225,3 @@ class PreProcessClass:
         if args.savePlot == "":
             if self.fromGui:
                 plt.show()
-
-        return len(paperDict)

@@ -136,7 +136,7 @@ class ScientoPyClass:
 
             print("Scopus papers: %s" % globalVar.papersScopus)
             print("WoS papers: %s" % globalVar.papersWoS)
-            print("Omited papers: %s" % globalVar.omitedPapers)
+            print("Omitted papers: %s" % globalVar.omitedPapers)
             print("Total papers: %s" % len(self.papersDict))
 
         # Create a yearArray
