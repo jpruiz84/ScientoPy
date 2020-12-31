@@ -161,10 +161,6 @@ class PreProcessClass:
         # Removing duplicates
         if not args.noRemDupl:
             paperDict = paperUtils.removeDuplicates(paperDict, logWriter, self.preProcessBrief)
-
-        if paperDict == 0:
-            return
-
         # if not remove duplicates
         else:
             self.preProcessBrief["totalAfterRemDupl"] = self.preProcessBrief["papersAfterRemOmitted"]
