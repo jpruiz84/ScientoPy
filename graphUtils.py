@@ -27,6 +27,7 @@ from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 from scipy import interpolate
 from matplotlib.ticker import MaxNLocator
 import matplotlib.ticker
+import matplotlib.ticker as mtick
 
 
 def plot_time_line(plt, topicResults, fSecundary):
@@ -175,7 +176,7 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   else:
     plt.ylabel("Average growth rate (AGR), %d - %d (doc./year)" % (agrStartYear, agrEndYear))
 
-  plt.gca().set_xticklabels(['{:.0f}%'.format(x) for x in plt.gca().get_xticks()])
+  ax.xaxis.set_major_formatter(mtick.PercentFormatter())
 
   # Calculate plot max and min
   xMax = max(xArray)
@@ -218,11 +219,6 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
                        transform=ax.transData)
   ax.lines.append(dashed_line)
-
-  #plt.ylabel("Average growth rate, %d - %d (doc./year)" % (
-  #  yearArray[startYearIndex], yearArray[endYearIndex]))
-  #plt.xlabel("Total documents ")
-
 
   # Plot accumulative papers count
   ax0 = plt.subplot(gs[0])
