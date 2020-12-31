@@ -78,7 +78,7 @@ class ScientoPyClass:
         globalVar.cancelProcess = False
 
         globalVar.progressText = "Reading dataset"
-	globalVar.progressPer = 0
+        globalVar.progressPer = 0
 
         # To let progress bar open
         if self.fromGui:

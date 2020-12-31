@@ -43,7 +43,7 @@ class PreProcessClass:
 
     def preprocess(self, args=''):
         globalVar.cancelProcess = False
-	    globalVar.progressPer = 0
+        globalVar.progressPer = 0
 
         if args == '':
             args = self
