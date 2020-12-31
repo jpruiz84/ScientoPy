@@ -537,6 +537,8 @@ class ScientoPyClass:
             # show
             plt.imshow(wc, interpolation="bilinear")
             plt.axis("off")
+            fig = plt.gcf()
+            fig.canvas.set_window_title(args.criterion + ' word cloud graph')
 
         if args.graphType == "bar":
             graphUtils.plot_bar_horizontal(plt, self.topicResults, args)
@@ -545,7 +547,7 @@ class ScientoPyClass:
             graphUtils.plot_bar_horizontal_trends(plt, self.topicResults,
                                                     self.yearArray[self.startYearIndex], self.yearArray[self.endYearIndex], args)
         if args.graphType == "time_line":
-            graphUtils.plot_time_line(plt, self.topicResults, False)
+            graphUtils.plot_time_line(plt, self.topicResults, False, args)
             fig = plt.gcf()
             fig.set_size_inches(args.plotWidth, args.plotHeight)
 

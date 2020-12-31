@@ -30,7 +30,7 @@ import matplotlib.ticker
 import matplotlib.ticker as mtick
 
 
-def plot_time_line(plt, topicResults, fSecundary):
+def plot_time_line(plt, topicResults, fSecundary, args):
     count = 0
     ax = plt.gca()
     for topicItem in topicResults:
@@ -64,6 +64,10 @@ def plot_time_line(plt, topicResults, fSecundary):
     plt.xlabel("Publication year")
     plt.ylabel("Number of documents")
 
+    fig = plt.gcf()
+    fig.set_size_inches(globalVar.DEFAULT_PLOT_WIDTH, globalVar.DEFAULT_PLOT_WIDTH/2)
+    fig.canvas.set_window_title(args.criterion + ' time line graph')
+
 def plot_bar_horizontal(plt, topicResults, args):
   ax = plt.gca()
   itemsName = []
@@ -82,6 +86,7 @@ def plot_bar_horizontal(plt, topicResults, args):
   ax.xaxis.grid(linestyle='--', linewidth=0.5, dashes=(5, 10))
 
   fig = plt.gcf()
+  fig.canvas.set_window_title(args.criterion + ' bar graph')
   fig.set_size_inches(args.plotWidth, args.plotHeight)
 
 
@@ -122,6 +127,8 @@ def plot_bar_horizontal_trends(plt, topicResults, agrStartYear, agrEndYear, args
 
   fig = plt.gcf()
   fig.set_size_inches(args.plotWidth, args.plotHeight)
+  fig.canvas.set_window_title(args.criterion + ' bar trends graph')
+
 
   if(len(itemsName) > 20):
     fig.set_size_inches(args.plotWidth, args.plotHeight*(len(itemsName)/17))
@@ -284,6 +291,9 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
     ax0.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax0.get_yaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
 
+  fig = plt.gcf()
+  fig.canvas.set_window_title(args.criterion + ' evolution graph')
+
 
 def grapPreprocess(plt, preProcessBrief):
   ax = plt.gca()
@@ -327,4 +337,5 @@ def grapPreprocess(plt, preProcessBrief):
 
   fig = plt.gcf()
   fig.set_size_inches(globalVar.DEFAULT_PLOT_WIDTH, globalVar.DEFAULT_PLOT_WIDTH/2)
+  fig.canvas.set_window_title('Preprocess brief graph')
 
