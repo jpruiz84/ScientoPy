@@ -195,9 +195,16 @@ class ScientoPyGui:
         print("Canceled")
 
     def progress_bar_fun(self):
+        def on_closing():
+            self.cancel_run()
+
         #start progress bar
         popup = Toplevel()
-        popup.geometry('300x120')
+        popup.protocol("WM_DELETE_WINDOW", on_closing)
+
+        x = self.root.winfo_x()
+        y = self.root.winfo_y()
+        popup.geometry('300x120+%d+%d' % (x + 250, y + 120))
         popup.title("Progress")
         label_text = StringVar()
         
