@@ -507,6 +507,9 @@ class ScientoPyClass:
         if args == '':
             args = self
 
+        if args.noPlot:
+            return
+
         # If more than 100 results and not wordCloud, no plot.
         if len(self.topicResults) > 100 and not args.graphType == "word_cloud" and not args.noPlot:
             args.noPlot = True
