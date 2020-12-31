@@ -42,6 +42,8 @@ class PreProcessClass:
         self.preProcessBrief = {}
 
     def preprocess(self, args=''):
+        globalVar.cancelProcess = False
+	globalVar.progressPer = 0
 
         if args == '':
             args = self
@@ -50,8 +52,6 @@ class PreProcessClass:
         print("\n\nScientoPy prerprocess")
         print("======================\n")
 
-        globalVar.progressPer = 0
-        globalVar.progressText = 'Reading input files'
 
         # Check python version
         if sys.version_info[0] < 3:
@@ -96,11 +96,16 @@ class PreProcessClass:
         files_to_read = len(os.listdir(os.path.join(args.dataInFolder, '')))
         print("Files to read: %d" % files_to_read)
 
+        globalVar.progressPer = 0
+        globalVar.progressText = 'Reading input files'
+
         files_counter = 0
         # Read files from the dataInFolder
         for file in os.listdir(os.path.join(args.dataInFolder, '')):
             files_counter += 1
             globalVar.progressPer = int(float(files_counter) / float(files_to_read) * 100)
+            if globalVar.cancelProcess:
+                return
             if file.endswith(".csv") or file.endswith(".txt"):
                 print("Reading file: %s" % (os.path.join(args.dataInFolder, '') + file))
                 ifile = open(os.path.join(args.dataInFolder, '') + file, "r", encoding='utf-8')
@@ -156,6 +161,9 @@ class PreProcessClass:
         # Removing duplicates
         if not args.noRemDupl:
             paperDict = paperUtils.removeDuplicates(paperDict, logWriter, self.preProcessBrief)
+
+        if paperDict == 0:
+            return
 
         # if not remove duplicates
         else:

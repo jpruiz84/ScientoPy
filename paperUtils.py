@@ -42,6 +42,9 @@ def openFileToDict(ifile, papersDict):
   header = 0
   rownum = 0
   for row in reader:
+    if globalVar.cancelProcess:
+        return
+
     # Save header row.
     if rownum == 0:
       header = row
@@ -581,6 +584,9 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
         duplicatedPapersCount += 1
         progressPer = int(float(i) / float(len(paperDict)) * 100)
         globalVar.progressPer = progressPer
+
+        if globalVar.cancelProcess:
+          return 0
         
         if progressPerPrev != progressPer:
           progressPerPrev = progressPer

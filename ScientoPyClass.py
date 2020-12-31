@@ -28,6 +28,7 @@ import numpy as np
 import graphUtils
 import sys
 import re
+import time
 from PIL import Image
 
 
@@ -74,6 +75,15 @@ class ScientoPyClass:
         plt.close()
 
     def scientoPy(self, args=''):
+        globalVar.cancelProcess = False
+
+        globalVar.progressText = "Reading dataset"
+	globalVar.progressPer = 0
+
+        # To let progress bar open
+        if self.fromGui:
+            time.sleep(0.01)
+
         if args == '':
             args = self
 
@@ -136,10 +146,12 @@ class ScientoPyClass:
             ifile = open(INPUT_FILE, "r", encoding='utf-8')
             print("Reading file: %s" % (INPUT_FILE))
             globalVar.progressPer = 10
-            globalVar.progressText = "Reading dataset"
 
             paperUtils.openFileToDict(ifile, self.papersDict)
             ifile.close()
+
+            if globalVar.cancelProcess:
+                return
 
             print("Scopus papers: %s" % globalVar.papersScopus)
             print("WoS papers: %s" % globalVar.papersWoS)
@@ -217,6 +229,8 @@ class ScientoPyClass:
 
             # For each paper, get the full topicDic
             for paper in papersDictInside:
+                if globalVar.cancelProcess:
+                    return
 
                 # For each item in paper criteria
                 for item in paper[args.criterion].split(";"):
@@ -308,6 +322,9 @@ class ScientoPyClass:
             papersCounter += 1
             progressPer = int(float(papersCounter) / float(papersLen) * 100)
             globalVar.progressPer = progressPer
+
+            if globalVar.cancelProcess:
+                return
 
             # For each item in paper criteria
             for item in paper[args.criterion].split(";"):
@@ -464,7 +481,18 @@ class ScientoPyClass:
 
         globalVar.progressText = "Saving results"
 
+        if self.fromGui:
+            time.sleep(0.01)
+        if globalVar.cancelProcess:
+            return
+
         self.resultsFileName = paperSave.saveTopResults(self.topicResults, args.criterion)
+
+        if self.fromGui:
+            time.sleep(0.01)
+        if globalVar.cancelProcess:
+            return
+
         self.extResultsFileName = paperSave.saveExtendedResults(self.topicResults, args.criterion)
 
         # Only save results if that is result of a not previous result

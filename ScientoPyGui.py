@@ -190,10 +190,14 @@ class ScientoPyGui:
         run_button = Button(process_page, text="Run", command=self.scientoPyRun)
         run_button.place(relx=0.96, rely=0.92, anchor=E)
 
+    def cancel_run(self):
+        globalVar.cancelProcess = True
+        print("Canceled")
+
     def progress_bar_fun(self):
         #start progress bar
         popup = Toplevel()
-        popup.geometry('300x100')
+        popup.geometry('300x120')
         popup.title("Progress")
         label_text = StringVar()
         
@@ -207,6 +211,10 @@ class ScientoPyGui:
         progress_bar.place(x=150, y=50, anchor="center")
         popup.pack_slaves()
 
+        cancel_button = Button(popup, text="Cancel", command=self.cancel_run)
+        cancel_button.place(x=150, y=95, anchor="center")
+
+
         #print("globalVar.progressPer1: %d" % globalVar.progressPer)
         while globalVar.progressPer != 101:
             label_text.set(globalVar.progressText)
@@ -214,6 +222,8 @@ class ScientoPyGui:
             time.sleep(0.1)
             #print("globalVar.progressPer2: %d" % globalVar.progressPer)
             progress_var.set(globalVar.progressPer)
+            if globalVar.cancelProcess:
+                break
         
         popup.destroy()
 
@@ -238,6 +248,9 @@ class ScientoPyGui:
             messagebox.showinfo("Error", "No preprocess breif found, please run the preprocess first")
 
     def scientoPyRun(self):
+        globalVar.cancelProcess = False
+        globalVar.progressPer = 0
+
         if not os.path.exists(self.scientoPy.preprocessDatasetFile):
             messagebox.showinfo("Error", "No preprocess input dataset, please run the preprocess first")
             return
@@ -266,6 +279,9 @@ class ScientoPyGui:
         self.progress_bar_fun()
         t1.join()
 
+        if globalVar.cancelProcess:
+            return
+
         self.scientoPy.plotResults()
 
     def select_dataset(self):
@@ -282,17 +298,20 @@ class ScientoPyGui:
                 self.preprocess.dataInFolder = self.root.dir_name
                 self.preprocess.noRemDupl = not self.chkValueRemoveDupl.get()
 
+                # Run preprocess in another thread
                 t1 = threading.Thread(target=self.preprocess.preprocess)
                 t1.start()
-                
+                # While running preprocess run progress bar
+                # Progress bar ends when preprocess ends
                 self.progress_bar_fun()
-
+                # Wait until preprocess thread ends
                 t1.join()
-                
-                if(globalVar.totalPapers > 0):
+
+                if globalVar.cancelProcess:
+                    messagebox.showinfo("Error", "Preprocessing canceled")
+                elif(globalVar.totalPapers > 0):
                     self.preprocess.graphBrief()
-        
-                if globalVar.totalPapers == 0:
+                elif globalVar.totalPapers == 0:
                     messagebox.showinfo("Error", "No valid dataset files found in: %s" % self.root.dir_name)
             except:
                 messagebox.showinfo("Error", "No valid dataset folder")
