@@ -493,7 +493,7 @@ def printPaper(paper):
   
 
   
-def removeDuplicates(paperDict, logWriter, preProcessBrief):
+def removeDuplicates(paperDict, logWriter=None, preProcessBrief=None):
   duplicatedPapersCount = 0
   removedPapersScopus = 0
   removedPapersWoS = 0
@@ -595,65 +595,66 @@ def removeDuplicates(paperDict, logWriter, preProcessBrief):
             #print("p: %d" % progressPer)
             sys.stdout.write("\r%d%%  " % (int(progressPer)))
             sys.stdout.flush()
-        
 
-  # To avoid by zero division
-  if globalVar.papersScopus > 0:
-    preProcessBrief["percenRemPapersScopus"] = 100.0*removedPapersScopus/globalVar.papersScopus
-  else:
-    preProcessBrief["percenRemPapersScopus"] = 0
-  if globalVar.papersWoS > 0:
-    preProcessBrief["percenRemPapersWos"] = 100.0 * removedPapersWoS / globalVar.papersWoS
-  else:
-    preProcessBrief["percenRemPapersWos"] = 0
-  if duplicatedPapersCount > 0:
-    percenDuplicatedWithDifferentCitedBy = 100.0*duplicatedWithDifferentCitedBy/duplicatedPapersCount
-  else:
-    percenDuplicatedWithDifferentCitedBy = 0
-
-  globalVar.progressPer = 100
-  print("\r{0:.0f}%".format(100))
   print("\nDuplicated papers found: %s" % duplicatedPapersCount)
   print("Original papers count: %s" % globalVar.OriginalTotalPapers)
   print("Actual papers count: %s" % len(paperDict))
-  print("Removed papers WoS: %s, %.1f %%" %
-        (removedPapersWoS, preProcessBrief["percenRemPapersWos"]))
-  print("Removed papers Scopus: %s, %.1f %%" %
-        (removedPapersScopus, preProcessBrief["percenRemPapersScopus"]))
-  if(duplicatedPapersCount != 0):
-    print("Duplicated documents with different cited by: %s, %.1f %%\n" % (duplicatedWithDifferentCitedBy,
-                                                                           percenDuplicatedWithDifferentCitedBy))
 
-  globalVar.totalAfterRemDupl = len(paperDict)
+  if logWriter != None:
+    # To avoid by zero division
+    if globalVar.papersScopus > 0:
+      preProcessBrief["percenRemPapersScopus"] = 100.0*removedPapersScopus/globalVar.papersScopus
+    else:
+      preProcessBrief["percenRemPapersScopus"] = 0
+    if globalVar.papersWoS > 0:
+      preProcessBrief["percenRemPapersWos"] = 100.0 * removedPapersWoS / globalVar.papersWoS
+    else:
+      preProcessBrief["percenRemPapersWos"] = 0
+    if duplicatedPapersCount > 0:
+      percenDuplicatedWithDifferentCitedBy = 100.0*duplicatedWithDifferentCitedBy/duplicatedPapersCount
+    else:
+      percenDuplicatedWithDifferentCitedBy = 0
 
-  preProcessBrief["totalAfterRemDupl"] = globalVar.totalAfterRemDupl
-  preProcessBrief["removedTotalPapers"] = duplicatedPapersCount
-  preProcessBrief["removedPapersScopus"] = removedPapersScopus
-  preProcessBrief["removedPapersWoS"] = removedPapersWoS
-  preProcessBrief["papersScopus"] = preProcessBrief["loadedPapersScopus"] - preProcessBrief["removedPapersScopus"]
-  preProcessBrief["papersWoS"] = preProcessBrief["loadedPapersWoS"] - preProcessBrief["removedPapersWoS"]
+    globalVar.progressPer = 100
+    print("\r{0:.0f}%".format(100))
+    print("Removed papers WoS: %s, %.1f %%" %
+          (removedPapersWoS, preProcessBrief["percenRemPapersWos"]))
+    print("Removed papers Scopus: %s, %.1f %%" %
+          (removedPapersScopus, preProcessBrief["percenRemPapersScopus"]))
+    if(duplicatedPapersCount != 0):
+      print("Duplicated documents with different cited by: %s, %.1f %%\n" % (duplicatedWithDifferentCitedBy,
+                                                                            percenDuplicatedWithDifferentCitedBy))
 
-  logWriter.writerow({'Info': ''})
-  logWriter.writerow({'Info': 'Duplicated removal results:'})
+    globalVar.totalAfterRemDupl = len(paperDict)
 
-  logWriter.writerow({'Info': 'Duplicated papers found',
-                      'Number':("%d" % (duplicatedPapersCount)),
-                      'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
+    preProcessBrief["totalAfterRemDupl"] = globalVar.totalAfterRemDupl
+    preProcessBrief["removedTotalPapers"] = duplicatedPapersCount
+    preProcessBrief["removedPapersScopus"] = removedPapersScopus
+    preProcessBrief["removedPapersWoS"] = removedPapersWoS
+    preProcessBrief["papersScopus"] = preProcessBrief["loadedPapersScopus"] - preProcessBrief["removedPapersScopus"]
+    preProcessBrief["papersWoS"] = preProcessBrief["loadedPapersWoS"] - preProcessBrief["removedPapersWoS"]
 
-  logWriter.writerow({'Info': 'Removed duplicated papers from WoS',
-                      'Number':("%d" % (removedPapersWoS)),
-                      'Percentage': ("%.1f%%" % (preProcessBrief["percenRemPapersWos"]))})
+    logWriter.writerow({'Info': ''})
+    logWriter.writerow({'Info': 'Duplicated removal results:'})
 
-  logWriter.writerow({'Info': 'Removed duplicated papers from Scopus',
-                      'Number':("%d" % (removedPapersScopus)),
-                      'Percentage': ("%.1f%%" % (preProcessBrief["percenRemPapersScopus"]))})
+    logWriter.writerow({'Info': 'Duplicated papers found',
+                        'Number':("%d" % (duplicatedPapersCount)),
+                        'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
 
-  logWriter.writerow({'Info': 'Duplicated documents with different cited by',
-                      'Number':("%d" % (duplicatedWithDifferentCitedBy)),
-                      'Percentage': ("%.1f%%" % (percenDuplicatedWithDifferentCitedBy))})
+    logWriter.writerow({'Info': 'Removed duplicated papers from WoS',
+                        'Number':("%d" % (removedPapersWoS)),
+                        'Percentage': ("%.1f%%" % (preProcessBrief["percenRemPapersWos"]))})
+
+    logWriter.writerow({'Info': 'Removed duplicated papers from Scopus',
+                        'Number':("%d" % (removedPapersScopus)),
+                        'Percentage': ("%.1f%%" % (preProcessBrief["percenRemPapersScopus"]))})
+
+    logWriter.writerow({'Info': 'Duplicated documents with different cited by',
+                        'Number':("%d" % (duplicatedWithDifferentCitedBy)),
+                        'Percentage': ("%.1f%%" % (percenDuplicatedWithDifferentCitedBy))})
 
 
-  logWriter.writerow({'Info': 'Total papers after rem. dupl.', 'Number': str(globalVar.totalAfterRemDupl)})
+    logWriter.writerow({'Info': 'Total papers after rem. dupl.', 'Number': str(globalVar.totalAfterRemDupl)})
 
   return paperDict
 

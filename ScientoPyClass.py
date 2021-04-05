@@ -153,6 +153,10 @@ class ScientoPyClass:
             if globalVar.cancelProcess:
                 return
 
+            # If reading previous results, remove possible duplicated from multiple topics
+            if args.previousResults:
+                self.papersDict= paperUtils.removeDuplicates(self.papersDict)
+
             print("Scopus papers: %s" % globalVar.papersScopus)
             print("WoS papers: %s" % globalVar.papersWoS)
             print("Omitted papers: %s" % globalVar.omitedPapers)

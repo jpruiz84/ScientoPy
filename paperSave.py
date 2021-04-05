@@ -28,7 +28,7 @@ def saveResults(paperDict, outFileName):
 
   if globalVar.SAVE_RESULTS_ON == "SCOPUS_FIELDS":
 
-    print("Saving results on: %s, with Scopus fields" % outFileName)
+    print("Saving results on: %s, with Scopus fields, total %d papers" % (outFileName, len(paperDict)))
 
     ofile = open(outFileName, 'w', encoding='utf-8')
 
