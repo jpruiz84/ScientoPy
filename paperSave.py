@@ -150,12 +150,16 @@ def saveResults(paperDict, outFileName):
     print("ERROR, no SAVE_RESULTS_ON selected on globalVar.py")
 
 
-def saveTopResults(topicResults, criterionIn):
+def saveTopResults(topicResults, criterionIn, plotName):
+
+  Name = ''
+  if plotName != '':
+    Name = '_' + os.path.splitext(plotName)[0]
 
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + ".csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + Name + ".csv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", criterion, "Total", "AGR", "ADY", "PDLY", "hIndex"] + list(topicResults[0]["year"])
@@ -191,12 +195,16 @@ def saveTopResults(topicResults, criterionIn):
   return fileName
 
 
-def saveExtendedResults(topicResults, criterionIn):
+def saveExtendedResults(topicResults, criterionIn, plotName):
+
+  Name = ''
+  if plotName != '':
+    Name = os.path.splitext(plotName)[0]
 
   # Upper first character
   criterion = criterionIn[0].upper() + criterionIn[1:]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + "_extended.csv")
+  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + Name + "_extended.csv")
   ofile = open(fileName, 'w', encoding='utf-8')
 
   fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "Year", "Title", "Abstract", "Document type",  "Authors",

@@ -490,14 +490,14 @@ class ScientoPyClass:
         if globalVar.cancelProcess:
             return
 
-        self.resultsFileName = paperSave.saveTopResults(self.topicResults, args.criterion)
+        self.resultsFileName = paperSave.saveTopResults(self.topicResults, args.criterion, args.savePlot)
 
         if self.fromGui:
             time.sleep(0.01)
         if globalVar.cancelProcess:
             return
 
-        self.extResultsFileName = paperSave.saveExtendedResults(self.topicResults, args.criterion)
+        self.extResultsFileName = paperSave.saveExtendedResults(self.topicResults, args.criterion, args.savePlot)
 
         # Only save results if that is result of a not previous result
         if not args.previousResults:
