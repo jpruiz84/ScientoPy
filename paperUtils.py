@@ -119,22 +119,32 @@ def openFileToDict(ifile, papersDict):
         # Scopus fields
         if headerCol == "Authors": paperIn["author"] = col
         if headerCol == "Authors": paperIn["authorFull"] = col
-        if headerCol == "Title": paperIn["title"] = col
+        
+        if headerCol == "author_names": 
+          paperIn["author"] = col.replace(";",".;").replace("..",".")
+        
+        if headerCol == "author_names": paperIn["authorFull"] = col
+
+        if headerCol == "Title" or headerCol == "title": paperIn["title"] = col
         if headerCol == "Year": paperIn["year"] = col
-        if headerCol == "Source title": paperIn["sourceTitle"] = col
+        if headerCol == "Source title" or headerCol == "publicationName": paperIn["sourceTitle"] = col
         if headerCol == "Volume": paperIn["volume"] = col
         if headerCol == "Issue": paperIn["issue"] = col
         if headerCol == "Art. No.": paperIn["artNo"] = col
         if headerCol == "Page start": paperIn["pageSart"] = col
         if headerCol == "Page end": paperIn["pageEnd"] = col
         if headerCol == "Page count": paperIn["pageCount"] = col
-        if headerCol == "Cited by": paperIn["citedBy"] = col
-        if headerCol == "DOI": paperIn["doi"] = col
+        if headerCol == "Cited by" or headerCol == "citedby_count": paperIn["citedBy"] = col
+        if headerCol == "DOI" or headerCol == "doi": paperIn["doi"] = col
         if headerCol == "Link": paperIn["link"] = col
         if headerCol == "Affiliations": paperIn["affiliations"] = col
         if headerCol == "Authors with affiliations": paperIn["authorsWithAffiliations"] = col
-        if headerCol == "Abstract": paperIn["abstract"] = col
+        if headerCol == "Abstract" or headerCol == "description": paperIn["abstract"] = col
         if headerCol == "Author Keywords": paperIn["authorKeywords"] = col
+        
+        if headerCol == "authkeywords": 
+          paperIn["authorKeywords"] = col.replace(" | ",";")
+        
         if headerCol == "Index Keywords": paperIn["indexKeywords"] = col
         if headerCol == "Correspondence Address": paperIn["correspondenceAddress"] = col
 
@@ -145,15 +155,18 @@ def openFileToDict(ifile, papersDict):
 
         if headerCol == "Editors": paperIn["editors"] = col
         if headerCol == "Publisher": paperIn["publisher"] = col
-        if headerCol == "ISSN": paperIn["issn"] = col
+        if headerCol == "ISSN" or headerCol == "issn": paperIn["issn"] = col
         if headerCol == "ISBN": paperIn["isbn"] = col
         if headerCol == "CODEN": paperIn["coden"] = col
         if headerCol == "PubMed ID": paperIn["pubMedId"] = col
         if headerCol == "Language of Original Document": paperIn["languageOfOriginalDocument"] = col
         if headerCol == "Abbreviated Source Title": paperIn["abbreviatedSourceTitle"] = col
-        if headerCol == "Document Type": paperIn["documentType"] = col
+        if headerCol == "Document Type" or headerCol == "subtypeDescription": paperIn["documentType"] = col
         if headerCol == "Source": paperIn["source"] = col
-        if headerCol == "EID": paperIn["eid"] = col
+        if headerCol == "EID" or headerCol == "eid": paperIn["eid"] = col
+        if headerCol == "coverDate": 
+          paperIn["year"] = col.split("-")[0]
+        if headerCol == "affiliation_country": paperIn["affiliations"] = col
 
         # WoS fields
         #if headerCol == "PT": paperIn[""] = col    # Publication Type (J=Journal; B=Book; S=Series; P=Patent)
@@ -637,9 +650,10 @@ def removeDuplicates(paperDict, logWriter=None, preProcessBrief=None):
     logWriter.writerow({'Info': ''})
     logWriter.writerow({'Info': 'Duplicated removal results:'})
 
-    logWriter.writerow({'Info': 'Duplicated papers found',
-                        'Number':("%d" % (duplicatedPapersCount)),
-                        'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
+    if globalVar.OriginalTotalPapers > 0:
+      logWriter.writerow({'Info': 'Duplicated papers found',
+                          'Number':("%d" % (duplicatedPapersCount)),
+                          'Percentage': ("%.1f%%" % (100.0 * duplicatedPapersCount / globalVar.OriginalTotalPapers))})
 
     logWriter.writerow({'Info': 'Removed duplicated papers from WoS',
                         'Number':("%d" % (removedPapersWoS)),
@@ -692,7 +706,8 @@ def sourcesStatics(paperDict, logWriter):
   for key1, value1 in statics.items():
     for key2, value2 in statics[key1].items():
       if type(statics[key1][key2]) == int:
-        statics[key1][key2] = ("%d, %.1f%%" % (statics[key1][key2], (100.0 * statics[key1][key2]/totalPapers)))
+        if totalPapers > 0:
+          statics[key1][key2] = ("%d, %.1f%%" % (statics[key1][key2], (100.0 * statics[key1][key2]/totalPapers)))
 
   logWriter.writerow(statics["WoS"])
   logWriter.writerow(statics["Scopus"])

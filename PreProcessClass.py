@@ -143,13 +143,15 @@ class PreProcessClass:
 
         logWriter.writerow(
             {'Info': 'Total papers after omitted papers removed', 'Number': str(globalVar.OriginalTotalPapers)})
-        logWriter.writerow({'Info': 'Loaded papers from WoS',
-                            'Number': ("%d" % (globalVar.papersWoS)),
-                            'Percentage': ("%.1f%%" % (100.0 * globalVar.papersWoS / globalVar.OriginalTotalPapers))})
-        logWriter.writerow({'Info': 'Loaded papers from Scopus',
-                            'Number': ("%d" % (globalVar.papersScopus)),
-                            'Percentage': (
-                                        "%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
+        
+        if globalVar.OriginalTotalPapers > 0:
+            logWriter.writerow({'Info': 'Loaded papers from WoS',
+                                'Number': ("%d" % (globalVar.papersWoS)),
+                                'Percentage': ("%.1f%%" % (100.0 * globalVar.papersWoS / globalVar.OriginalTotalPapers))})
+            logWriter.writerow({'Info': 'Loaded papers from Scopus',
+                                'Number': ("%d" % (globalVar.papersScopus)),
+                                'Percentage': (
+                                            "%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
 
         print("Loaded papers: %s" % len(paperDict))
         print("Omitted papers: %s" % globalVar.omitedPapers)
