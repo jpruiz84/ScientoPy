@@ -115,6 +115,7 @@ def openFileToDict(ifile, papersDict):
 
         # remove special accents
         headerCol = unidecode.unidecode(header[colnum])
+        headerCol = headerCol.replace('"','')
 
         # Scopus fields
         if headerCol == "Authors": paperIn["author"] = col
@@ -125,7 +126,7 @@ def openFileToDict(ifile, papersDict):
         
         if headerCol == "author_names": paperIn["authorFull"] = col
 
-        if headerCol == "Title" or headerCol == "title": paperIn["title"] = col
+        if headerCol == "Title" or headerCol == "title"  or headerCol == "Titles": paperIn["title"] = col
         if headerCol == "Year": paperIn["year"] = col
         if headerCol == "Source title" or headerCol == "publicationName": paperIn["sourceTitle"] = col
         if headerCol == "Volume": paperIn["volume"] = col
