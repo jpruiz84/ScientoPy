@@ -26,6 +26,7 @@ import unicodedata
 import sys
 import unidecode
 import time
+import pandas as pd
 
 def openFileToDict(ifile, papersDict):
   firstLineTell = ifile.tell()
@@ -712,6 +713,40 @@ def sourcesStatics(paperDict, logWriter):
 
   logWriter.writerow(statics["WoS"])
   logWriter.writerow(statics["Scopus"])
+
+
+def desam_names_scopus(paperDict):
+
+  scopus_dict = [d for d in paperDict if d.get('dataBase') == 'Scopus'] 
+  wos_dict = [d for d in paperDict if d.get('dataBase') != 'Scopus']
+
+  df = pd.DataFrame.from_dict(scopus_dict)
+
+  # Split the author_ids and author_names columns
+  df[['author_ids', 'author_names']] = df[['author_ids', 'author_names']].apply(lambda x: x.str.split(';'))
+
+  # Create a list of tuples with ID and Name
+  data = [(id, name) for ids, names in zip(df['author_ids'], df['author_names']) for id, name in zip(ids, names)]
+
+  # Create a new DataFrame from the list of tuples
+  df_new = pd.DataFrame(data, columns=['ID', 'Name'])
+
+  # Reset the index
+  df_new.reset_index(drop=True, inplace=True)
+
+  df_unique = df_new.drop_duplicates(subset='ID')
+
+  # Create a dictionary mapping IDs to names from df_names
+  id_to_name = df_unique.set_index('ID')['Name'].to_dict()
+
+  # Create a new column 'Correct Name' in df_data by mapping the IDs to names
+  df['author_names'] = df['author_ids'].apply(lambda x: '; '.join([id_to_name[id_] for id_ in x]))
+
+  new_scopus_dict = df.to_dict(orient='records')
+
+  paperDict = new_scopus_dict + wos_dict 
+
+
 
 
 

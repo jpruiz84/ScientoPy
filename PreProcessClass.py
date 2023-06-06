@@ -52,7 +52,6 @@ class PreProcessClass:
         print("\n\nScientoPy prerprocess")
         print("======================\n")
 
-
         # Check python version
         if sys.version_info[0] < 3:
             print("ERROR, you are using Python 2, Python 3.X.X required")
@@ -76,7 +75,6 @@ class PreProcessClass:
         globalVar.papersWoS = 0
         globalVar.omitedPapers = 0
 
-        
         self.preProcessBrief["totalLoadedPapers"] = 0
         self.preProcessBrief["omittedPapers"] = 0
         self.preProcessBrief["papersAfterRemOmitted"] = 0
@@ -103,20 +101,26 @@ class PreProcessClass:
         # Read files from the dataInFolder
         for file in os.listdir(os.path.join(args.dataInFolder, '')):
             files_counter += 1
-            globalVar.progressPer = int(float(files_counter) / float(files_to_read) * 100)
+            globalVar.progressPer = int(
+                float(files_counter) / float(files_to_read) * 100)
             if globalVar.cancelProcess:
                 return
             if file.endswith(".csv") or file.endswith(".txt"):
-                print("Reading file: %s" % (os.path.join(args.dataInFolder, '') + file))
-                ifile = open(os.path.join(args.dataInFolder, '') + file, "r", encoding='utf-8')
+                print("Reading file: %s" %
+                      (os.path.join(args.dataInFolder, '') + file))
+                ifile = open(os.path.join(args.dataInFolder, '') +
+                             file, "r", encoding='utf-8')
                 paperUtils.openFileToDict(ifile, paperDict)
 
         # If not documents found
         if (globalVar.loadedPapers == 0):
-            print("ERROR: 0 documents found from " + os.path.join(args.dataInFolder, ''))
+            print("ERROR: 0 documents found from " +
+                  os.path.join(args.dataInFolder, ''))
             print("")
             globalVar.progressPer = 101
             return
+
+        paperUtils.desam_names_scopus(paperDict)
 
         globalVar.OriginalTotalPapers = len(paperDict)
 
@@ -130,12 +134,15 @@ class PreProcessClass:
         # Open the file to write the preprocessing log in CSV
         logFile = open(os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE),
                        'w', encoding='utf-8')
-        fieldnames = ["Info", "Number", "Percentage", "Source"] + globalVar.INCLUDED_TYPES + ["Total"]
-        logWriter = csv.DictWriter(logFile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
+        fieldnames = ["Info", "Number", "Percentage",
+                      "Source"] + globalVar.INCLUDED_TYPES + ["Total"]
+        logWriter = csv.DictWriter(
+            logFile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
         logWriter.writeheader()
 
         logWriter.writerow({'Info': '***** Original data *****'})
-        logWriter.writerow({'Info': 'Loaded papers', 'Number': str(globalVar.loadedPapers)})
+        logWriter.writerow(
+            {'Info': 'Loaded papers', 'Number': str(globalVar.loadedPapers)})
 
         logWriter.writerow({'Info': 'Omitted papers by document type',
                             'Number': ("%d" % (globalVar.omitedPapers)),
@@ -143,7 +150,7 @@ class PreProcessClass:
 
         logWriter.writerow(
             {'Info': 'Total papers after omitted papers removed', 'Number': str(globalVar.OriginalTotalPapers)})
-        
+
         if globalVar.OriginalTotalPapers > 0:
             logWriter.writerow({'Info': 'Loaded papers from WoS',
                                 'Number': ("%d" % (globalVar.papersWoS)),
@@ -151,7 +158,7 @@ class PreProcessClass:
             logWriter.writerow({'Info': 'Loaded papers from Scopus',
                                 'Number': ("%d" % (globalVar.papersScopus)),
                                 'Percentage': (
-                                            "%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
+                                    "%.1f%%" % (100.0 * globalVar.papersScopus / globalVar.OriginalTotalPapers))})
 
         print("Loaded papers: %s" % len(paperDict))
         print("Omitted papers: %s" % globalVar.omitedPapers)
@@ -162,7 +169,8 @@ class PreProcessClass:
 
         # Removing duplicates
         if not args.noRemDupl:
-            paperDict = paperUtils.removeDuplicates(paperDict, logWriter, self.preProcessBrief)
+            paperDict = paperUtils.removeDuplicates(
+                paperDict, logWriter, self.preProcessBrief)
         # if not remove duplicates
         else:
             self.preProcessBrief["totalAfterRemDupl"] = self.preProcessBrief["papersAfterRemOmitted"]
@@ -176,8 +184,12 @@ class PreProcessClass:
 
         # To avoid by zero division
         if self.preProcessBrief["totalAfterRemDupl"] > 0:
-            percentagePapersWos = 100.0 * self.preProcessBrief["papersWoS"] / self.preProcessBrief["totalAfterRemDupl"]
-            percentagePapersScopus = 100.0 * self.preProcessBrief["papersScopus"] / self.preProcessBrief["totalAfterRemDupl"]
+            percentagePapersWos = 100.0 * \
+                self.preProcessBrief["papersWoS"] / \
+                self.preProcessBrief["totalAfterRemDupl"]
+            percentagePapersScopus = 100.0 * \
+                self.preProcessBrief["papersScopus"] / \
+                self.preProcessBrief["totalAfterRemDupl"]
         else:
             percentagePapersWos = 0
             percentagePapersScopus = 0
@@ -192,7 +204,8 @@ class PreProcessClass:
         # Statics after removing duplicates
         if not args.noRemDupl:
             logWriter.writerow({'Info': ''})
-            logWriter.writerow({'Info': 'Statics after duplication removal filter'})
+            logWriter.writerow(
+                {'Info': 'Statics after duplication removal filter'})
             paperUtils.sourcesStatics(paperDict, logWriter)
 
         # Save final results
@@ -207,7 +220,6 @@ class PreProcessClass:
 
         globalVar.totalPapers = len(paperDict)
         globalVar.progressPer = 101
-
 
     def graphBrief(self, args=''):
 
@@ -230,7 +242,8 @@ class PreProcessClass:
         else:
             plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
                         bbox_inches='tight', pad_inches=0.01)
-            print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
+            print("Plot saved on: " +
+                  os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
 
         if args.savePlot == "":
             if self.fromGui:
