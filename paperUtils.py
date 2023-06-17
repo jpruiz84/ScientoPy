@@ -879,33 +879,36 @@ def disam_names_scopus(paperDict):
 
     df = pd.DataFrame.from_dict(scopus_dict)
 
-    # Split the author_ids and author_names columns
-    df[["author_ids", "author"]] = df[["author_ids", "author"]].apply(
-        lambda x: x.str.split(".;")
-    )
+    author_ids = "author_ids"
 
-    # Create a list of tuples with ID and Name
-    data = [
-        (id, name)
-        for ids, names in zip(df["author_ids"], df["author"])
-        for id, name in zip(ids, names)
-    ]
+    if author_ids in df.columns:
+        # Split the author_ids and author_names columns
+        df[["author_ids", "author"]] = df[["author_ids", "author"]].apply(
+            lambda x: x.str.split(".;")
+        )
 
-    # Create a new DataFrame from the list of tuples
-    df_new = pd.DataFrame(data, columns=["ID", "Name"])
+        # Create a list of tuples with ID and Name
+        data = [
+            (id, name)
+            for ids, names in zip(df["author_ids"], df["author"])
+            for id, name in zip(ids, names)
+        ]
 
-    # Reset the index
-    df_new.reset_index(drop=True, inplace=True)
+        # Create a new DataFrame from the list of tuples
+        df_new = pd.DataFrame(data, columns=["ID", "Name"])
 
-    df_unique = df_new.drop_duplicates(subset="ID")
+        # Reset the index
+        df_new.reset_index(drop=True, inplace=True)
 
-    # Create a dictionary mapping IDs to names from df_names
-    id_to_name = df_unique.set_index("ID")["Name"].to_dict()
+        df_unique = df_new.drop_duplicates(subset="ID")
 
-    # Create a new column 'Correct Name' in df_data by mapping the IDs to names
-    df["author"] = df["author_ids"].apply(
-        lambda x: ".; ".join([id_to_name[id_] for id_ in x])
-    )
+        # Create a dictionary mapping IDs to names from df_names
+        id_to_name = df_unique.set_index("ID")["Name"].to_dict()
+
+        # Create a new column 'Correct Name' in df_data by mapping the IDs to names
+        df["author"] = df["author_ids"].apply(
+            lambda x: ".; ".join([id_to_name[id_] for id_ in x])
+        )
 
     new_scopus_dict = df.to_dict(orient="records")
 
