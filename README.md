@@ -52,7 +52,7 @@ Install prerequisites
     R, cmd, and Enter), and run the installation script:
 
         python3 -m pip install --upgrade pip
-        python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
+        python3 -m pip install --user unidecode numpy pandas scipy matplotlib wordcloud
         
 
 The bibliometric dataset
