@@ -545,7 +545,7 @@ class ScientoPyClass:
             plt.imshow(wc, interpolation="bilinear")
             plt.axis("off")
             fig = plt.gcf()
-            fig.canvas.set_window_title(args.criterion + ' word cloud graph')
+            plt.gcf().canvas.manager.set_window_title(args.criterion + ' word cloud graph')
 
         if args.graphType == "bar":
             graphUtils.plot_bar_horizontal(plt, self.topicResults, args)
