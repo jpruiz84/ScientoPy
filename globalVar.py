@@ -111,6 +111,8 @@ progressPer = 0
 progressText = ''
 totalPapers = 0
 cancelProcess = False
+decPlaces = 1
+
 
 validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract",
                   "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
@@ -118,4 +120,4 @@ validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexK
 validGrapTypes = ["bar_trends", "bar", "time_line", "evolution", "word_cloud"]
 
 
-SCIENTOPY_VERSION = "2.1.3"
+SCIENTOPY_VERSION = "2.1.4"

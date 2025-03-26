@@ -416,14 +416,14 @@ class ScientoPyClass:
             self.startYearIndex = self.endYearIndex - (args.windowWidth - 1)
 
             topicItem["AverageDocPerYear"] = \
-                round(np.mean(topicItem["PapersCount"][self.startYearIndex: self.endYearIndex + 1]), 1)
+                np.mean(topicItem["PapersCount"][self.startYearIndex: self.endYearIndex + 1])
 
             topicItem["PapersInLastYears"] = \
                 np.sum(topicItem["PapersCount"][self.startYearIndex: self.endYearIndex + 1])
 
             if topicItem["PapersTotal"] > 0:
                 topicItem["PerInLastYears"] = \
-                    round(100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"], 1)
+                    100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"]
 
         # Scale in percentage per year
         if args.pYear:

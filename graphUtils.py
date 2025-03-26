@@ -99,7 +99,7 @@ def plot_bar_horizontal_trends(plt, topicResults, agrStartYear, agrEndYear, args
   for topicItem in topicResults:
     x.append(topicItem["PapersTotal"])
     x2.append(topicItem["PapersInLastYears"])
-    xPer.append(round(topicItem["PerInLastYears"]))
+    xPer.append(topicItem["PerInLastYears"])
     itemsName.append(topicItem["name"])
 
   y_pos = np.arange(len(itemsName))[::-1]
@@ -113,7 +113,7 @@ def plot_bar_horizontal_trends(plt, topicResults, agrStartYear, agrEndYear, args
 
 
   for xt, xPerT, yt in zip(x, xPer, y_pos):
-    plt.text(xt + (xmax-xmin)*0.03, yt - (ymax-ymin)*0.003, '%d%%' % xPerT, ha='left', va='center')
+    plt.text(xt + (xmax-xmin)*0.03, yt - (ymax-ymin)*0.003, f'%0.{globalVar.decPlaces}f%%' % xPerT, ha='left', va='center')
 
 
   plt.yticks(y_pos, itemsName)
@@ -309,8 +309,8 @@ def grapPreprocess(plt, preProcessBrief):
   x2.append(preProcessBrief["removedPapersWoS"])
   x2.append(preProcessBrief["removedPapersScopus"])
 
-  xPer.append(round(preProcessBrief["percenRemPapersWos"]))
-  xPer.append(round(preProcessBrief["percenRemPapersScopus"]))
+  xPer.append(preProcessBrief["percenRemPapersWos"])
+  xPer.append(preProcessBrief["percenRemPapersScopus"])
 
   y_pos = np.arange(len(itemsName))[::-1]
 
@@ -324,7 +324,7 @@ def grapPreprocess(plt, preProcessBrief):
 
 
   for xt, xPerT, yt in zip(x, xPer, y_pos):
-    plt.text(xt + (xmax-xmin)*0.03, yt - (ymax-ymin)*0.003, '%d%%' % xPerT, ha='left', va='center')
+    plt.text(xt + (xmax-xmin)*0.03, yt - (ymax-ymin)*0.003, f'%0.{globalVar.decPlaces}f%%' % xPerT, ha='left', va='center')
 
 
   plt.yticks(y_pos, itemsName)
