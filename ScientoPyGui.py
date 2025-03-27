@@ -1,4 +1,4 @@
-# !/usr/bin/python3
+#!/usr/bin/env python3
 
 # The MIT License (MIT)
 # Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
