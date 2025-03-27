@@ -530,7 +530,7 @@ def openFileToDict(ifile, papersDict):
 
             globalVar.loadedPapers += 1
 
-            # Filter papers that are not in document tipe list
+            # Filter papers that are not in document type list
             if any(
                 pType.upper() in paperIn["documentType"].upper().split("; ")
                 for pType in globalVar.INCLUDED_TYPES
@@ -853,9 +853,22 @@ def sourcesStatics(paperDict, logWriter):
     # On each paper to count statics
     for paper in paperDict:
         try:
-            statics[paper["dataBase"]][paper["documentType"].split("; ")[0]] += 1
+            # Get the first document type
+            doc_type_raw = paper["documentType"].split("; ")[0]
+            
+            # Find the matching capitalized key in your existing dictionary
+            matching_key = None
+            for existing_key in statics[paper["dataBase"]]:
+                if existing_key.upper() == doc_type_raw.upper():
+                    matching_key = existing_key
+                    break
+            
+            # If no matching key found, use the raw document type
+            if matching_key is None:
+                matching_key = doc_type_raw
+                
+            statics[paper["dataBase"]][matching_key] += 1
             statics[paper["dataBase"]]["Total"] += 1
-
         except:
             noDocumentTypeCount += 1
 
