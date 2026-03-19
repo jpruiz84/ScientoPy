@@ -46,6 +46,7 @@ GRAPHS_OUT_FOLDER = "graphs"
 DEFUALT_DATA_IN_FOLDER = "dataIn"
 RESULTS_FOLDER = "results"
 LATEX_EXAMPLE_FOLDER = "latexExample"
+DB_FILE_NAME = "scientopy.db"
 
 
 # Documents types to include on the script processing

@@ -23,6 +23,7 @@
 
 import paperUtils
 import paperSave
+import paperDB
 import globalVar
 import os
 import matplotlib.pyplot as plt
@@ -31,9 +32,6 @@ import graphUtils
 import sys
 import re
 import unidecode
-
-import sys
-import os
 
 def generateBibtex(inputLatexFile):
     print("\n\nGenerating BibTeX")
@@ -77,12 +75,19 @@ def generateBibtex(inputLatexFile):
     papersDict = []
     papersToBib = []
 
-    # Open the storage database and add to papersDict
-    INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
-    ifile = open(INPUT_FILE, "r", encoding='utf-8')
-    print("Reading file: %s" % (INPUT_FILE))
-    paperUtils.openFileToDict(ifile, papersDict)
-    ifile.close()
+    # Try loading from SQLite first, fallback to CSV
+    db_path = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.DB_FILE_NAME)
+    if os.path.isfile(db_path):
+        print("Reading from database: %s" % db_path)
+        conn = paperDB.get_connection(db_path)
+        papersDict = paperDB.get_all_papers(conn)
+        conn.close()
+    else:
+        INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+        ifile = open(INPUT_FILE, "r", encoding='utf-8')
+        print("Reading file: %s" % (INPUT_FILE))
+        paperUtils.openFileToDict(ifile, papersDict)
+        ifile.close()
     print("Loaded %d docuemnts" % (len(papersDict)))
 
     # Find the number of total papers per year

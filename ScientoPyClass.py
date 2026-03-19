@@ -21,6 +21,7 @@
 
 import paperUtils
 import paperSave
+import paperDB
 import globalVar
 import os
 import matplotlib.pyplot as plt
@@ -118,7 +119,8 @@ class ScientoPyClass:
         else:
             INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
 
-
+        # SQLite database path
+        db_path = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.DB_FILE_NAME)
 
         # Start the output list empty
         papersDictOut = []
@@ -137,30 +139,49 @@ class ScientoPyClass:
         if loadDataSet:
             self.papersDict = []
             self.lastPreviousResults = args.previousResults
-            # Open the storage database and add to sel.fpapersDict
-            if not os.path.isfile(INPUT_FILE):
-                print("ERROR: %s file not found" % INPUT_FILE)
-                print("Make sure that you have run the preprocess step before run scientoPy")
-                exit()
 
-            ifile = open(INPUT_FILE, "r", encoding='utf-8')
-            print("Reading file: %s" % (INPUT_FILE))
-            globalVar.progressPer = 10
+            # Try loading from SQLite first (unless reading previous results)
+            if not args.previousResults and os.path.isfile(db_path):
+                print("Reading from database: %s" % db_path)
+                globalVar.progressPer = 10
+                conn = paperDB.get_connection(db_path)
+                self.papersDict = paperDB.get_all_papers(conn)
+                conn.close()
 
-            paperUtils.openFileToDict(ifile, self.papersDict)
-            ifile.close()
+                if globalVar.cancelProcess:
+                    return
 
-            if globalVar.cancelProcess:
-                return
+                # Count papers by database for display
+                scopus_count = sum(1 for p in self.papersDict if p.get("dataBase") == "Scopus")
+                wos_count = sum(1 for p in self.papersDict if p.get("dataBase") == "WoS")
+                print("Scopus papers: %s" % scopus_count)
+                print("WoS papers: %s" % wos_count)
+                print("Total papers: %s" % len(self.papersDict))
+            else:
+                # Fallback to CSV reading
+                if not os.path.isfile(INPUT_FILE):
+                    print("ERROR: %s file not found" % INPUT_FILE)
+                    print("Make sure that you have run the preprocess step before run scientoPy")
+                    exit()
 
-            # If reading previous results, remove possible duplicated from multiple topics
-            if args.previousResults:
-                self.papersDict= paperUtils.removeDuplicates(self.papersDict)
+                ifile = open(INPUT_FILE, "r", encoding='utf-8')
+                print("Reading file: %s" % (INPUT_FILE))
+                globalVar.progressPer = 10
 
-            print("Scopus papers: %s" % globalVar.papersScopus)
-            print("WoS papers: %s" % globalVar.papersWoS)
-            print("Omitted papers: %s" % globalVar.omitedPapers)
-            print("Total papers: %s" % len(self.papersDict))
+                paperUtils.openFileToDict(ifile, self.papersDict)
+                ifile.close()
+
+                if globalVar.cancelProcess:
+                    return
+
+                # If reading previous results, remove possible duplicated from multiple topics
+                if args.previousResults:
+                    self.papersDict= paperUtils.removeDuplicates(self.papersDict)
+
+                print("Scopus papers: %s" % globalVar.papersScopus)
+                print("WoS papers: %s" % globalVar.papersWoS)
+                print("Omitted papers: %s" % globalVar.omitedPapers)
+                print("Total papers: %s" % len(self.papersDict))
 
         # Create a self.yearArray
         self.yearArray = range(args.startYear, args.endYear + 1)
@@ -188,6 +209,9 @@ class ScientoPyClass:
         for paper in papersDictInside:
             if int(paper["year"]) in yearPapers.keys():
                 yearPapers[int(paper["year"])] += 1
+
+        # Determine if SQL path is available for topic operations
+        use_sql_topics = not args.previousResults and os.path.isfile(db_path)
 
         # Get the filter options
         filterSubTopic = ""
@@ -223,11 +247,39 @@ class ScientoPyClass:
                 print(topic)
 
         # Find the top topics
-        else:
-            print("Finding the top topics...")
+        elif use_sql_topics and filterSubTopic == "":
+            # SQL-based topic discovery using keywords table
+            print("Finding the top topics (SQL)...")
             globalVar.progressPer = 30
             globalVar.progressText = "Finding the top topics"
 
+            if args.trend:
+                topicListLength = globalVar.TOP_TREND_SIZE
+                startList = 0
+            else:
+                topicListLength = args.length
+                startList = args.skipFirst
+
+            conn_topics = paperDB.get_connection(db_path)
+            top_topics = paperDB.topic_discovery_sql(
+                conn_topics, args.criterion, args.startYear, args.endYear,
+                only_first=args.onlyFirst, limit=topicListLength, offset=startList
+            )
+            conn_topics.close()
+
+            for kw, count in top_topics:
+                topicList.append([kw])
+
+            if len(topicList) == 0:
+                print("\nFINISHED : There is not results with your inputs criteria or filter")
+                del papersDictInside
+                return
+
+        else:
+            # Python fallback for topic discovery (used with filter or previousResults)
+            print("Finding the top topics...")
+            globalVar.progressPer = 30
+            globalVar.progressText = "Finding the top topics"
 
             topicDic = {}
 
@@ -318,57 +370,142 @@ class ScientoPyClass:
         print("Calculating papers statistics...")
         globalVar.progressText = "Calculating papers statistics"
 
-        papersLen = len(papersDictInside)
-        papersCounter = 0
+        if use_sql_topics:
+            # SQL-based topic matching using keywords table
+            conn_match = paperDB.get_connection(db_path)
+            cur_match = conn_match.cursor()
+            year_list = list(self.yearArray)
 
-        # For each paper
-        for paper in papersDictInside:
-            papersCounter += 1
-            progressPer = int(float(papersCounter) / float(papersLen) * 100)
-            globalVar.progressPer = progressPer
+            for topicIdx, topicItem in enumerate(self.topicResults):
+                globalVar.progressPer = int(float(topicIdx) / float(len(self.topicResults)) * 100)
+                if globalVar.cancelProcess:
+                    conn_match.close()
+                    return
 
-            if globalVar.cancelProcess:
-                return
+                subtopics_upper = [s.upper() for s in topicItem["allTopics"]]
+                has_wildcard = args.topics and any("*" in s for s in topicItem["allTopics"])
 
-            # For each item in paper criteria
-            for item in paper[args.criterion].split(";"):
-                # Strip paper item and upper
-                item = item.strip()
-                itemUp = item.upper()
+                # Build topic condition and params
+                if has_wildcard:
+                    conditions = []
+                    topic_params = []
+                    for st in subtopics_upper:
+                        pattern = st.replace("*", "%")
+                        conditions.append("k.keyword LIKE ?")
+                        topic_params.append(pattern)
+                    topic_cond = "(" + " OR ".join(conditions) + ")"
+                else:
+                    placeholders = ",".join(["?"] * len(subtopics_upper))
+                    topic_cond = "k.keyword IN ({})".format(placeholders)
+                    topic_params = list(subtopics_upper)
 
-                # For each topic in topic results
-                for topicItem in self.topicResults:
-                    # for each sub topic
-                    for subTopic in topicItem["allTopics"]:
+                pos_filter = "AND k.position = 0" if args.onlyFirst else ""
 
-                        # Check if the sub topic match with the paper item
-                        if args.topics and "*" in subTopic.upper():
-                            subTopicRegex = subTopic.upper().replace("*", ".*")
-                            p = re.compile(subTopicRegex)
-                            match = p.match(itemUp)
-                        else:
-                            match = subTopic.upper() == itemUp
+                # Get year counts and citation sums
+                sql_counts = """
+                    SELECT p.year, COUNT(*) as cnt, SUM(p.citedBy) as cited
+                    FROM keywords k JOIN papers p ON k.paper_id = p.id
+                    WHERE k.field = ? AND {tc} {pf}
+                      AND p.year BETWEEN ? AND ?
+                    GROUP BY p.year
+                """.format(tc=topic_cond, pf=pos_filter)
 
-                        # If match, sum it to the topicItem
-                        if match:
-                            yearIndex = topicItem["year"].index(int(paper["year"]))
-                            topicItem["PapersCount"][yearIndex] += 1
-                            topicItem["PapersTotal"] += 1
-                            topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
-                            topicItem["CitedByTotal"] += int(paper["citedBy"])
-                            # If no name in the topicItem, put the first one that was found
-                            if topicItem["name"] == "":
-                                topicItem["name"] = item
-                            topicItem["papers"].append(paper)
-                            # Add the matched paper to the papersDictOut
-                            papersDictOut.append(paper)
+                params = [args.criterion] + topic_params + [args.startYear, args.endYear]
+                rows = cur_match.execute(sql_counts, params).fetchall()
 
-                            # If it is a new topic, add it to topicItem["topicsFound"]
-                            if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
-                                topicItem["topicsFound"].append(item)
-                # Only process one (the first one) if args.onlyFirst
-                if args.onlyFirst:
-                    break
+                for r in rows:
+                    if r['year'] in year_list:
+                        yearIndex = year_list.index(r['year'])
+                        topicItem["PapersCount"][yearIndex] = r['cnt']
+                        topicItem["PapersTotal"] += r['cnt']
+                        topicItem["CitedByCount"][yearIndex] = r['cited'] or 0
+                        topicItem["CitedByTotal"] += r['cited'] or 0
+
+                # Get matching papers (one row per keyword match, preserving duplicates)
+                sql_papers = """
+                    SELECT p.*, k.keyword as matched_kw
+                    FROM keywords k JOIN papers p ON k.paper_id = p.id
+                    WHERE k.field = ? AND {tc} {pf}
+                      AND p.year BETWEEN ? AND ?
+                """.format(tc=topic_cond, pf=pos_filter)
+
+                paper_rows = cur_match.execute(sql_papers, params).fetchall()
+
+                for r in paper_rows:
+                    paper = paperDB.row_to_paper_dict(r)
+                    topicItem["papers"].append(paper)
+                    papersDictOut.append(paper)
+
+                    kw_upper = r['matched_kw']
+                    # Find original case from paper's criterion field
+                    if topicItem["name"] == "" or kw_upper not in [x.upper() for x in topicItem["topicsFound"]]:
+                        original_case = kw_upper
+                        field_val = paper.get(args.criterion, '')
+                        for field_item in field_val.split(";"):
+                            if field_item.strip().upper() == kw_upper:
+                                original_case = field_item.strip()
+                                break
+
+                        if topicItem["name"] == "":
+                            topicItem["name"] = original_case
+
+                        if kw_upper not in [x.upper() for x in topicItem["topicsFound"]]:
+                            topicItem["topicsFound"].append(original_case)
+
+            conn_match.close()
+        else:
+            # Python fallback for topic matching
+            papersLen = len(papersDictInside)
+            papersCounter = 0
+
+            # For each paper
+            for paper in papersDictInside:
+                papersCounter += 1
+                progressPer = int(float(papersCounter) / float(papersLen) * 100)
+                globalVar.progressPer = progressPer
+
+                if globalVar.cancelProcess:
+                    return
+
+                # For each item in paper criteria
+                for item in paper[args.criterion].split(";"):
+                    # Strip paper item and upper
+                    item = item.strip()
+                    itemUp = item.upper()
+
+                    # For each topic in topic results
+                    for topicItem in self.topicResults:
+                        # for each sub topic
+                        for subTopic in topicItem["allTopics"]:
+
+                            # Check if the sub topic match with the paper item
+                            if args.topics and "*" in subTopic.upper():
+                                subTopicRegex = subTopic.upper().replace("*", ".*")
+                                p = re.compile(subTopicRegex)
+                                match = p.match(itemUp)
+                            else:
+                                match = subTopic.upper() == itemUp
+
+                            # If match, sum it to the topicItem
+                            if match:
+                                yearIndex = topicItem["year"].index(int(paper["year"]))
+                                topicItem["PapersCount"][yearIndex] += 1
+                                topicItem["PapersTotal"] += 1
+                                topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
+                                topicItem["CitedByTotal"] += int(paper["citedBy"])
+                                # If no name in the topicItem, put the first one that was found
+                                if topicItem["name"] == "":
+                                    topicItem["name"] = item
+                                topicItem["papers"].append(paper)
+                                # Add the matched paper to the papersDictOut
+                                papersDictOut.append(paper)
+
+                                # If it is a new topic, add it to topicItem["topicsFound"]
+                                if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
+                                    topicItem["topicsFound"].append(item)
+                    # Only process one (the first one) if args.onlyFirst
+                    if args.onlyFirst:
+                        break
 
         # Print the topics found if the asterisk willcard was used
         for topicItem in self.topicResults:

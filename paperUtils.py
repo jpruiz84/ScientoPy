@@ -29,7 +29,14 @@ import time
 import pandas as pd
 
 
-def openFileToDict(ifile, papersDict):
+def _parse_csv_to_dicts(ifile):
+    """Generator that yields paper dicts from a CSV/TSV file.
+
+    Contains all parsing logic: header mapping, author preprocessing,
+    affiliation extraction, keyword merging, document type filtering.
+    Each yielded dict also has a '_accepted' key (True if passed doctype filter)
+    and '_database' key for counting.
+    """
     firstLineTell = ifile.tell()
     firstLine = ifile.readline()
     ifile.seek(firstLineTell)
@@ -531,21 +538,63 @@ def openFileToDict(ifile, papersDict):
             globalVar.loadedPapers += 1
 
             # Filter papers that are not in document type list
-            if any(
+            accepted = any(
                 pType.upper() in paperIn["documentType"].upper().split("; ")
                 for pType in globalVar.INCLUDED_TYPES
-            ):
-                papersDict.append(paperIn)
+            )
+
+            if accepted:
                 if paperIn["dataBase"] == "WoS":
                     globalVar.papersWoS += 1
                 if paperIn["dataBase"] == "Scopus":
                     globalVar.papersScopus += 1
-
             else:
                 globalVar.omitedPapers += 1
+
+            paperIn["_accepted"] = accepted
+            yield paperIn
+
         rownum += 1
 
     ifile.close()
+
+
+def openFileToDict(ifile, papersDict):
+    """Read CSV/TSV file and append accepted papers to papersDict list."""
+    for paperIn in _parse_csv_to_dicts(ifile):
+        if paperIn["_accepted"]:
+            del paperIn["_accepted"]
+            papersDict.append(paperIn)
+        else:
+            del paperIn["_accepted"]
+
+
+def openFileToDb(ifile, conn):
+    """Read CSV/TSV file and insert accepted papers into SQLite DB.
+    Returns the number of papers inserted."""
+    import paperDB
+
+    count = 0
+    batch = []
+    batch_size = 500
+
+    for paperIn in _parse_csv_to_dicts(ifile):
+        if paperIn["_accepted"]:
+            del paperIn["_accepted"]
+            batch.append(paperIn)
+            count += 1
+
+            if len(batch) >= batch_size:
+                paperDB.insert_papers_bulk(conn, batch)
+                batch = []
+        else:
+            del paperIn["_accepted"]
+
+    # Insert remaining
+    if batch:
+        paperDB.insert_papers_bulk(conn, batch)
+
+    return count
 
 
 def getPapersLinkFromFile(ifile, papersDict):

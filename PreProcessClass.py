@@ -22,6 +22,7 @@
 import csv
 import paperUtils
 import paperSave
+import paperDB
 import globalVar
 import os
 import argparse
@@ -90,6 +91,11 @@ class PreProcessClass:
         self.preProcessBrief["percenRemPapersScopus"] = 0
         self.preProcessBrief["percenRemPapersWos"] = 0
 
+        # Initialize SQLite database
+        db_path = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.DB_FILE_NAME)
+        conn = paperDB.get_connection(db_path)
+        paperDB.clear_db(conn)
+
         files_to_read = len(os.listdir(os.path.join(args.dataInFolder, "")))
         print("Files to read: %d" % files_to_read)
 
@@ -104,6 +110,7 @@ class PreProcessClass:
                 float(files_counter) / float(files_to_read) * 100
             )
             if globalVar.cancelProcess:
+                conn.close()
                 return
             if file.endswith(".csv") or file.endswith(".txt"):
                 print("Reading file: %s" % (os.path.join(args.dataInFolder, "") + file))
@@ -119,6 +126,7 @@ class PreProcessClass:
             )
             print("")
             globalVar.progressPer = 101
+            conn.close()
             return
 
         paperDict = paperUtils.disam_names_scopus(paperDict)
@@ -260,14 +268,21 @@ class PreProcessClass:
             logWriter.writerow({"Info": "Statics after duplication removal filter"})
             paperUtils.sourcesStatics(paperDict, logWriter)
 
-        # Save final results
+        # Save final results to CSV (backward compat)
         paperSave.saveResults(
             paperDict,
             os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME),
         )
 
+        # Populate SQLite database with deduplicated papers
+        paperDB.insert_papers_bulk(conn, paperDict)
+        # Populate keywords table for fast topic matching
+        paperDB.populate_all_keywords(conn)
+
         # Close log file
         logFile.close()
+
+        conn.close()
 
         print("\nPreprocess finished.")
 
