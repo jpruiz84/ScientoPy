@@ -219,13 +219,13 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   xmin, xmax = ax.get_xlim()
   dashed_line = Line2D([xmin, xmax], [0.0, 0.0], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
                        transform=ax.transData)
-  ax.lines.append(dashed_line)
+  ax.add_line(dashed_line)
 
   # Plot the Y dash line
   ymin, ymax = ax.get_ylim()
   dashed_line = Line2D([0.0, 0.0], [ymin, ymax], linestyle='--', linewidth=1, color=[0, 0, 0], zorder=2,
                        transform=ax.transData)
-  ax.lines.append(dashed_line)
+  ax.add_line(dashed_line)
 
   # Plot accumulative papers count
   ax0 = plt.subplot(gs[0])
