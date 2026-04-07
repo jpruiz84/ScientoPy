@@ -87,7 +87,7 @@ Preprocessing
 First we need to preprocess the downloaded dataset. This preprocess
 merge all the downloaded files from one folder to a single file. Also,
 this process remove the duplicated files. To preprocess the example
-dataset (“Internet of thing” AND “Gateway” located in dataInExample) run
+dataset (“Bluetooth low energy” located in dataInExample) run
 this command inside ScientoPy folder:
 
     python3 preProcess.py dataInExample
@@ -95,11 +95,11 @@ this command inside ScientoPy folder:
 Then, inside the folder `ScientoPy/dataPre` you will find the following
 files:
 
--   **papersPreprocessed.tsv:** this file contains the information of
+-   **papersPreprocessed.csv:** this file contains the information of
     all papers after the pre-process. This file will be used by the
     others scripts as the input data.
 
--   **PreprocessedBrief.tsv:** this file briefs the pre-process statics
+-   **PreprocessedBrief.csv:** this file briefs the pre-process statics
     results, such as duplicated papers removed, types of documents, and
     others.
 
@@ -238,7 +238,7 @@ the last run script. For example if we run the command:
     python3 scientoPy.py -c country -t "Canada" --noPlot
 
 ScientoPy will create a documents output file
-(`results/papersPreprocessed.tsv`) with all documents that have authors
+(`results/papersPreprocessed.csv`) with all documents that have authors
 with affiliation in Canada. This output file can be used by ScientoPy to
 perform an analysis based on this, in that way if we run the following
 command with the option `-r` or `--previousResults` after the previous
@@ -266,17 +266,17 @@ by executing the script `exampleGenerateGraphs.sh` you will find the
 following folder and files structure described bellow:
 
 -   **dataInExample:** contains Scopus and WoS example data set for the
-    search criteria “Internet of things” AND “Gateway” downloaded in 27
-    November 2017. This is the input example for preprocess script.
+    search criteria “Bluetooth low energy” downloaded in April 2, 2026.
+    This is the input example for preprocess script.
 
 -   **dataPre:** output folder for the preprocess results, and input
     folder for scientoPy script.
 
-    -   **papersPreprocessed.tsv:** preprocesed papers data with all input
+    -   **papersPreprocessed.csv:** preprocesed papers data with all input
         documents merged, filtered, and duplication removed. This is the
         input file that scientoPy script uses.
     
-    -   **PreprocessedBrief.tsv:** preproceses brief table that shows the
+    -   **PreprocessedBrief.csv:** preproceses brief table that shows the
         preprocess results related to total papers found per data base, the
         omitted papers, the duplicated papers count per data base, and the
         total number of papers per paper type (Conference paper, article,
@@ -290,17 +290,17 @@ following folder and files structure described bellow:
 
 -   **results:** output folder for scientoPy result output files
 
-    -   **AuthorKeywords.tsv:** scientoPy output file for the selected
+    -   **AuthorKeywords.csv:** scientoPy output file for the selected
         criterion (in this case authorKeywords) that shows the top topics or
         the custom topics with the total number of documents, the Average
         Growth Rate (AGR), the Average Documents per Year (ADY), the
         h-index, and the documents per each year.
     
-    -   **AuthorKeywords\_extended.tsv:** scientoPy output file for the
+    -   **AuthorKeywords\_extended.csv:** scientoPy output file for the
         selected criterion (in this case authorKeywords) that show the top
         or custom topics with the documents related to each one.
     
-    -   **papersPreprocessed.tsv:** inside the results folder, this file
+    -   **papersPreprocessed.csv:** inside the results folder, this file
         contains the output papers from the last scientoPy used script. This
         is used as an input for scientoPy script when it use the option `-r`
         or `--previousResults`
@@ -316,7 +316,7 @@ ScientoPy has 5 different ways to graph the results described bellow:
 | Time line       | `-g time_line`     | Graphs the number of documents of each topic vs the publication year                                                                              |
 | Horizontal bars | `-g bar`         | Graphs the total number of documents of each topic in horizontal bars                                                                             |
 | Horizontal bars trends | `-g bar_trends`         | Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years     |
-| Word cloud      | `-g wordCloud`   | Generate a word cloud based on the topic total number of publications                                                                             |
+| Word cloud      | `-g word_cloud`   | Generate a word cloud based on the topic total number of publications                                                                             |
 | Evolution      | `-g evolution`  | Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the percentage of documents in the last years |
 
 
