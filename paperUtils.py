@@ -29,6 +29,77 @@ import time
 import pandas as pd
 
 
+def normalizeOpenAccess(raw):
+    """Normalize WoS and Scopus Open Access tags based on SAVE_RESULTS_ON."""
+    if not raw or not raw.strip():
+        return ""
+
+    # Parse raw value into internal standard tags
+    tags = []
+    if "Open Access" in raw:
+        # Scopus format: semicolon-separated with "Open Access" suffix
+        for part in (p.strip() for p in raw.split(";")):
+            if part == "All Open Access":
+                continue
+            elif part == "Gold Open Access":
+                tags.append("Gold")
+            elif part == "Hybrid Gold Open Access":
+                tags.append("Hybrid")
+            elif part == "Bronze Open Access":
+                tags.append("Bronze")
+            elif part == "Green Open Access":
+                tags.append("Green")
+    else:
+        # WoS format: comma-separated, inconsistent casing
+        for part in (p.strip() for p in raw.split(",")):
+            lower = part.lower()
+            if lower == "gold":
+                tags.append("Gold")
+            elif lower == "hybrid":
+                tags.append("Hybrid")
+            elif lower == "bronze":
+                tags.append("Bronze")
+            elif part == "Green Submitted":
+                tags.append("Green Submitted")
+            elif part == "Green Accepted":
+                tags.append("Green Accepted")
+            elif part == "Green Published":
+                tags.append("Green Published")
+
+    if not tags:
+        return ""
+
+    # Format output based on SAVE_RESULTS_ON
+    if globalVar.SAVE_RESULTS_ON == "WOS_FIELDS":
+        wos_tags = []
+        for t in tags:
+            if t == "Gold":
+                wos_tags.append("gold")
+            elif t == "Hybrid":
+                wos_tags.append("hybrid")
+            elif t == "Bronze":
+                wos_tags.append("Bronze")
+            elif t == "Green":
+                wos_tags.append("Green Published")
+            else:
+                wos_tags.append(t)
+        return ", ".join(wos_tags)
+    else:
+        # SCOPUS_FIELDS format
+        scopus_tags = []
+        for t in tags:
+            if t == "Gold":
+                scopus_tags.append("Gold Open Access")
+            elif t == "Hybrid":
+                scopus_tags.append("Hybrid Gold Open Access")
+            elif t == "Bronze":
+                scopus_tags.append("Bronze Open Access")
+            elif t in ("Green", "Green Submitted", "Green Accepted", "Green Published"):
+                if "Green Open Access" not in scopus_tags:
+                    scopus_tags.append("Green Open Access")
+        return "All Open Access; " + "; ".join(scopus_tags)
+
+
 def openFileToDict(ifile, papersDict):
     firstLineTell = ifile.tell()
     firstLine = ifile.readline()
@@ -218,7 +289,7 @@ def openFileToDict(ifile, papersDict):
                     paperIn["affiliations"] = col
 
                 if headerCol == "Open Access":
-                    paperIn["openAccess"] = col
+                    paperIn["openAccess"] = normalizeOpenAccess(col)
 
                 # WoS fields
                 # if headerCol == "PT": paperIn[""] = col    # Publication Type (J=Journal; B=Book; S=Series; P=Patent)
@@ -326,8 +397,8 @@ def openFileToDict(ifile, papersDict):
                     paperIn["eid"] = col  # Accession Number
                 if headerCol == "PM":
                     paperIn["pubMedId"] = col  # PubMed ID
-                if headerCol == "OA": 
-                    paperIn["openAccess"] = col      # Open Access Indicator
+                if headerCol == "OA":
+                    paperIn["openAccess"] = normalizeOpenAccess(col)      # Open Access Indicator
                 # if headerCol == "HC": paperIn[""] = col      # ESI Highly Cited Paper. Note that this field is valued only for ESI subscribers.
                 # if headerCol == "HP": paperIn[""] = col      # ESI Hot Paper. Note that this field is valued only for ESI subscribers.
                 # if headerCol == "DA": paperIn[""] = col      # Date this report was generated.

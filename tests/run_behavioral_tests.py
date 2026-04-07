@@ -306,6 +306,43 @@ def main():
             check("T-M15b", "Source: WoS count == 13", wos_count == 13,
                   f"got {wos_count}")
 
+            # ── T-M16: Open Access normalization ──
+            print("\n--- Open Access normalization tests ---")
+            # Scopus Gold stays as Scopus format (SAVE_RESULTS_ON = SCOPUS_FIELDS)
+            s_gold = find_row(papers, "EID", "2-s2.0-test-alpha-2020-a")
+            if s_gold:
+                check("T-M16a", "Scopus Gold OA preserved",
+                      s_gold.get("Open Access", "") == "All Open Access; Gold Open Access",
+                      f"got '{s_gold.get('Open Access', '')}'")
+
+            # Scopus Green stays as Scopus format
+            s_green = find_row(papers, "EID", "2-s2.0-test-alpha-2020-b")
+            if s_green:
+                check("T-M16b", "Scopus Green OA preserved",
+                      s_green.get("Open Access", "") == "All Open Access; Green Open Access",
+                      f"got '{s_green.get('Open Access', '')}'")
+
+            # WoS "gold" normalized to Scopus format
+            w_gold = find_row(papers, "EID", "WOS:test-beta-2021-a")
+            if w_gold:
+                check("T-M16c", "WoS gold -> Scopus Gold Open Access",
+                      w_gold.get("Open Access", "") == "All Open Access; Gold Open Access",
+                      f"got '{w_gold.get('Open Access', '')}'")
+
+            # WoS "Green Submitted, hybrid" normalized to Scopus format
+            w_multi = find_row(papers, "EID", "WOS:test-beta-2021-b")
+            if w_multi:
+                check("T-M16d", "WoS Green+hybrid -> Scopus format",
+                      w_multi.get("Open Access", "") == "All Open Access; Green Open Access; Hybrid Gold Open Access",
+                      f"got '{w_multi.get('Open Access', '')}'")
+
+            # Empty OA stays empty
+            s_empty = find_row(papers, "EID", "2-s2.0-test-alpha-2018-a")
+            if s_empty:
+                check("T-M16e", "Empty OA stays empty",
+                      s_empty.get("Open Access", "").strip() == "",
+                      f"got '{s_empty.get('Open Access', '')}'")
+
         # ── Stage 2: scientoPy analyses ──
 
         # T05–T07: authorKeywords default

@@ -18,10 +18,16 @@ def generate(output_dir):
     wos_papers = []
 
     # ── Group A: "Alpha" — 10 papers, Scopus only, 2018–2022 ──
+    # OA values: 2020-A=Gold, 2020-B=Green, rest empty
     paper_idx = 0
     for year in [2018, 2019, 2020, 2021, 2022]:
         for suffix in ["A", "B"]:
             paper_idx += 1
+            oa = ""
+            if year == 2020 and suffix == "A":
+                oa = "All Open Access; Gold Open Access"
+            elif year == 2020 and suffix == "B":
+                oa = "All Open Access; Green Open Access"
             scopus_papers.append({
                 "Authors": "Smith, J.",
                 "Title": f"Alpha Paper {year} {suffix}",
@@ -41,13 +47,20 @@ def generate(output_dir):
                 "Author Keywords": "Alpha",
                 "Index Keywords": "Alpha index",
                 "Document Type": "Article",
+                "Open Access": oa,
                 "Source": "Scopus",
                 "EID": f"2-s2.0-test-alpha-{year}-{suffix.lower()}",
             })
 
     # ── Group B: "Beta" — 8 papers, WoS only, 2020–2023 ──
+    # OA values: 2021-A=gold, 2021-B="Green Submitted, hybrid", rest empty
     for year in [2020, 2021, 2022, 2023]:
         for suffix in ["A", "B"]:
+            oa = ""
+            if year == 2021 and suffix == "A":
+                oa = "gold"
+            elif year == 2021 and suffix == "B":
+                oa = "Green Submitted, hybrid"
             wos_papers.append({
                 "PT": "J",
                 "AU": "Muller, H.",
@@ -60,6 +73,7 @@ def generate(output_dir):
                 "ID": "Beta index",
                 "AB": f"Abstract for beta paper {year} {suffix}",
                 "C1": f"[Muller, Hans] TU Berlin, Berlin, Germany",
+                "OA": oa,
                 "Z9": "5",
                 "PY": str(year),
                 "DI": f"10.0002/beta-{year}-{suffix.lower()}",
@@ -200,7 +214,8 @@ def generate(output_dir):
         "Authors", "Title", "Year", "Source title", "Volume", "Issue",
         "Art. No.", "Page start", "Page end", "Cited by", "DOI", "Link",
         "Affiliations", "Authors with affiliations", "Abstract",
-        "Author Keywords", "Index Keywords", "Document Type", "Source", "EID",
+        "Author Keywords", "Index Keywords", "Document Type",
+        "Open Access", "Source", "EID",
     ]
 
     scopus_path = os.path.join(output_dir, "test_scopus.csv")
@@ -213,7 +228,7 @@ def generate(output_dir):
     # ── Write WoS TXT (tab-delimited) ──
     wos_header = [
         "PT", "AU", "AF", "TI", "SO", "LA", "DT", "DE", "ID", "AB",
-        "C1", "Z9", "PY", "DI", "SC", "UT",
+        "C1", "OA", "Z9", "PY", "DI", "SC", "UT",
     ]
 
     wos_path = os.path.join(output_dir, "test_wos.txt")

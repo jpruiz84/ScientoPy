@@ -297,6 +297,7 @@ The generator must assign known, verifiable values to specific fields. The table
 | `DOI` | `10.0001/alpha-2020-a` |
 | `Document Type` | `Article` |
 | `Affiliations` | `MIT, Cambridge, United States` |
+| `Open Access` | `All Open Access; Gold Open Access` |
 | `EID` | `2-s2.0-test-alpha-2020-a` |
 | `Source` | `Scopus` |
 
@@ -313,6 +314,7 @@ The generator must assign known, verifiable values to specific fields. The table
 | `DOI` (`DI`) | `10.0002/beta-2021-a` |
 | `Document Type` (`DT`) | `Article` |
 | `Affiliations` (`C1`) | `[Muller, Hans] TU Berlin, Berlin, Germany` |
+| `OA` | `gold` |
 | `EID` (`UT`) | `WOS:test-beta-2021-a` |
 
 #### Reference Papers D1a/D1b (Duplicate pair, Group D)
@@ -472,7 +474,62 @@ Create one paper where `Author Keywords = "Gamma"` and `Index Keywords = "Gamma;
 |---|---|
 | `bothKeywords` | `Gamma;Extra keyword` (Gamma not duplicated) |
 
-### 4.8 Document Type Omission Assertions
+### 4.8 Open Access Normalization Assertions
+
+`paperUtils.normalizeOpenAccess` standardizes OA tags from WoS and Scopus into the format specified by `globalVar.SAVE_RESULTS_ON`. Since the default is `SCOPUS_FIELDS`, WoS OA values are converted to Scopus format.
+
+**Mapping (WoS → Scopus):**
+
+| WoS value | Scopus equivalent |
+|---|---|
+| `gold` | `Gold Open Access` |
+| `hybrid` | `Hybrid Gold Open Access` |
+| `Bronze` | `Bronze Open Access` |
+| `Green Submitted` / `Green Accepted` / `Green Published` | `Green Open Access` |
+
+Scopus output always includes the `All Open Access` prefix when any OA tag is present.
+
+#### Test T-M16a: Scopus Gold OA preserved
+
+Paper `EID == "2-s2.0-test-alpha-2020-a"` with `Open Access = "All Open Access; Gold Open Access"`:
+
+| Column | Expected value |
+|---|---|
+| `Open Access` | `All Open Access; Gold Open Access` |
+
+#### Test T-M16b: Scopus Green OA preserved
+
+Paper `EID == "2-s2.0-test-alpha-2020-b"` with `Open Access = "All Open Access; Green Open Access"`:
+
+| Column | Expected value |
+|---|---|
+| `Open Access` | `All Open Access; Green Open Access` |
+
+#### Test T-M16c: WoS gold normalized to Scopus format
+
+Paper `EID == "WOS:test-beta-2021-a"` with WoS `OA = "gold"`:
+
+| Column | Expected value |
+|---|---|
+| `Open Access` | `All Open Access; Gold Open Access` |
+
+#### Test T-M16d: WoS multi-value normalized to Scopus format
+
+Paper `EID == "WOS:test-beta-2021-b"` with WoS `OA = "Green Submitted, hybrid"`:
+
+| Column | Expected value |
+|---|---|
+| `Open Access` | `All Open Access; Green Open Access; Hybrid Gold Open Access` |
+
+#### Test T-M16e: Empty OA stays empty
+
+Paper `EID == "2-s2.0-test-alpha-2018-a"` with `Open Access = ""`:
+
+| Column | Expected value |
+|---|---|
+| `Open Access` | *(empty string)* |
+
+### 4.9 Document Type Omission Assertions
 
 #### Test T-M13: Omitted papers absent from output
 
@@ -483,7 +540,7 @@ Assert that no row in `papersPreprocessed.csv` has `Document Type == "Book Chapt
 Assert that all 28 remaining papers have a `Document Type` value that matches one of:
 `Article`, `Conference Paper`, `Review`, `Proceedings Paper`, `Article in Press`
 
-### 4.9 Source Distribution in Output
+### 4.10 Source Distribution in Output
 
 #### Test T-M15: Source field distribution
 
@@ -551,6 +608,7 @@ Each test run should use a **temporary working directory** (e.g., `tempfile.mkdt
 | T-M13 | Omitted types absent | `preProcess.py` | `dataPre/papersPreprocessed.csv` | No `Book Chapter` rows |
 | T-M14 | Valid document types | `preProcess.py` | `dataPre/papersPreprocessed.csv` | All 28 rows have included doc type |
 | T-M15 | Source distribution | `preProcess.py` | `dataPre/papersPreprocessed.csv` | Scopus=15, WoS=13 |
+| T-M16 | OA normalization | `preProcess.py` | `dataPre/papersPreprocessed.csv` | WoS OA tags normalized to Scopus format |
 
 ---
 
