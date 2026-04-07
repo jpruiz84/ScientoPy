@@ -39,7 +39,7 @@ def saveResults(paperDict, outFileName):
                   "Publisher Address", "Conference name", "Conference location", "Conference date",
                   "Publisher", "ISSN", "ISBN", "CODEN", "PubMed ID", "Language of Original Document",
                   "Abbreviated Source Title", "Document Type", "Source", "Subject", "EID", "duplicatedIn",
-                  "country", "emailHost", "institution", "institutionWithCountry", "authorFull"]
+                  "country", "emailHost", "institution", "institutionWithCountry", "authorFull", "Open Access"]
 
 
 
@@ -98,6 +98,8 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["institution"] = paperOut["institution"]
       paperDicWrite["institutionWithCountry"] = paperOut["institutionWithCountry"]
       paperDicWrite["bothKeywords"] = paperOut["bothKeywords"]
+      
+      paperDicWrite["Open Access"] = paperOut["openAccess"]
 
       writer.writerow(paperDicWrite)
 
@@ -141,6 +143,8 @@ def saveResults(paperDict, outFileName):
 
       paperDicWrite["duplicatedIn"] = ";".join(paperOut["duplicatedIn"])
       paperDicWrite["country"] = paperOut["country"]
+
+      paperDicWrite["OA"] = paperOut["openAccess"]
 
       writer.writerow(paperDicWrite)
 

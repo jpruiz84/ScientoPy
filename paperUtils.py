@@ -111,6 +111,8 @@ def openFileToDict(ifile, papersDict):
             paperIn["bothKeywords"] = ""
             paperIn["authorFull"] = ""
 
+            paperIn["openAccess"] = ""
+
             for col in row:
                 if colnum >= len(header):
                     break
@@ -214,6 +216,9 @@ def openFileToDict(ifile, papersDict):
                     paperIn["year"] = col.split("-")[0]
                 if headerCol == "affiliation_country":
                     paperIn["affiliations"] = col
+
+                if headerCol == "Open Access":
+                    paperIn["openAccess"] = col
 
                 # WoS fields
                 # if headerCol == "PT": paperIn[""] = col    # Publication Type (J=Journal; B=Book; S=Series; P=Patent)
@@ -321,7 +326,8 @@ def openFileToDict(ifile, papersDict):
                     paperIn["eid"] = col  # Accession Number
                 if headerCol == "PM":
                     paperIn["pubMedId"] = col  # PubMed ID
-                # if headerCol == "OA": paperIn[""] = col      # Open Access Indicator
+                if headerCol == "OA": 
+                    paperIn["openAccess"] = col      # Open Access Indicator
                 # if headerCol == "HC": paperIn[""] = col      # ESI Highly Cited Paper. Note that this field is valued only for ESI subscribers.
                 # if headerCol == "HP": paperIn[""] = col      # ESI Hot Paper. Note that this field is valued only for ESI subscribers.
                 # if headerCol == "DA": paperIn[""] = col      # Date this report was generated.
