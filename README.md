@@ -29,8 +29,8 @@ Installation for Windows
 For detailed instructions about ScientoPy Graphic User Interface, go to the user manual in 
 [Manual/ScientoPyGui_user_manual.pdf](./Manual/ScientoPyGui_user_manual.pdf) 
 
-Run ScientoPy for Ubuntu (or Debian based)
-===========================================
+Run ScientoPy from source (Linux, macOS, Windows)
+==================================================
 
 To clone directly the last version from the repository run the following
 git command:
@@ -41,18 +41,20 @@ git command:
 Install prerequisites
 ----------------------
 
-**IMPORTANT NOTE:** ScientoPy works with Python version 3.7 and not with version 3.11
+**Requirements:** Python 3.9 or higher.
 
-1.  For run these commands to install Python3:
+1.  On Ubuntu/Debian, install Python3 and tkinter:
 
         sudo apt-get install python3 python3-tk python3-pip python3-pil python3-pil.imagetk
-        
-2.  Install the unidecode, numpy, scipy, matplotlib, and wordcloud
-    Python libraries. For Windows, enter in the command line (Windows +
-    R, cmd, and Enter), and run the installation script:
 
-        python3 -m pip install --upgrade pip
-        python3 -m pip install --user unidecode numpy pandas scipy matplotlib wordcloud
+2.  Create a virtual environment and install dependencies:
+
+        python3 -m venv venv
+        source venv/bin/activate        # Linux/macOS
+        # venv\Scripts\activate          # Windows
+
+        pip install --upgrade pip
+        pip install -r requirements.txt
         
 
 The bibliometric dataset

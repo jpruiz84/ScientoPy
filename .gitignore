@@ -20,5 +20,8 @@ data_*/
 *.swp
 .DS_Store
 
+# LibreOffice lock files
+.~lock.*#
+
 # Sandbox
 sandbox/
