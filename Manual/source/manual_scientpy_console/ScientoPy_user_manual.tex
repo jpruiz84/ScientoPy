@@ -74,7 +74,7 @@
 
 
 \begin{center}
-{\LARGE \textbf{ScientoPy v 1.4.0, Installation and User Manual\\}}
+{\LARGE \textbf{ScientoPy v 2.1.6, Installation and User Manual\\}}
 \vspace*{0.5cm}
 \includegraphics[scale=0.2]{./figures/escudoUnicacuaSolo.eps}\\
 \vspace*{0.5cm}
@@ -88,24 +88,34 @@ Juan Pablo Ruiz Rosero\\
 
 \section{Installation}
 
+\textbf{Requirements:} Python 3.9 or higher.
+
 \begin{enumerate}
-\item For Windows download and install the Python 3 latest version (for example Python 3.6.5) from: \\ \url{https://www.python.org/downloads/}.
-\item For Debian or Ubuntu run these commands to install Python3: 
+\item For Windows download and install Python 3 (version 3.9 or higher) from: \\ \url{https://www.python.org/downloads/}.
+\item For Debian or Ubuntu run this command to install Python3 and tkinter:
 \begin{verbatim}
-sudo apt-get install python3 python3-tk python3-pip
+sudo apt-get install python3 python3-tk python3-pip python3-pil python3-pil.imagetk
 \end{verbatim}
 
-\item To use wordCloud in Windows, install Microsoft Visual C++ Redistributable para Visual Studio 2017 according to these instructions: \url{https://www.scivision.co/python-windows-visual-c++-14-required/}
-
-\item Install the unidecode, numpy, scipy, matplotlib, and wordcloud Python libraries. For Windows, enter in the command line (Windows + R, cmd, and Enter), and run the installation script:
+\item Clone the repository:
 \begin{verbatim}
-python3 -m pip install --user unidecode numpy scipy matplotlib wordcloud
+git clone https://github.com/jpruiz84/ScientoPy
+\end{verbatim}
+
+\item Create a virtual environment and install dependencies:
+\begin{verbatim}
+python3 -m venv venv
+source venv/bin/activate        # Linux/macOS
+# venv\Scripts\activate          # Windows
+
+pip install --upgrade pip
+pip install -r requirements.txt
 \end{verbatim}
 
 \end{enumerate}
 
 \section{Download the bibliometric dataset}
-This section describes how to download the proper dataset from Scopus and WoS. Define a search criteria that will be used for Scopus and WoS. For this guide and for the example dataset we are using: "Internet of thing"  AND  "Gateway" 
+This section describes how to download the proper dataset from Scopus and WoS. Define a search criteria that will be used for Scopus and WoS. For this guide and for the example dataset we are using: "Bluetooth low energy"
 
 \subsection{Download the dataset from Scopus}
 \begin{enumerate}
@@ -146,15 +156,15 @@ This section describes the ScientoPy scripts to preprocess and analyze the bibli
 
 \subsection{Preprocessing}
 
-First we need to preprocess the downloaded dataset. This preprocess merge all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To preprocess the example dataset ("Bluetooth low energy"  downloaded in March 21, 2019, located in dataInExample) run this command inside ScientoPy folder: 
+First we need to preprocess the downloaded dataset. This preprocess merge all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To preprocess the example dataset ("Bluetooth low energy"  downloaded in April 2, 2026, located in dataInExample) run this command inside ScientoPy folder:
 \begin{verbatim}
 python3 preProcess.py dataInExample
 \end{verbatim}
 
 Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files: 
 \begin{itemize}
-\item \textbf{papersPreprocessed.tsv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data. 
-\item \textbf{PreprocessedBrief.tsv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
+\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data. 
+\item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
 \end{itemize}
 
 To find more options of the preprocessing script you can run:
@@ -263,6 +273,24 @@ This script have more options like, save the plot on a file, or others. For more
 python3 scientoPy.py -h
 \end{verbatim}
 
+\subsection{Additional options}
+
+The \verb|scientoPy.py| script provides the following additional options:
+
+\begin{itemize}
+\item \verb|--onlyFirst|: Only look in the first element of the topic, for example to analyze only the first author name, country or institution.
+\item \verb|--graphTitle "Title"|: Put a title in the output graph.
+\item \verb|--plotWidth N|: Set the plot width size in inches (default: 6.4).
+\item \verb|--plotHeight N|: Set the plot height size in inches (default: 4.8).
+\item \verb|-f "filter"| or \verb|--filter "filter"|: Filter to be applied on a sub topic. For example, to extract institutions from the United States:
+\begin{verbatim}
+python3 scientoPy.py -c institutionWithCountry -f "United States"
+\end{verbatim}
+\item \verb|--pYear|: Present the results in percentage per year instead of documents per year.
+\item \verb|--yLog|: Plot Y axes in log scale.
+\item \verb|-s N| or \verb|--skipFirst N|: To filter the first top N elements from the results.
+\end{itemize}
+
 \subsection{Finding trending topics}
 
 This script finds the top trending topics based on the higher average growth rate (AGR) over the others. The AGR is calculated on two years periods, using the following Equation \eqref{equation_AGR}:
@@ -283,11 +311,11 @@ $P_i$ = Number of publications on year $i.$\\
 To find the top trending topics on author keywords criterion, you can run the following script: 
 
 \begin{verbatim}
-python3 scientoPy.py -c authorKeywords --trend --startYear 2008 --endYear 2018 \
+python3 scientoPy.py -c authorKeywords --trend --startYear 2015 --endYear 2025 \
 --windowWidth 2  --agrForGraph -g evolution
 \end{verbatim}
 
-This script will find the top 200 topics, then it calculates the AGR for the last 2 years (\verb|--windowWidth 2|). Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 3 AGR topics are filtered (they correspond to the keyword Internet of things), and the next 10 topics are garph in a parametric plot. 
+This script will find the top 200 topics, then it calculates the AGR for the last 2 years (\verb|--windowWidth 2|). Finally, the 200 top topics are sorted from the highest AGR in the last 2 year period to the lower. The first 3 AGR topics are filtered (they correspond to the keyword Bluetooth low energy), and the next 10 topics are graphed in an evolution plot.
 
 \subsection{Analysis based on the previous results}
 
@@ -297,7 +325,7 @@ ScientoPy generates an output file with all the output documents from the last r
 python3 scientoPy.py -c country -t "Canada" --noPlot
 \end{verbatim}
 
-ScientoPy will create a documents output file (\verb|results/papersPreprocessed.tsv|) with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on this, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
+ScientoPy will create a documents output file (\verb|results/papersPreprocessed.csv|) with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on this, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
 
 \begin{verbatim}
 python3 scientoPy.py -c authorKeywords -r -g bar
@@ -320,26 +348,26 @@ After run some ScientoPy commands or after run all the example commands by execu
 	.1 ScientoPy.
 	.2 dataInExample.
 	.2 dataPre.
-	.3 papersPreprocessed.tsv.
-	.3 PreprocessedBrief.tsv.
+	.3 papersPreprocessed.csv.
+	.3 PreprocessedBrief.csv.
 	.2 graphs.
 	.2 Manual.
 	.2 results.
-	.3 AuthorKeywords.tsv.
-	.3 AuthorKeywords\_extended.tsv.
-	.3 papersPreprocessed.tsv.
+	.3 AuthorKeywords.csv.
+	.3 AuthorKeywords\_extended.csv.
+	.3 papersPreprocessed.csv.
 }
 
 These folders and output files are described bellow:
 
 \begin{itemize}
-	\item \textbf{dataInExample: } contains Scopus and WoS example data set for the search criteria "Internet of things" AND "Gateway" downloaded in 27 November 2017. This is the input example for preprocess script.
+	\item \textbf{dataInExample: } contains Scopus and WoS example data set for the search criteria "Bluetooth low energy" downloaded in April 2, 2026. This is the input example for preprocess script.
 	
 	\item \textbf{dataPre: } output folder for the preprocess results, and input folder for scientoPy script.
 	
-	\item \textbf{papersPreprocessed.tsv: } preprocesed papers data with all input documents merged, filtered, and duplication removed. This is the input file that scientoPy script uses.
+	\item \textbf{papersPreprocessed.csv: } preprocesed papers data with all input documents merged, filtered, and duplication removed. This is the input file that scientoPy script uses.
 	
-	\item \textbf{PreprocessedBrief.tsv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
+	\item \textbf{PreprocessedBrief.csv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
 	
 	\item \textbf{graphs: } graphs output folder for preprocess and scientoPy scripts
 	
@@ -347,11 +375,11 @@ These folders and output files are described bellow:
 	
 	\item \textbf{results: } output folder for scientoPy result output files
 	
-	\item \textbf{AuthorKeywords.tsv: } scientoPy output file for the selected criterion (in this case authorKeywords) that shows the top topics or the custom  topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the h-index, and the documents per each year. 
+	\item \textbf{AuthorKeywords.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that shows the top topics or the custom  topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the h-index, and the documents per each year. 
 	
-	\item \textbf{AuthorKeywords\_extended.tsv: } scientoPy output file for the selected criterion (in this case authorKeywords) that show the top or custom topics with the documents related to each one.
+	\item \textbf{AuthorKeywords\_extended.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that show the top or custom topics with the documents related to each one.
 	
-	\item \textbf{papersPreprocessed.tsv: } inside the results folder, this file contains the output papers from the last scientoPy used script. This is used as an input for scientoPy script when it use the option \verb|-r| or \verb|--previousResults|
+	\item \textbf{papersPreprocessed.csv: } inside the results folder, this file contains the output papers from the last scientoPy used script. This is used as an input for scientoPy script when it use the option \verb|-r| or \verb|--previousResults|
 \end{itemize}
 
 \newpage
@@ -371,7 +399,7 @@ ScientoPy has 5 different ways to graph the results described on Table \ref{tabl
 	\noalign{\smallskip}\hline\noalign{\smallskip}                                                                         
 	Time line      & \verb|-g time_line| & Graphs the number of documents of each topic vs the publication year \\
 	Horizontal bars  & \verb|-g bar| & Graphs the total number of documents of each topic in horizontal bars \\
-	Horizontal bars trends  & \verb|-g bar| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years \\
+	Horizontal bars trends  & \verb|-g bar_trends| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years \\
 	Evolution     & \verb|-g evolution| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the percentage of documents in the last years\\
 	Word cloud     & \verb|-g word_cloud| & Generate a word cloud based on the topic total number of publications \\
 	\noalign{\smallskip}\hline
@@ -383,7 +411,7 @@ Below are showed some examples of these graphs types, with the command used.
 \subsection{Time line graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g time_line
+python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g time_line
 \end{verbatim}
 
 \begin{center}
@@ -393,7 +421,7 @@ python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g time_l
 \subsection{Horizontal bars graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar
+python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g bar
 \end{verbatim}
 
 \begin{center}
@@ -403,7 +431,7 @@ python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar
 \subsection{Horizontal bars trends}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar_trends
+python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g bar_trends
 \end{verbatim}
 
 \begin{center}
@@ -413,7 +441,7 @@ python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g bar_tr
 \subsection{Evolution graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g evolution
+python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g evolution
 \end{verbatim}
 
 \begin{center}
@@ -424,11 +452,11 @@ python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -g evolut
 \subsection{Word cloud graph}
 Command: 
 \begin{verbatim}
-python3 scientoPy.py -c authorKeywords --startYear 2008 --endYear 2018 -l 500 -g word_cloud
+python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -l 500 -g word_cloud
 \end{verbatim}
 
 \begin{center}
-	\includegraphics[width=0.9\textwidth]{./figures/graph_word_cloud.eps}
+	\includegraphics[width=0.9\textwidth]{./figures/graph_word_cloud.png}
 \end{center}
 
 
