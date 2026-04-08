@@ -557,6 +557,16 @@ class ScientoPyGui(QMainWindow):
         bibtex_btn.clicked.connect(self.generate_bibtex)
         btn_row.addWidget(bibtex_btn)
 
+        clear_topics_btn = QPushButton("Clear topics")
+        clear_topics_btn.setToolTip("Clear the Custom topics text area.")
+        clear_topics_btn.clicked.connect(lambda: self.custom_topics.clear())
+        btn_row.addWidget(clear_topics_btn)
+
+        reset_btn = QPushButton("Reset defaults")
+        reset_btn.setToolTip("Reset all analysis parameters to their default values.")
+        reset_btn.clicked.connect(self._reset_analysis_defaults)
+        btn_row.addWidget(reset_btn)
+
         btn_row.addStretch(1)
 
         run_btn = QPushButton("Run")
@@ -596,6 +606,13 @@ class ScientoPyGui(QMainWindow):
         copy_all_btn = QPushButton("Copy All")
         copy_all_btn.clicked.connect(self._copy_all_cells)
         bottom_row.addWidget(copy_all_btn)
+
+        analyze_sel_btn = QPushButton("Analyze selection")
+        analyze_sel_btn.setToolTip(
+            "Copy the topic names from selected rows to the\n"
+            "Custom topics field in the Analysis tab.")
+        analyze_sel_btn.clicked.connect(self._analyze_selection)
+        bottom_row.addWidget(analyze_sel_btn)
 
         layout.addLayout(bottom_row)
 
@@ -652,6 +669,35 @@ class ScientoPyGui(QMainWindow):
         self.results_status_label.setText(
             "Showing results from: %s" % os.path.basename(filepath)
         )
+
+    def _analyze_selection(self):
+        """Copy topic names from selected rows to the Custom topics field."""
+        selected_rows = sorted(set(idx.row() for idx in self.results_table.selectedIndexes()))
+        if not selected_rows:
+            self.status_bar.showMessage("No rows selected")
+            return
+
+        # The topic name is in column 1 (column 0 is "Pos.")
+        # But if the table is showing preprocess brief, column 1 may not be topics.
+        # Detect: if header of col 1 matches a criterion name, it's analysis results.
+        header_item = self.results_table.horizontalHeaderItem(1)
+        if not header_item:
+            return
+
+        topics = []
+        for row in selected_rows:
+            cell = self.results_table.item(row, 1)
+            if cell and cell.text().strip():
+                topics.append(cell.text().strip())
+
+        if not topics:
+            self.status_bar.showMessage("No topics found in selection")
+            return
+
+        self.custom_topics.setPlainText("\n".join(topics))
+        self.tabs.setCurrentIndex(1)  # Switch to Analysis tab
+        self.status_bar.showMessage(
+            "%d topic(s) copied to Custom topics" % len(topics))
 
     @staticmethod
     def _get_header_tooltip(header):
@@ -805,6 +851,22 @@ class ScientoPyGui(QMainWindow):
 
     def _copy_all_ext_cells(self):
         self._copy_all_from(self.ext_results_table)
+
+    def _reset_analysis_defaults(self):
+        """Reset all analysis parameters to their default values."""
+        self.combo_criterion.setCurrentIndex(
+            globalVar.validCriterion.index("authorKeywords"))
+        self.combo_graph_type.setCurrentIndex(
+            globalVar.validGrapTypes.index("bar_trends"))
+        self.spin_start_year.setValue(globalVar.DEFAULT_START_YEAR)
+        self.spin_end_year.setValue(globalVar.DEFAULT_END_YEAR)
+        self.spin_topics_length.setValue(10)
+        self.spin_skip_first.setValue(0)
+        self.spin_window_width.setValue(2)
+        self.chk_previous_results.setChecked(False)
+        self.chk_trend_analysis.setChecked(False)
+        self.custom_topics.clear()
+        self.status_bar.showMessage("Analysis parameters reset to defaults")
 
     def _run_current_tab(self):
         """Ctrl+R handler: run preprocess or analysis depending on active tab."""
