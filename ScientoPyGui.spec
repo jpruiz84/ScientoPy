@@ -61,7 +61,7 @@ exe = EXE(
     debug=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True,
     icon=icon_file,
     version=version_file,
 )
