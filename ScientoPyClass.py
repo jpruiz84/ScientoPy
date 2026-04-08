@@ -32,6 +32,10 @@ import time
 from PIL import Image
 
 
+class ScientoPyError(Exception):
+    pass
+
+
 class ScientoPyClass:
     def __init__(self, from_gui=False):
 
@@ -90,21 +94,13 @@ class ScientoPyClass:
         print("\n\nScientoPy: %s" % (globalVar.SCIENTOPY_VERSION))
         print("================\n")
 
-        # Check python version
-        if sys.version_info[0] < 3:
-            print("ERROR, you are using Python 2, Python 3.X.X required")
-            print("")
-            exit()
-
         # Validate window Width
         if args.windowWidth < 1:
-            print("ERROR: minimum windowWidth 1")
-            exit()
+            raise ScientoPyError("Minimum windowWidth is 1")
 
         # Validate start and end years
         if args.startYear > args.endYear:
-            print("ERROR: startYear > endYear")
-            exit()
+            raise ScientoPyError("startYear (%d) > endYear (%d)" % (args.startYear, args.endYear))
 
         # Create output folders if not exist
         if not os.path.exists(os.path.join(globalVar.GRAPHS_OUT_FOLDER)):
@@ -139,9 +135,7 @@ class ScientoPyClass:
             self.lastPreviousResults = args.previousResults
             # Open the storage database and add to sel.fpapersDict
             if not os.path.isfile(INPUT_FILE):
-                print("ERROR: %s file not found" % INPUT_FILE)
-                print("Make sure that you have run the preprocess step before run scientoPy")
-                exit()
+                raise ScientoPyError("File not found: %s\nMake sure you have run the preprocess step first." % INPUT_FILE)
 
             ifile = open(INPUT_FILE, "r", encoding='utf-8')
             print("Reading file: %s" % (INPUT_FILE))

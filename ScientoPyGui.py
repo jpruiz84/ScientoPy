@@ -45,7 +45,7 @@ from PySide6.QtCore import Qt, QTimer
 
 import globalVar
 from PreProcessClass import PreProcessClass
-from ScientoPyClass import ScientoPyClass
+from ScientoPyClass import ScientoPyClass, ScientoPyError
 from generateBibtex import generateBibtex
 
 def asset_path(filename):
@@ -834,8 +834,12 @@ class ScientoPyGui(QMainWindow):
             elif globalVar.totalPapers == 0:
                 QMessageBox.critical(self, "Error",
                                      "No valid dataset files found in: %s" % dataset_path)
-        except Exception:
-            QMessageBox.critical(self, "Error", "No valid dataset folder")
+        except FileNotFoundError:
+            QMessageBox.critical(self, "Error", "Dataset folder not found: %s" % dataset_path)
+        except PermissionError:
+            QMessageBox.critical(self, "Error", "Permission denied accessing: %s" % dataset_path)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", "Preprocessing failed: %s" % str(e))
 
     def scientoPyRun(self):
         globalVar.cancelProcess = False
@@ -866,7 +870,15 @@ class ScientoPyGui(QMainWindow):
         else:
             self.scientoPy.topics = ''
 
-        t1 = threading.Thread(target=self.scientoPy.scientoPy)
+        self._thread_error = None
+
+        def run_analysis():
+            try:
+                self.scientoPy.scientoPy()
+            except ScientoPyError as e:
+                self._thread_error = str(e)
+
+        t1 = threading.Thread(target=run_analysis)
         t1.start()
 
         dialog = ProgressDialog(self)
@@ -875,6 +887,10 @@ class ScientoPyGui(QMainWindow):
         t1.join()
 
         if globalVar.cancelProcess:
+            return
+
+        if self._thread_error:
+            QMessageBox.critical(self, "Error", self._thread_error)
             return
 
         apply_matplotlib_theme(QApplication.instance())

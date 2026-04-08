@@ -946,7 +946,7 @@ def sourcesStatics(paperDict, logWriter):
                 
             statics[paper["dataBase"]][matching_key] += 1
             statics[paper["dataBase"]]["Total"] += 1
-        except:
+        except (KeyError, TypeError):
             noDocumentTypeCount += 1
 
     # Put the percentajes

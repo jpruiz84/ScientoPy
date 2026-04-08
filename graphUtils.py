@@ -287,7 +287,7 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   plt.ylabel("Accumulative number of documents")
 
   if args.yLog:
-    ax0.set_yscale("symlog", nonposy='clip')
+    ax0.set_yscale("symlog", nonpositive='clip')
     ax0.get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax0.get_yaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
 

@@ -21,9 +21,10 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
+import sys
 import globalVar
 import argparse
-from ScientoPyClass import ScientoPyClass
+from ScientoPyClass import ScientoPyClass, ScientoPyError
 
 parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
 
@@ -96,6 +97,10 @@ parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.
 args = parser.parse_args()
 
 # Start scientoPy
-scientoPy = ScientoPyClass()
-scientoPy.scientoPy(args)
-scientoPy.plotResults(args)
+try:
+    scientoPy = ScientoPyClass()
+    scientoPy.scientoPy(args)
+    scientoPy.plotResults(args)
+except ScientoPyError as e:
+    print("ERROR: %s" % e)
+    sys.exit(1)
