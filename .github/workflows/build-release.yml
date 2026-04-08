@@ -1,0 +1,99 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows-x64
+            artifact_ext: zip
+          - os: ubuntu-22.04
+            platform: linux-x64
+            artifact_ext: tar.gz
+          - os: macos-14
+            platform: macos-arm64
+            artifact_ext: zip
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install Linux Qt dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgl1-mesa-glx \
+            libegl1 \
+            libxkbcommon0 \
+            libdbus-1-3 \
+            libxcb-cursor0 \
+            libxcb-icccm4 \
+            libxcb-keysyms1 \
+            libxcb-shape0
+
+      - name: Build with PyInstaller
+        run: pyinstaller ScientoPyGui.spec --noconfirm
+
+      - name: Package artifact (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/ScientoPyGui/* -DestinationPath ScientoPy-${{ matrix.platform }}.zip
+
+      - name: Package artifact (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          tar -czf ScientoPy-${{ matrix.platform }}.tar.gz -C dist ScientoPyGui
+
+      - name: Package artifact (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd dist && zip -r ../ScientoPy-${{ matrix.platform }}.zip ScientoPyGui
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScientoPy-${{ matrix.platform }}
+          path: ScientoPy-${{ matrix.platform }}.${{ matrix.artifact_ext }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

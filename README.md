@@ -20,15 +20,20 @@ It has the following main characteristics:
 - Graphical user interface
 
 
-Installation for Windows
-========================
+Download Pre-built Releases
+===========================
 
-1. Download the latest stable release from: <https://github.com/jpruiz84/ScientoPy/releases>
+Download the latest release for your platform from:
+<https://github.com/jpruiz84/ScientoPy/releases>
 
-2. Unzip the downloaded file and run ScientoPyGui.exe
+| Platform | File | Instructions |
+|---|---|---|
+| **Windows** (x64) | `ScientoPy-windows-x64.zip` | Extract and run `ScientoPyGui.exe` |
+| **Linux** (x64) | `ScientoPy-linux-x64.tar.gz` | Extract, then `chmod +x ScientoPyGui/ScientoPyGui && ./ScientoPyGui/ScientoPyGui` |
+| **macOS** (Apple Silicon) | `ScientoPy-macos-arm64.zip` | Extract, then right-click > Open (or `xattr -cr ScientoPyGui/`) to bypass Gatekeeper |
 
-For detailed instructions about ScientoPy Graphic User Interface, go to the user manual in 
-[Manual/ScientoPyGui_user_manual.pdf](./Manual/ScientoPyGui_user_manual.pdf) 
+For detailed instructions about the ScientoPy Graphic User Interface, see the user manual:
+[Manual/ScientoPyGui_user_manual.pdf](./Manual/ScientoPyGui_user_manual.pdf)
 
 Run ScientoPy from source (Linux, macOS, Windows)
 ==================================================

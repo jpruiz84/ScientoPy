@@ -23,5 +23,13 @@ data_*/
 # LibreOffice lock files
 .~lock.*#
 
+# PyInstaller build artifacts
+dist/
+build/
+*.spec.bak
+
+# User config
+scientopy_config.json
+
 # Sandbox
 sandbox/

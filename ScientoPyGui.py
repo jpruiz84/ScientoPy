@@ -48,6 +48,14 @@ from PreProcessClass import PreProcessClass
 from ScientoPyClass import ScientoPyClass
 from generateBibtex import generateBibtex
 
+def asset_path(filename):
+    """Resolve asset path for both PyInstaller bundle and source mode."""
+    if getattr(sys, 'frozen', False):
+        base = sys._MEIPASS
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, filename)
+
 CONFIG_FILE = "scientopy_config.json"
 
 HEADER_TOOLTIPS = {
@@ -231,8 +239,9 @@ class ScientoPyGui(QMainWindow):
             self.resize(1000, 600)
 
         # Window icon
-        if os.path.exists("scientopy_icon.png"):
-            self.setWindowIcon(QIcon("scientopy_icon.png"))
+        icon_path = asset_path("scientopy_icon.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         # Menu bar
         self._create_menu_bar()
@@ -315,7 +324,9 @@ class ScientoPyGui(QMainWindow):
             return
         app = QApplication.instance()
         dark = is_dark_mode(app)
-        logo_path = "scientopy_logo_dark.png" if dark and os.path.exists("scientopy_logo_dark.png") else "scientopy_logo.png"
+        dark_logo = asset_path("scientopy_logo_dark.png")
+        light_logo = asset_path("scientopy_logo.png")
+        logo_path = dark_logo if dark and os.path.exists(dark_logo) else light_logo
         if os.path.exists(logo_path):
             pixmap = QPixmap(logo_path)
             scaled = pixmap.scaled(400, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -334,8 +345,9 @@ class ScientoPyGui(QMainWindow):
 
         self.logo_label = QLabel()
         self.logo_label.setAlignment(Qt.AlignCenter)
-        if os.path.exists("scientopy_logo.png"):
-            pixmap = QPixmap("scientopy_logo.png")
+        logo_file = asset_path("scientopy_logo.png")
+        if os.path.exists(logo_file):
+            pixmap = QPixmap(logo_file)
             scaled = pixmap.scaled(400, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.logo_label.setPixmap(scaled)
         logo_container.addWidget(self.logo_label)
