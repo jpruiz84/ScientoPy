@@ -50,6 +50,8 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+version_file = 'version_info.py' if sys.platform == 'win32' else None
+
 exe = EXE(
     pyz,
     a.scripts,
@@ -61,6 +63,7 @@ exe = EXE(
     upx=True,
     console=False,
     icon=icon_file,
+    version=version_file,
 )
 
 coll = COLLECT(
