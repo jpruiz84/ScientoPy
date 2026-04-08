@@ -273,7 +273,7 @@ class ScientoPyClass:
                 topicList.append([topic[0]])
 
             if len(topicList) == 0:
-                print("\nFINISHED : There is not results with your inputs criteria or filter")
+                print("\nFINISHED: No results found for criterion '%s'" % args.criterion)
                 del papersDictInside
                 return
 

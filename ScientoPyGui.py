@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QDialog, QProgressBar, QFileDialog, QMessageBox,
     QMenuBar, QSizePolicy, QSpacerItem,
     QTableWidget, QTableWidgetItem, QHeaderView,
+    QStatusBar,
 )
 from PySide6.QtGui import QPixmap, QIcon, QAction, QActionGroup, QPalette, QColor, QKeySequence, QShortcut
 from PySide6.QtCore import Qt, QTimer
@@ -258,6 +259,11 @@ class ScientoPyGui(QMainWindow):
         self._create_preprocess_tab()
         self._create_analysis_tab()
         self._create_results_tab()
+
+        # Status bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        self.status_bar.showMessage("Ready")
         self._create_ext_results_tab()
 
         # Apply saved appearance
@@ -809,12 +815,29 @@ class ScientoPyGui(QMainWindow):
             QMessageBox.critical(self, "Error", "No dataset folder defined")
             return
 
+        if not os.path.isdir(dataset_path):
+            QMessageBox.critical(self, "Error", "Dataset folder not found: %s" % dataset_path)
+            return
+
+        # Validate folder contains CSV or TXT files
+        has_data_files = any(
+            f.lower().endswith(('.csv', '.txt'))
+            for f in os.listdir(dataset_path) if os.path.isfile(os.path.join(dataset_path, f))
+        )
+        if not has_data_files:
+            QMessageBox.critical(self, "Error",
+                                 "No CSV or TXT files found in: %s\n"
+                                 "Ensure the folder contains Scopus CSV or WoS TXT export files." % dataset_path)
+            return
+
         try:
             self.preprocess.dataInFolder = dataset_path
             self.preprocess.noRemDupl = not self.chk_remove_dupl.isChecked()
 
             globalVar.cancelProcess = False
             globalVar.progressPer = 0
+
+            self.status_bar.showMessage("Preprocessing dataset...")
 
             t1 = threading.Thread(target=self.preprocess.preprocess)
             t1.start()
@@ -825,20 +848,28 @@ class ScientoPyGui(QMainWindow):
             t1.join()
 
             if globalVar.cancelProcess:
+                self.status_bar.showMessage("Preprocessing canceled")
                 QMessageBox.critical(self, "Error", "Preprocessing canceled")
             elif globalVar.totalPapers > 0:
+                self.status_bar.showMessage(
+                    "Preprocessing complete \u2014 %d papers" % globalVar.totalPapers)
                 apply_matplotlib_theme(QApplication.instance())
                 self.preprocess.graphBrief()
                 self._load_results_table()
                 self.tabs.setCurrentIndex(2)  # Switch to Results tab
             elif globalVar.totalPapers == 0:
+                self.status_bar.showMessage("Preprocessing failed: no valid files")
                 QMessageBox.critical(self, "Error",
-                                     "No valid dataset files found in: %s" % dataset_path)
+                                     "No valid dataset files found in: %s\n"
+                                     "Ensure the folder contains Scopus CSV or WoS TXT export files." % dataset_path)
         except FileNotFoundError:
+            self.status_bar.showMessage("Error: folder not found")
             QMessageBox.critical(self, "Error", "Dataset folder not found: %s" % dataset_path)
         except PermissionError:
+            self.status_bar.showMessage("Error: permission denied")
             QMessageBox.critical(self, "Error", "Permission denied accessing: %s" % dataset_path)
         except Exception as e:
+            self.status_bar.showMessage("Error: preprocessing failed")
             QMessageBox.critical(self, "Error", "Preprocessing failed: %s" % str(e))
 
     def scientoPyRun(self):
@@ -849,8 +880,6 @@ class ScientoPyGui(QMainWindow):
             QMessageBox.critical(self, "Error",
                                  "No preprocess input dataset, please run the preprocess first")
             return
-
-        print(self.chk_previous_results.isChecked())
 
         self.scientoPy.closePlot()
 
@@ -871,6 +900,7 @@ class ScientoPyGui(QMainWindow):
             self.scientoPy.topics = ''
 
         self._thread_error = None
+        self.status_bar.showMessage("Running analysis...")
 
         def run_analysis():
             try:
@@ -887,11 +917,17 @@ class ScientoPyGui(QMainWindow):
         t1.join()
 
         if globalVar.cancelProcess:
+            self.status_bar.showMessage("Analysis canceled")
             return
 
         if self._thread_error:
+            self.status_bar.showMessage("Analysis failed")
             QMessageBox.critical(self, "Error", self._thread_error)
             return
+
+        topic_count = len(self.scientoPy.topicResults)
+        self.status_bar.showMessage(
+            "Analysis complete \u2014 %d topics found" % topic_count)
 
         apply_matplotlib_theme(QApplication.instance())
         self.scientoPy.plotResults()
@@ -916,8 +952,8 @@ class ScientoPyGui(QMainWindow):
         if not latex_file:
             return
 
-        print(latex_file)
         out_file = generateBibtex(latex_file)
+        self.status_bar.showMessage("BibTeX generated: %s" % os.path.basename(out_file))
         abs_path = os.path.abspath(out_file)
 
         msg = QMessageBox(self)
