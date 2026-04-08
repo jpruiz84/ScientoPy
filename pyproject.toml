@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
 authors = [
-    { name = "Juan Ruiz-Rosero", email = "jpruiz@unicauca.edu.co" },
+    { name = "Juan Ruiz-Rosero", email = "jpabloruiz@unicauca.edu.co" },
 ]
 keywords = ["scientometrics", "bibliometrics", "research", "analysis"]
 classifiers = [
