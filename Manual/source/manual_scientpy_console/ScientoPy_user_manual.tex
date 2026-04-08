@@ -156,15 +156,43 @@ This section describes the ScientoPy scripts to preprocess and analyze the bibli
 
 \subsection{Preprocessing}
 
-First we need to preprocess the downloaded dataset. This preprocess merge all the downloaded files from one folder to a single file. Also, this process remove the duplicated files. To preprocess the example dataset ("Bluetooth low energy"  downloaded in April 2, 2026, located in dataInExample) run this command inside ScientoPy folder:
+First we need to preprocess the downloaded dataset. The preprocessing improves the dataset readability and precision through the following steps:
+
+\begin{enumerate}
+\item \textbf{Document type filtering:} By default, ScientoPy filters publications classified as: Conference Paper, Article, Review, Proceedings Paper, or Article in Press. Other document types (book chapters, short surveys, letters, notes, editorials, erratum, reports, etc.) are excluded.
+
+\item \textbf{Field tags correlation:} WoS and Scopus use different field tags for their datasets. ScientoPy converts WoS two-character field tags to Scopus style fields and uses the Scopus format internally.
+
+\item \textbf{Author's name normalization:} To ensure consistency between WoS and Scopus author name formats, ScientoPy applies the following normalizations:
+\begin{itemize}
+\item Replace Scopus dot and comma separators with semicolons
+\item Remove dots and commas from WoS and Scopus author fields
+\item Remove accents marks and special characters
+\item Convert the first author last name to upper case
+\end{itemize}
+
+\item \textbf{Duplicated removal:} ScientoPy detects duplicated documents based on the DOI, the normalized title, and the normalized first author last name. When duplicates are found between WoS and Scopus, ScientoPy keeps the WoS document and removes the Scopus one. For duplicated documents with different ``cited by'' counts, ScientoPy calculates the average times cited between the two entries and assigns it to the kept document.
+
+\item \textbf{Times cited:} When a document is duplicated, the \textit{times cited} field often does not match between databases. ScientoPy gets the average times cited between the two duplicated documents and sets it in the document that is going to be kept. This value is used later for h-index calculations.
+
+\item \textbf{Country and institution extraction:} ScientoPy extracts the document's country from all author's affiliations (last section after the comma). Institution names are extracted from the first section before the comma in WoS documents' affiliation fields. Country names are normalized (e.g., ``USA'' $\to$ ``United States'', ``UK'' $\to$ ``United Kingdom'').
+\end{enumerate}
+
+To preprocess the example dataset (``Bluetooth low energy'' downloaded in April 2, 2026, located in dataInExample) run this command inside ScientoPy folder:
 \begin{verbatim}
 python3 preProcess.py dataInExample
 \end{verbatim}
 
-Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files: 
+Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files:
 \begin{itemize}
-\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data. 
-\item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results, such as duplicated papers removed, types of documents, and others. 
+\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data.
+\item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results. The columns in this table are:
+\begin{itemize}
+\item \textbf{Info:} description of the preprocessing statistic.
+\item \textbf{Number:} count of documents.
+\item \textbf{Percentage:} relative percentage. \textit{Omitted papers by document type} percentage is relative to \textit{Total loaded papers}. \textit{Papers from WoS/Scopus} percentages are relative to \textit{Total loaded papers}. \textit{Total duplicated papers found} percentage is relative to \textit{Total loaded papers}. \textit{Removed duplicated papers from WoS} percentage is relative to \textit{Papers from WoS}. \textit{Removed duplicated papers from Scopus} percentage is relative to \textit{Papers from Scopus}. \textit{Duplicated documents with different cited by} percentage is relative to \textit{Total duplicated papers found}. \textit{Papers from WoS/Scopus} (after removal) percentages are relative to \textit{Total papers after rem. dupl.}
+\item \textbf{Source, Conference Paper, Article, Review, Proceedings Paper, Article in Press, Total:} these columns show the document type breakdown per database source.
+\end{itemize}
 \end{itemize}
 
 To find more options of the preprocessing script you can run:
@@ -291,24 +319,70 @@ python3 scientoPy.py -c institutionWithCountry -f "United States"
 \item \verb|-s N| or \verb|--skipFirst N|: To filter the first top N elements from the results.
 \end{itemize}
 
+\subsection{Topics growth indicators}
+
+ScientoPy uses three different topic growth indicators to find trending topics and their relative/absolute growth. These indicators are included in the output results table.
+
+\subsubsection{Average Growth Rate (AGR)}
+
+The AGR is the average difference between the number of documents published in one year with the number of documents published in the previous year, inside a time frame. It indicates how the number of documents published for a topic has growth (positive number) or decline (negative number) on average. The AGR is calculated using the following equation:
+\begin{equation}
+AGR = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i - P_{i-1}}{(Y_e - Y_s)+1}
+\label{equation_AGR}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $AGR$ = Average growth rate
+\item $Y_s$ = Start year, calculated as $Y_s = Y_e - (\text{WindowWidth} + 1)$
+\item $Y_e$ = End year
+\item $P_i$ = Number of publications on year $i$
+\end{itemize}
+
+The default WindowWidth is 2 years. Thus, if the end year is 2025, the AGR is the average growth rate between 2023 and 2025.
+
+\subsubsection{Average Documents per Year (ADY)}
+
+The ADY is an absolute indicator that represents the average number of documents published inside a time frame for a specific topic. The ADY is calculated using the following equation:
+\begin{equation}
+ADY = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i}{(Y_e - Y_s)+1}
+\label{equation_ADY}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $ADY$ = Average documents per year
+\item $Y_s$ = Start year, calculated as described in Eq.~\ref{equation_AGR}
+\item $Y_e$ = End year
+\item $P_i$ = Number of publications on year $i$
+\end{itemize}
+
+\subsubsection{Percentage of Documents in Last Years (PDLY)}
+
+The PDLY is a relative indicator that represents the percentage of the ADY relative to the total number of documents for a specific topic. The PDLY is calculated using the following equation:
+\begin{equation}
+PDLY = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i}{(Y_e - Y_s + 1) \times TND} \times 100\%
+\label{equation_PDLY}
+\end{equation}
+
+where:
+\begin{itemize}
+\item $PDLY$ = Percentage of documents in last years
+\item $Y_s$ = Start year, calculated as described in Eq.~\ref{equation_AGR}
+\item $Y_e$ = End year
+\item $P_i$ = Number of publications on year $i$
+\item $TND$ = Total number of documents
+\end{itemize}
+
+\subsubsection{h-index}
+
+The h-index is extracted for each analyzed topic. A topic has an h-index of $h$ if $h$ of its documents have been cited at least $h$ times. The h-index is calculated using the \textit{times cited} field from the preprocessed dataset.
+
 \subsection{Finding trending topics}
 
-This script finds the top trending topics based on the higher average growth rate (AGR) over the others. The AGR is calculated on two years periods, using the following Equation \eqref{equation_AGR}:
-\begin{equation*}
-AGR = \frac{\sum\limits_{i = Y_s}^{Y_e}P_i - P_{i-1}}{(Y_e - Y_s)+1},  
-\label{equation_AGR}
-\end{equation*}
+ScientoPy can find trending topics by looking at the top author keywords based on the highest AGR (described in the ``Topics growth indicators'' section above).
 
-\setlength{\leftskip}{5cm}
-\hspace*{-1cm}where:\\
-$AGR$ = Average growth rate;\\
-$Y_s$ = Start year;\\
-$Y_e$ = End year;\\
-$P_i$ = Number of publications on year $i.$\\
-
-\setlength{\leftskip}{0pt}
-
-To find the top trending topics on author keywords criterion, you can run the following script: 
+To find the top trending topics on author keywords criterion, you can run the following script:
 
 \begin{verbatim}
 python3 scientoPy.py -c authorKeywords --trend --startYear 2015 --endYear 2025 \
@@ -375,8 +449,18 @@ These folders and output files are described bellow:
 	
 	\item \textbf{results: } output folder for scientoPy result output files
 	
-	\item \textbf{AuthorKeywords.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that shows the top topics or the custom  topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the h-index, and the documents per each year. 
-	
+	\item \textbf{AuthorKeywords.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that shows the top topics or the custom topics with the following columns:
+	\begin{itemize}
+	\item \textbf{Pos.:} Position in the ranking.
+	\item \textbf{[Criterion]:} The topic name for the selected criterion (e.g., AuthorKeywords, Country, Author, etc.).
+	\item \textbf{Total:} Total number of documents for this topic.
+	\item \textbf{AGR:} Average Growth Rate, the average difference in documents between consecutive years inside the window period. See Eq.~\ref{equation_AGR}.
+	\item \textbf{ADY:} Average Documents per Year, the average number of documents published per year inside the window period. See Eq.~\ref{equation_ADY}.
+	\item \textbf{PDLY:} Percentage of Documents in Last Years, the percentage of ADY relative to the total number of documents. See Eq.~\ref{equation_PDLY}.
+	\item \textbf{hIndex:} h-index for the topic. A topic has h-index $h$ if $h$ of its documents have been cited at least $h$ times.
+	\item \textbf{[Year columns]:} Number of documents published in each year within the analysis range.
+	\end{itemize}
+
 	\item \textbf{AuthorKeywords\_extended.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that show the top or custom topics with the documents related to each one.
 	
 	\item \textbf{papersPreprocessed.csv: } inside the results folder, this file contains the output papers from the last scientoPy used script. This is used as an input for scientoPy script when it use the option \verb|-r| or \verb|--previousResults|
@@ -400,7 +484,7 @@ ScientoPy has 5 different ways to graph the results described on Table \ref{tabl
 	Time line      & \verb|-g time_line| & Graphs the number of documents of each topic vs the publication year \\
 	Horizontal bars  & \verb|-g bar| & Graphs the total number of documents of each topic in horizontal bars \\
 	Horizontal bars trends  & \verb|-g bar_trends| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years \\
-	Evolution     & \verb|-g evolution| & Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the percentage of documents in the last years\\
+	Evolution     & \verb|-g evolution| & Graphs two plots: on the left, the accumulative number of documents (logarithmic scale) vs. the publication year, where the beginning of each line shows when the topic research started and the final value represents the total number of documents; on the right, a scatter plot of the Average Growth Rate (AGR) on the Y-axis vs. the Percentage of Documents in Last Years (PDLY) on the X-axis, allowing comparison of absolute and relative growth for each topic \\
 	Word cloud     & \verb|-g word_cloud| & Generate a word cloud based on the topic total number of publications \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
@@ -439,7 +523,7 @@ python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g bar_tr
 \end{center}
 
 \subsection{Evolution graph}
-Command: 
+Command:
 \begin{verbatim}
 python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g evolution
 \end{verbatim}
@@ -447,6 +531,12 @@ python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -g evolut
 \begin{center}
 	\includegraphics[width=0.75\textwidth]{./figures/graph_evolution.eps}
 \end{center}
+
+The evolution graph shows two panels:
+\begin{itemize}
+\item \textbf{Left panel (Accumulative documents):} The X-axis represents the publication year and the Y-axis the accumulative number of documents (in logarithmic scale). The beginning of each line indicates when the topic research started, and the final value of each line represents the total number of documents published for that topic.
+\item \textbf{Right panel (AGR vs. PDLY):} The Y-axis represents the AGR (Average Growth Rate) for the specified window period, and the X-axis represents the PDLY (Percentage of Documents in Last Years). Topics with higher AGR have the highest absolute growth, and topics with higher PDLY have the highest relative growth. This allows identifying which topics are trending (high AGR and high PDLY) versus which are established but declining.
+\end{itemize}
 
 
 \subsection{Word cloud graph}
@@ -460,4 +550,74 @@ python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -l 500 -g
 \end{center}
 
 
-\end{document}  
+\newpage
+\section{BibTeX generation}
+
+ScientoPy can automatically generate a BibTeX bibliography file from a LaTeX document. This feature matches \verb|\cite{}| keys used in the LaTeX file against the preprocessed dataset, and produces a \verb|.bib| file with the corresponding entries.
+
+\subsection{How it works}
+
+The \verb|generateBibtex.py| script performs the following steps:
+
+\begin{enumerate}
+\item Reads the input LaTeX file and extracts all \verb|\cite{key}| references from the document body (between \verb|\begin{document}| and \verb|\begin{thebibliography}|).
+\item Loads the preprocessed dataset (\verb|dataPre/papersPreprocessed.csv|).
+\item Matches each citation key against the EID field of the papers in the dataset.
+\item Generates BibTeX entries for matched papers:
+\begin{itemize}
+\item \verb|@Article{}| for journals, reviews, and articles in press.
+\item \verb|@Inproceedings{}| for conference papers and proceedings papers.
+\end{itemize}
+\item Handles author name formatting, converting Scopus and WoS formats into BibTeX's \verb|and|-separated format.
+\item Escapes LaTeX special characters (\verb|&|, \verb|_|) in titles and other fields.
+\item Saves the output file next to the input file, with the suffix \verb|_bibliography.bib|. For example, \verb|myPaper.tex| produces \verb|myPaper_bibliography.bib|.
+\end{enumerate}
+
+\subsection{Usage}
+
+\textbf{Prerequisites:} The preprocessing step must be completed first, so that the file \verb|dataPre/papersPreprocessed.csv| exists.
+
+\subsubsection{Using the cite keys}
+
+In your LaTeX document, use the paper's EID as the cite key. The EID can be found in the extended results file (\verb|results/*_extended.csv|) under the \textbf{EID} column. For example:
+
+\begin{verbatim}
+\cite{WOS:000363238300013}
+\cite{WOS:000371717205060, WOS:000380412500076}
+\end{verbatim}
+
+\subsubsection{Running from the command line}
+
+To generate the BibTeX file, run:
+
+\begin{verbatim}
+python3 generateBibtex.py latexExample/article_example.tex
+\end{verbatim}
+
+This will create the file \verb|latexExample/article_example_bibliography.bib|.
+
+\subsubsection{Compiling the LaTeX document}
+
+In your LaTeX document, reference the generated bibliography:
+
+\begin{verbatim}
+\bibliographystyle{unsrt}
+\bibliography{article_example_bibliography}
+\end{verbatim}
+
+Then compile with the standard LaTeX/BibTeX cycle:
+
+\begin{verbatim}
+pdflatex article_example
+bibtex article_example
+pdflatex article_example
+pdflatex article_example
+\end{verbatim}
+
+A Makefile is provided in the \verb|latexExample/| folder that automates this process. Run \verb|make| inside that folder to generate the bibliography and compile the PDF in one step.
+
+\subsubsection{Using the GUI}
+
+In the ScientoPy graphical interface, click the \textbf{Generate BibTeX} button on the Analysis tab. This will open a file dialog to select your LaTeX file, generate the bibliography, and open the resulting \verb|.bib| file.
+
+\end{document}

@@ -16,6 +16,7 @@ It has the following main characteristics:
 - Wildcard topics search
 - Trending topics using the top average growth rate (AGR)
 - Five different visualization graphs: bar, bar trends, timeline, evolution, and word cloud
+- Automatic BibTeX bibliography generation from LaTeX documents using paper EIDs as cite keys
 - Graphical user interface
 
 
@@ -304,6 +305,41 @@ following folder and files structure described bellow:
         contains the output papers from the last scientoPy used script. This
         is used as an input for scientoPy script when it use the option `-r`
         or `--previousResults`
+
+BibTeX generation
+-----------------
+
+ScientoPy can automatically generate a BibTeX bibliography file from a
+LaTeX document. Use the paper EID (found in the `EID` column of the
+extended results file `results/*_extended.csv`) as the cite key in your
+LaTeX document:
+
+    \cite{WOS:000363238300013}
+
+Then run the `generateBibtex.py` script:
+
+    python3 generateBibtex.py latexExample/article_example.tex
+
+This will create `latexExample/article_example_bibliography.bib` next to
+the input file. The script:
+
+- Extracts all `\cite{}` keys from the LaTeX document body
+- Matches them against the preprocessed dataset (`dataPre/papersPreprocessed.csv`)
+- Generates `@Article{}` entries for journals/reviews and `@Inproceedings{}` for conference papers
+- Handles author name formatting and LaTeX special character escaping
+
+Reference the generated file in your LaTeX document:
+
+    \bibliographystyle{unsrt}
+    \bibliography{article_example_bibliography}
+
+A Makefile is provided in `latexExample/` that automates the full
+build (bibliography generation + pdflatex/bibtex compilation). Run
+`make` inside that folder.
+
+This feature is also available from the GUI via the **Generate BibTeX**
+button on the Analysis tab.
+
 
 ScientoPy graph types
 =====================

@@ -422,8 +422,8 @@ class ScientoPyClass:
                 np.sum(topicItem["PapersCount"][self.startYearIndex: self.endYearIndex + 1])
 
             if topicItem["PapersTotal"] > 0:
-                topicItem["PerInLastYears"] = \
-                    100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"]
+                topicItem["PerInLastYears"] = round(
+                    100 * topicItem["PapersInLastYears"] / topicItem["PapersTotal"], 2)
 
         # Scale in percentage per year
         if args.pYear:

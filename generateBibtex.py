@@ -1,4 +1,4 @@
-# !/usr/bin/python3
+#!/usr/bin/env python3
 
 # The MIT License (MIT)
 # Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
@@ -96,7 +96,7 @@ def generateBibtex(inputLatexFile):
                 papersToBib.append(paper)
                 citesDict[paper["eid"]] = True
 
-    OUT_FILE = os.path.join(globalVar.LATEX_EXAMPLE_FOLDER, globalVar.OUTPUT_FILE_BIB)
+    OUT_FILE = os.path.splitext(inputLatexFile)[0] + '_bibliography.bib'
     ofile = open(OUT_FILE, 'w', encoding='utf-8')
 
     for paper in papersToBib:
@@ -113,18 +113,18 @@ def generateBibtex(inputLatexFile):
 
         # Preprocess fields
         paper["title"] = unidecode.unidecode(paper["title"])
-        paper["title"] = paper["title"].replace("&", "\&").replace("_", "\_")
+        paper["title"] = paper["title"].replace("&", "\\&").replace("_", "\\_")
         paper["title"] = paper["title"].replace('"', '``', 1).replace('"', "''")
 
         paper["sourceTitle"] = unidecode.unidecode(paper["sourceTitle"])
-        paper["sourceTitle"] = paper["sourceTitle"].replace("&", "\&").replace("_", "\_")
+        paper["sourceTitle"] = paper["sourceTitle"].replace("&", "\\&").replace("_", "\\_")
 
-        paper["pageCount"] = paper["pageCount"].replace("&", "\&").replace("_", "\_")
-        paper["publisher"] = paper["publisher"].replace("&", "\&").replace("_", "\_")
-        paper["publisherAddress"] = paper["publisherAddress"].replace("&", "\&").replace("_", "\_")
-        paper["conferenceTitle"] = paper["conferenceTitle"].replace("&", "\&").replace("_", "\_")
-        paper["conferenceLocation"] = paper["conferenceLocation"].replace("&", "\&").replace("_", "\_")
-        paper["conferenceDate"] = paper["conferenceDate"].replace("&", "\&").replace("_", "\_")
+        paper["pageCount"] = paper["pageCount"].replace("&", "\\&").replace("_", "\\_")
+        paper["publisher"] = paper["publisher"].replace("&", "\\&").replace("_", "\\_")
+        paper["publisherAddress"] = paper["publisherAddress"].replace("&", "\\&").replace("_", "\\_")
+        paper["conferenceTitle"] = paper["conferenceTitle"].replace("&", "\\&").replace("_", "\\_")
+        paper["conferenceLocation"] = paper["conferenceLocation"].replace("&", "\\&").replace("_", "\\_")
+        paper["conferenceDate"] = paper["conferenceDate"].replace("&", "\\&").replace("_", "\\_")
 
         if (paper["documentType"].split(";")[0] in ["Article", "Review", "Article in Press"]):
             ofile.write('@Article{%s,\n' % paper["eid"])
