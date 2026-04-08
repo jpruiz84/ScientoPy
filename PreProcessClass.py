@@ -72,7 +72,7 @@ class PreProcessClass:
         globalVar.totalPapers = 0
         globalVar.papersScopus = 0
         globalVar.papersWoS = 0
-        globalVar.omitedPapers = 0
+        globalVar.omittedPapers = 0
 
         self.preProcessBrief["totalLoadedPapers"] = 0
         self.preProcessBrief["omittedPapers"] = 0
@@ -126,7 +126,7 @@ class PreProcessClass:
         globalVar.OriginalTotalPapers = len(paperDict)
 
         self.preProcessBrief["totalLoadedPapers"] = globalVar.loadedPapers
-        self.preProcessBrief["omittedPapers"] = globalVar.omitedPapers
+        self.preProcessBrief["omittedPapers"] = globalVar.omittedPapers
         self.preProcessBrief["papersAfterRemOmitted"] = globalVar.OriginalTotalPapers
 
         self.preProcessBrief["loadedPapersScopus"] = globalVar.papersScopus
@@ -156,9 +156,9 @@ class PreProcessClass:
         logWriter.writerow(
             {
                 "Info": "Omitted papers by document type",
-                "Number": ("%d" % (globalVar.omitedPapers)),
+                "Number": ("%d" % (globalVar.omittedPapers)),
                 "Percentage": (
-                    "%.1f%%" % (100.0 * globalVar.omitedPapers / globalVar.loadedPapers)
+                    "%.1f%%" % (100.0 * globalVar.omittedPapers / globalVar.loadedPapers)
                 ),
             }
         )
@@ -197,7 +197,7 @@ class PreProcessClass:
             )
 
         print("Loaded papers: %s" % len(paperDict))
-        print("Omitted papers: %s" % globalVar.omitedPapers)
+        print("Omitted papers: %s" % globalVar.omittedPapers)
         print("total papers: %s" % globalVar.OriginalTotalPapers)
         print("WoS papers: %s" % globalVar.papersWoS)
         print("Scopus papers: %s" % globalVar.papersScopus)
@@ -278,7 +278,7 @@ class PreProcessClass:
         if args == "":
             args = self
 
-        graphUtils.grapPreprocess(plt, self.preProcessBrief)
+        graphUtils.graphPreprocess(plt, self.preProcessBrief)
 
         if args.graphTitle:
             plt.title(args.graphTitle)

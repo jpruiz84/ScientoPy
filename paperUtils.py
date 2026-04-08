@@ -135,7 +135,7 @@ def openFileToDict(ifile, papersDict):
             paperIn["volume"] = ""
             paperIn["issue"] = ""
             paperIn["artNo"] = ""
-            paperIn["pageSart"] = ""
+            paperIn["pageStart"] = ""
             paperIn["pageEnd"] = ""
             paperIn["pageCount"] = ""
             paperIn["link"] = ""
@@ -224,7 +224,7 @@ def openFileToDict(ifile, papersDict):
                 if headerCol == "Art. No.":
                     paperIn["artNo"] = col
                 if headerCol == "Page start":
-                    paperIn["pageSart"] = col
+                    paperIn["pageStart"] = col
                 if headerCol == "Page end":
                     paperIn["pageEnd"] = col
                 if headerCol == "Page count":
@@ -379,7 +379,7 @@ def openFileToDict(ifile, papersDict):
                 # if headerCol == "SI": paperIn[""] = col    # Special Issue
                 # if headerCol == "MA": paperIn[""] = col    # Meeting Abstract
                 if headerCol == "BP":
-                    paperIn["pageSart"] = col  # Beginning Page
+                    paperIn["pageStart"] = col  # Beginning Page
                 if headerCol == "EP":
                     paperIn["pageEnd"] = col  # Ending Page
                 if headerCol == "AR":
@@ -494,7 +494,7 @@ def openFileToDict(ifile, papersDict):
 
                 countries = []
                 institutions = []
-                institutionsWithCoutnry = []
+                institutionsWithCountry = []
 
                 # For each affiliation
                 for affiliation in affiliations:
@@ -555,26 +555,21 @@ def openFileToDict(ifile, papersDict):
                             ]:
                                 institutions.append(institution)
 
-                    institutionWithCoutnry = ""
+                    institutionWithCountry = ""
                     if institution != "":
-                        institutionWithCoutnry = "%s, %s" % (
+                        institutionWithCountry = "%s, %s" % (
                             institution.replace(",", ""),
                             country.replace(",", ""),
                         )
-                        if institutionWithCoutnry.upper() not in [
-                            x.upper() for x in institutionsWithCoutnry
+                        if institutionWithCountry.upper() not in [
+                            x.upper() for x in institutionsWithCountry
                         ]:
-                            institutionsWithCoutnry.append(institutionWithCoutnry)
+                            institutionsWithCountry.append(institutionWithCountry)
 
                     # print("\nOriginal: %s" % affiliation)
-                    # print("afSections: %s" % str(afSections))
-                    # print("country: %s" % country)
-                    # print("institution: %s" % institution)
-                    # print("institutionWithCoutnry: %s" % institutionWithCoutnry)
-
                 paperIn["country"] = ";".join(countries)
                 paperIn["institution"] = ";".join(institutions)
-                paperIn["institutionWithCountry"] = ";".join(institutionsWithCoutnry)
+                paperIn["institutionWithCountry"] = ";".join(institutionsWithCountry)
 
             # Get email host
             if paperIn["emailHost"] == "":
@@ -619,7 +614,7 @@ def openFileToDict(ifile, papersDict):
                     globalVar.papersScopus += 1
 
             else:
-                globalVar.omitedPapers += 1
+                globalVar.omittedPapers += 1
         rownum += 1
 
     ifile.close()

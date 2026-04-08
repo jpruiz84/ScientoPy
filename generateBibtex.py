@@ -83,13 +83,10 @@ def generateBibtex(inputLatexFile):
     print("Reading file: %s" % (INPUT_FILE))
     paperUtils.openFileToDict(ifile, papersDict)
     ifile.close()
-    print("Loaded %d docuemnts" % (len(papersDict)))
+    print("Loaded %d documents" % (len(papersDict)))
 
     # Find the number of total papers per year
-    count = 1
     for paper in papersDict:
-        # print("%d, %s" % (count, paper["title"]))
-        # count += 1
         if paper["eid"] in citesDict.keys():
             if citesDict[paper["eid"]] == False:
                 print("Added paper(%s): %s" % (paper["eid"], paper["title"]))
@@ -133,8 +130,8 @@ def generateBibtex(inputLatexFile):
             ofile.write('  Journal \t=\t"%s",\n' % paper["sourceTitle"])
             if paper["pageCount"]:
                 ofile.write('  Numpages\t=\t"%s",\n' % paper["pageCount"])
-            if paper["pageSart"] and paper["pageEnd"]:
-                ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
+            if paper["pageStart"] and paper["pageEnd"]:
+                ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageStart"], paper["pageEnd"]))
             if paper["volume"]:
                 ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
             if paper["artNo"]:
@@ -164,8 +161,8 @@ def generateBibtex(inputLatexFile):
                             (paper["conferenceTitle"], paper["conferenceDate"]))
             if paper["pageCount"]:
                 ofile.write('  Address\t=\t"%s",\n' % paper["pageCount"])
-            if paper["pageSart"] and paper["pageEnd"]:
-                ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageSart"], paper["pageEnd"]))
+            if paper["pageStart"] and paper["pageEnd"]:
+                ofile.write('  Pages \t=\t"%s-%s",\n' % (paper["pageStart"], paper["pageEnd"]))
             if paper["volume"]:
                 ofile.write('  Volume \t=\t"%s",\n' % paper["volume"])
             if paper["artNo"]:

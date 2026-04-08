@@ -258,11 +258,6 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
              linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
              zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], markeredgewidth=0.0)
 
-
-    #ax0.plot(x, y,
-    #         linewidth=1.5, marker=globalVar.MARKERS[count], markersize=12, markevery = [-1],
-    #         zorder=(len(topicResults) - count), color=globalVar.COLORS_TAB10[count], alpha = 0.25, markeredgewidth=0.0)
-
     ax0.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
@@ -295,7 +290,7 @@ def plot_evolution(plt, topicResults, agrStartYear, agrEndYear, args):
   plt.gcf().canvas.manager.set_window_title(args.criterion + ' evolution graph')
 
 
-def grapPreprocess(plt, preProcessBrief):
+def graphPreprocess(plt, preProcessBrief):
   ax = plt.gca()
   itemsName = ["WoS", "Scopus"]
 

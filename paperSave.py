@@ -61,7 +61,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["authorFull"] = paperOut["authorFull"]
       paperDicWrite["Issue"] = paperOut["issue"]
       paperDicWrite["Art. No."] = paperOut["artNo"]
-      paperDicWrite["Page start"] = paperOut["pageSart"]
+      paperDicWrite["Page start"] = paperOut["pageStart"]
       paperDicWrite["Page end"] = paperOut["pageEnd"]
       paperDicWrite["Page count"] = paperOut["pageCount"]
       paperDicWrite["Cited by"] = paperOut["citedBy"]
