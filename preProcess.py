@@ -38,8 +38,12 @@ parser.add_argument("--savePlot", default="",
 parser.add_argument("--graphTitle",
                     help="To put a title in the output graph", type=str)
 
-args = parser.parse_args()
+def main():
+    args = parser.parse_args()
+    preProcess = PreProcessClass()
+    preProcess.preprocess(args)
+    preProcess.graphBrief(args)
 
-preProcess = PreProcessClass()
-preProcess.preprocess(args)
-preProcess.graphBrief(args)
+
+if __name__ == '__main__':
+    main()

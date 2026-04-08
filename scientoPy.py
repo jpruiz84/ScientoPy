@@ -93,14 +93,16 @@ parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.
   'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
 
 
-# Parse arguments
-args = parser.parse_args()
+def main():
+    args = parser.parse_args()
+    try:
+        sp = ScientoPyClass()
+        sp.scientoPy(args)
+        sp.plotResults(args)
+    except ScientoPyError as e:
+        print("ERROR: %s" % e)
+        sys.exit(1)
 
-# Start scientoPy
-try:
-    scientoPy = ScientoPyClass()
-    scientoPy.scientoPy(args)
-    scientoPy.plotResults(args)
-except ScientoPyError as e:
-    print("ERROR: %s" % e)
-    sys.exit(1)
+
+if __name__ == '__main__':
+    main()
