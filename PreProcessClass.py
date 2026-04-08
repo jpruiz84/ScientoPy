@@ -301,7 +301,3 @@ class PreProcessClass:
                 "Plot saved on: "
                 + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot)
             )
-
-        if args.savePlot == "":
-            if self.fromGui:
-                plt.show()

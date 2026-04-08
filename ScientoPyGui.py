@@ -580,7 +580,7 @@ class ScientoPyGui(QMainWindow):
         if not os.path.exists(filepath):
             return
 
-        with open(filepath, "r", newline="") as f:
+        with open(filepath, "r", newline="", encoding="utf-8") as f:
             reader = csv.reader(f)
             rows = list(reader)
 
@@ -670,7 +670,7 @@ class ScientoPyGui(QMainWindow):
         if not os.path.exists(filepath):
             return
 
-        with open(filepath, "r", newline="") as f:
+        with open(filepath, "r", newline="", encoding="utf-8") as f:
             reader = csv.reader(f)
             rows = list(reader)
 

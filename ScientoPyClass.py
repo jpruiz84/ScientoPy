@@ -583,7 +583,3 @@ class ScientoPyClass:
             plt.savefig(os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot),
                         bbox_inches='tight', pad_inches=0.01)
             print("Plot saved on: " + os.path.join(globalVar.GRAPHS_OUT_FOLDER, args.savePlot))
-
-        if args.savePlot == "":
-            if self.fromGui:
-                plt.show()
