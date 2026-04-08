@@ -312,6 +312,20 @@ class ScientoPyClass:
         print("Calculating papers statistics...")
         globalVar.progressText = "Calculating papers statistics"
 
+        # Build lookup structures for O(1) topic matching
+        # exactLookup: uppercase subtopic string -> list of topicItem indices
+        exactLookup = {}
+        # wildcardPatterns: list of (compiled regex, topicItem index)
+        wildcardPatterns = []
+
+        for tIdx, topicItem in enumerate(self.topicResults):
+            for subTopic in topicItem["allTopics"]:
+                subUp = subTopic.upper()
+                if args.topics and "*" in subUp:
+                    wildcardPatterns.append((re.compile(subUp.replace("*", ".*")), tIdx))
+                else:
+                    exactLookup.setdefault(subUp, []).append(tIdx)
+
         papersLen = len(papersDictInside)
         papersCounter = 0
 
@@ -326,40 +340,37 @@ class ScientoPyClass:
 
             # For each item in paper criteria
             for item in paper[args.criterion].split(";"):
-                # Strip paper item and upper
                 item = item.strip()
                 itemUp = item.upper()
 
-                # For each topic in topic results
-                for topicItem in self.topicResults:
-                    # for each sub topic
-                    for subTopic in topicItem["allTopics"]:
+                # Collect matching topic indices
+                matchedIndices = set()
 
-                        # Check if the sub topic match with the paper item
-                        if args.topics and "*" in subTopic.upper():
-                            subTopicRegex = subTopic.upper().replace("*", ".*")
-                            p = re.compile(subTopicRegex)
-                            match = p.match(itemUp)
-                        else:
-                            match = subTopic.upper() == itemUp
+                # Exact lookup: O(1)
+                if itemUp in exactLookup:
+                    matchedIndices.update(exactLookup[itemUp])
 
-                        # If match, sum it to the topicItem
-                        if match:
-                            yearIndex = topicItem["year"].index(int(paper["year"]))
-                            topicItem["PapersCount"][yearIndex] += 1
-                            topicItem["PapersTotal"] += 1
-                            topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
-                            topicItem["CitedByTotal"] += int(paper["citedBy"])
-                            # If no name in the topicItem, put the first one that was found
-                            if topicItem["name"] == "":
-                                topicItem["name"] = item
-                            topicItem["papers"].append(paper)
-                            # Add the matched paper to the papersDictOut
-                            papersDictOut.append(paper)
+                # Wildcard patterns
+                for pattern, tIdx in wildcardPatterns:
+                    if pattern.match(itemUp):
+                        matchedIndices.add(tIdx)
 
-                            # If it is a new topic, add it to topicItem["topicsFound"]
-                            if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
-                                topicItem["topicsFound"].append(item)
+                # Apply matches
+                for tIdx in matchedIndices:
+                    topicItem = self.topicResults[tIdx]
+                    yearIndex = topicItem["year"].index(int(paper["year"]))
+                    topicItem["PapersCount"][yearIndex] += 1
+                    topicItem["PapersTotal"] += 1
+                    topicItem["CitedByCount"][yearIndex] += int(paper["citedBy"])
+                    topicItem["CitedByTotal"] += int(paper["citedBy"])
+                    if topicItem["name"] == "":
+                        topicItem["name"] = item
+                    topicItem["papers"].append(paper)
+                    papersDictOut.append(paper)
+
+                    if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
+                        topicItem["topicsFound"].append(item)
+
                 # Only process one (the first one) if args.onlyFirst
                 if args.onlyFirst:
                     break

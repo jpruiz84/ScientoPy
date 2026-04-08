@@ -720,85 +720,90 @@ def removeDuplicates(paperDict, logWriter=None, preProcessBrief=None):
     print("Removing duplicates...")
     globalVar.progressText = "Removing duplicates"
 
-    countMatch2 = 0
-    progressPerPrev = 0
-    # Run on paper list
-    for i in range(0, len(paperDict)):
-        match = True
-        while match:
-            # If we are on the last paper in the list
-            if i >= (len(paperDict) - 1):
-                match = False
+    # Build DOI lookup for O(1) matching
+    doi_to_index = {}
+    for idx, paper in enumerate(paperDict):
+        if paper["doi"] != "":
+            doi_to_index.setdefault(paper["doi"], []).append(idx)
+
+    # Mark duplicates using sorted adjacent comparison + DOI lookup
+    removed = set()
+    total = len(paperDict)
+
+    for i in range(total - 1):
+        if i in removed:
+            continue
+
+        j = i + 1
+        while j < total:
+            if j in removed:
+                j += 1
                 continue
 
-            # Compare first author last name and titleB in uppercase
+            # Compare first author last name and normalized title
             match = (
                 paperDict[i]["firstAuthorLastName"]
-                == paperDict[i + 1]["firstAuthorLastName"]
+                == paperDict[j]["firstAuthorLastName"]
+                and paperDict[i]["titleB"] == paperDict[j]["titleB"]
             )
-            match &= paperDict[i]["titleB"] == paperDict[i + 1]["titleB"]
-            if paperDict[i]["doi"] != "":
-                match |= paperDict[i]["doi"] == paperDict[i + 1]["doi"]
+            # Also match by DOI if available
+            if not match and paperDict[i]["doi"] != "":
+                match = paperDict[i]["doi"] == paperDict[j]["doi"]
 
-            match2 = (paperDict[i]["year"] != paperDict[i + 1]["year"]) & match
-            if match2 == True:
-                countMatch2 += 1
-                # print(countMatch2)
+            if not match:
+                break  # Sorted by titleB, so no more adjacent matches
 
-            # If the criterion match
-            if match == True:
-                # print("\nPaper %s duplicated with %s" %  (i, i+1))
+            # Mark j for removal (j is Scopus since WoS sorted first)
+            removed.add(j)
 
-                # print("Dup A: %s, %s" % (paperDict[i]["title"], paperDict[i]["year"]))
-                # print("Authors: %s, Database: %s, Cited by: %s" %
-                # (paperDict[i]["author"], paperDict[i]["dataBase"], paperDict[i]["citedBy"]))
+            if paperDict[j]["dataBase"] == "WoS":
+                removedPapersWoS += 1
+            elif paperDict[j]["dataBase"] == "Scopus":
+                removedPapersScopus += 1
 
-                # print("Dup B: %s, %s" % (paperDict[i+1]["title"], paperDict[i+1]["year"]))
-                # print("Authors: %s, Database: %s, Cited by: %s" %
-                # (paperDict[i+1]["author"], paperDict[i+1]["dataBase"], paperDict[i+1]["citedBy"]))
+            paperDict[i]["duplicatedIn"].append(paperDict[j]["eid"])
 
-                # Update the removed count
-                if paperDict[i + 1]["dataBase"] == "WoS":
+            if int(paperDict[i]["citedBy"]) != int(paperDict[j]["citedBy"]):
+                duplicatedWithDifferentCitedBy += 1
+
+            # Average the two citedBy
+            paperDict[i]["citedBy"] = int(
+                (int(paperDict[j]["citedBy"]) + int(paperDict[i]["citedBy"])) / 2
+            )
+
+            duplicatedPapersCount += 1
+            j += 1
+
+        # Update progress
+        progressPer = int(float(i) / float(total) * 100)
+        globalVar.progressPer = progressPer
+        if globalVar.cancelProcess:
+            return 0
+        if i % 500 == 0:
+            sys.stdout.write("\r%d%%  " % progressPer)
+            sys.stdout.flush()
+
+    # Also check DOI-based duplicates that are not adjacent after sorting
+    for doi, indices in doi_to_index.items():
+        live = [idx for idx in indices if idx not in removed]
+        if len(live) > 1:
+            keeper = live[0]
+            for dup_idx in live[1:]:
+                removed.add(dup_idx)
+                if paperDict[dup_idx]["dataBase"] == "WoS":
                     removedPapersWoS += 1
-
-                if paperDict[i + 1]["dataBase"] == "Scopus":
+                elif paperDict[dup_idx]["dataBase"] == "Scopus":
                     removedPapersScopus += 1
-
-                # print("Removing: %s" % paperDict[i+1]["dataBase"])
-
-                # Add all duplicated in duplicatedIn
-                # paperDict[i]["duplicatedIn"] = ";".join(paperDict[i]["duplicatedIn"].split(";") + [paperDict[i+1]["eid"]])
-                # paperDict[i]["duplicatedIn"] += (paperDict[i + 1]["eid"] + ";")
-                paperDict[i]["duplicatedIn"].append(paperDict[i + 1]["eid"])
-
-                # Find how many duplicated documents has different cited by
-                if int(paperDict[i]["citedBy"]) != int(paperDict[i + 1]["citedBy"]):
+                paperDict[keeper]["duplicatedIn"].append(paperDict[dup_idx]["eid"])
+                if int(paperDict[keeper]["citedBy"]) != int(paperDict[dup_idx]["citedBy"]):
                     duplicatedWithDifferentCitedBy += 1
-
-                # Average the two citedBy
-                paperDict[i]["citedBy"] = int(
-                    (int(paperDict[i + 1]["citedBy"]) + int(paperDict[i]["citedBy"]))
-                    / 2
+                paperDict[keeper]["citedBy"] = int(
+                    (int(paperDict[dup_idx]["citedBy"]) + int(paperDict[keeper]["citedBy"])) / 2
                 )
-
-                # Remove paper i + 1
-                paperDict.remove(paperDict[i + 1])
-
-                # Update progress percentage
                 duplicatedPapersCount += 1
-                progressPer = int(float(i) / float(len(paperDict)) * 100)
-                globalVar.progressPer = progressPer
 
-                if globalVar.cancelProcess:
-                    return 0
-
-                if progressPerPrev != progressPer:
-                    progressPerPrev = progressPer
-                    time.sleep(0.001)
-                    if progressPer < 100:
-                        # print("p: %d" % progressPer)
-                        sys.stdout.write("\r%d%%  " % (int(progressPer)))
-                        sys.stdout.flush()
+    # Rebuild list without removed papers
+    paperDict = [p for i, p in enumerate(paperDict) if i not in removed]
 
     print("\nDuplicated papers found: %s" % duplicatedPapersCount)
     print("Original papers count: %s" % globalVar.OriginalTotalPapers)
