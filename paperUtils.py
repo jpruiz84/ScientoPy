@@ -424,7 +424,7 @@ def openFileToDict(ifile, papersDict):
                 colnum += 1
 
             # Omit papers with invalid year
-            if not paperIn["year"].isdigit():
+            if not paperIn["year"].isdigit() or not (1900 <= int(paperIn["year"]) <= 2100):
                 continue
 
             # Omit papers without title

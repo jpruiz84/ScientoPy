@@ -140,6 +140,15 @@ def load_config():
         "last_dataset_folder": "",
         "window_geometry": "1000x600",
         "splitter_sizes": [280, 600],
+        "criterion": "authorKeywords",
+        "graph_type": "bar_trends",
+        "start_year": globalVar.DEFAULT_START_YEAR,
+        "end_year": globalVar.DEFAULT_END_YEAR,
+        "topics_length": 10,
+        "skip_first": 0,
+        "window_width": 2,
+        "previous_results": False,
+        "trend_analysis": False,
     }
     if os.path.exists(CONFIG_FILE):
         try:
@@ -265,6 +274,14 @@ class ScientoPyGui(QMainWindow):
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Ready")
         self._create_ext_results_tab()
+
+        # Keyboard shortcuts
+        QShortcut(QKeySequence("Ctrl+O"), self, activated=self.select_dataset)
+        QShortcut(QKeySequence("Ctrl+R"), self, activated=self._run_current_tab)
+        QShortcut(QKeySequence("Ctrl+1"), self, activated=lambda: self.tabs.setCurrentIndex(0))
+        QShortcut(QKeySequence("Ctrl+2"), self, activated=lambda: self.tabs.setCurrentIndex(1))
+        QShortcut(QKeySequence("Ctrl+3"), self, activated=lambda: self.tabs.setCurrentIndex(2))
+        QShortcut(QKeySequence("Ctrl+4"), self, activated=lambda: self.tabs.setCurrentIndex(3))
 
         # Apply saved appearance
         self._apply_appearance(self.config.get("appearance_mode", "System"))
@@ -419,7 +436,9 @@ class ScientoPyGui(QMainWindow):
 
         self.combo_criterion = QComboBox()
         self.combo_criterion.addItems(globalVar.validCriterion)
-        self.combo_criterion.setCurrentIndex(3)
+        saved_criterion = self.config.get("criterion", "authorKeywords")
+        idx = globalVar.validCriterion.index(saved_criterion) if saved_criterion in globalVar.validCriterion else 3
+        self.combo_criterion.setCurrentIndex(idx)
         self.combo_criterion.setToolTip(
             "Field to analyze: author, sourceTitle, authorKeywords,\n"
             "indexKeywords, bothKeywords, abstract, documentType,\n"
@@ -428,7 +447,9 @@ class ScientoPyGui(QMainWindow):
 
         self.combo_graph_type = QComboBox()
         self.combo_graph_type.addItems(globalVar.validGrapTypes)
-        self.combo_graph_type.setCurrentIndex(0)
+        saved_graph = self.config.get("graph_type", "bar_trends")
+        gidx = globalVar.validGrapTypes.index(saved_graph) if saved_graph in globalVar.validGrapTypes else 0
+        self.combo_graph_type.setCurrentIndex(gidx)
         self.combo_graph_type.setToolTip(
             "Visualization type:\n"
             "bar_trends - Horizontal bars with percentage in last years\n"
@@ -440,7 +461,7 @@ class ScientoPyGui(QMainWindow):
 
         self.spin_start_year = QSpinBox()
         self.spin_start_year.setRange(1900, 2100)
-        self.spin_start_year.setValue(globalVar.DEFAULT_START_YEAR)
+        self.spin_start_year.setValue(self.config.get("start_year", globalVar.DEFAULT_START_YEAR))
         self.spin_start_year.setToolTip(
             "Start year for the analysis range.\n"
             "Papers published before this year are excluded.")
@@ -448,7 +469,7 @@ class ScientoPyGui(QMainWindow):
 
         self.spin_end_year = QSpinBox()
         self.spin_end_year.setRange(1900, 2100)
-        self.spin_end_year.setValue(globalVar.DEFAULT_END_YEAR)
+        self.spin_end_year.setValue(self.config.get("end_year", globalVar.DEFAULT_END_YEAR))
         self.spin_end_year.setToolTip(
             "End year for the analysis range.\n"
             "Papers published after this year are excluded.")
@@ -456,7 +477,7 @@ class ScientoPyGui(QMainWindow):
 
         self.spin_topics_length = QSpinBox()
         self.spin_topics_length.setRange(0, 1000)
-        self.spin_topics_length.setValue(10)
+        self.spin_topics_length.setValue(self.config.get("topics_length", 10))
         self.spin_topics_length.setToolTip(
             "Number of top topics to extract and display.\n"
             "Default: 10")
@@ -464,7 +485,7 @@ class ScientoPyGui(QMainWindow):
 
         self.spin_skip_first = QSpinBox()
         self.spin_skip_first.setRange(0, 1000)
-        self.spin_skip_first.setValue(0)
+        self.spin_skip_first.setValue(self.config.get("skip_first", 0))
         self.spin_skip_first.setToolTip(
             "Skip the first N topics from the results.\n"
             "Useful to filter dominant topics that overshadow others.\n"
@@ -473,7 +494,7 @@ class ScientoPyGui(QMainWindow):
 
         self.spin_window_width = QSpinBox()
         self.spin_window_width.setRange(1, 100)
-        self.spin_window_width.setValue(2)
+        self.spin_window_width.setValue(self.config.get("window_width", 2))
         self.spin_window_width.setToolTip(
             "Window width in years for AGR, ADY, and PDLY calculation.\n"
             "Start year for indicators: Ys = EndYear - (WindowWidth + 1)\n"
@@ -483,6 +504,7 @@ class ScientoPyGui(QMainWindow):
         left_layout.addLayout(form)
 
         self.chk_previous_results = QCheckBox("Use previous results")
+        self.chk_previous_results.setChecked(self.config.get("previous_results", False))
         self.chk_previous_results.setToolTip(
             "Analyze based on the output documents from the last run.\n"
             "For example, first extract papers from a country, then\n"
@@ -490,6 +512,7 @@ class ScientoPyGui(QMainWindow):
         left_layout.addWidget(self.chk_previous_results)
 
         self.chk_trend_analysis = QCheckBox("Trend analysis")
+        self.chk_trend_analysis.setChecked(self.config.get("trend_analysis", False))
         self.chk_trend_analysis.setToolTip(
             "Find trending topics based on the highest Average Growth Rate (AGR).\n"
             "Extracts the top 200 topics, calculates AGR for the window period,\n"
@@ -783,6 +806,14 @@ class ScientoPyGui(QMainWindow):
     def _copy_all_ext_cells(self):
         self._copy_all_from(self.ext_results_table)
 
+    def _run_current_tab(self):
+        """Ctrl+R handler: run preprocess or analysis depending on active tab."""
+        idx = self.tabs.currentIndex()
+        if idx == 0:
+            self.run_preprocess()
+        elif idx == 1:
+            self.scientoPyRun()
+
     # ── Actions ───────────────────────────────────────────────
 
     def select_dataset(self):
@@ -978,6 +1009,16 @@ class ScientoPyGui(QMainWindow):
         self.config["window_geometry"] = "%dx%d" % (self.width(), self.height())
         if hasattr(self, 'analysis_splitter'):
             self.config["splitter_sizes"] = self.analysis_splitter.sizes()
+        # Save analysis parameters
+        self.config["criterion"] = self.combo_criterion.currentText()
+        self.config["graph_type"] = self.combo_graph_type.currentText()
+        self.config["start_year"] = self.spin_start_year.value()
+        self.config["end_year"] = self.spin_end_year.value()
+        self.config["topics_length"] = self.spin_topics_length.value()
+        self.config["skip_first"] = self.spin_skip_first.value()
+        self.config["window_width"] = self.spin_window_width.value()
+        self.config["previous_results"] = self.chk_previous_results.isChecked()
+        self.config["trend_analysis"] = self.chk_trend_analysis.isChecked()
         save_config(self.config)
         event.accept()
 

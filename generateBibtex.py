@@ -43,33 +43,24 @@ def generateBibtex(inputLatexFile):
     rawtext = fileobject.read()
     fileobject.close()
 
-    start = '\\begin{document}'
-    end = '\\begin{thebibliography}'
-    bodytext = rawtext[rawtext.find(start) + len(start):rawtext.rfind(end)]
+    # Extract body text between \begin{document} and \begin{thebibliography}
+    doc_start = rawtext.find('\\begin{document}')
+    bib_start = rawtext.rfind('\\begin{thebibliography}')
+    if doc_start >= 0:
+        doc_start += len('\\begin{document}')
+    else:
+        doc_start = 0
+    if bib_start < 0:
+        bib_start = len(rawtext)
+    bodytext = rawtext[doc_start:bib_start]
 
-    # Extracts the cites keys
+    # Extract citation keys using regex
     citesDict = {}
-    for char in range(0, len(bodytext) - 10):
-        if bodytext[char:char + 6] == '\\cite{':
-            cite = ''
-            char += len('\\cite{')
-            while (bodytext[char] != '}'):
-                if (bodytext[char] == ' '):
-                    char += 1
-                elif (bodytext[char] == ','):
-                    char += 1
-                    if cite in citesDict.keys():
-                        cite = ''
-                    else:
-                        citesDict[cite] = False
-                        cite = ''
-                else:
-                    cite += (bodytext[char])
-                    char += 1
-            if cite in citesDict.keys():
-                pass
-            else:
-                citesDict[cite] = False
+    for match in re.findall(r'\\cite\{([^}]+)\}', bodytext):
+        for key in match.split(','):
+            key = key.strip()
+            if key and key not in citesDict:
+                citesDict[key] = False
 
     print("%d cites found." % len(citesDict))
 
