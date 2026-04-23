@@ -39,7 +39,7 @@ See doc/performance_improvement_spec.md for the rationale.
 """
 
 import os
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import polars as pl
 
@@ -181,8 +181,8 @@ def load_folder(folder, papersDict, max_workers=None):
     plus counter tallies. The main process aggregates counters into globalVar
     and concatenates the paper lists.
 
-    This is CPU-bound work (unidecode + regex + list comprehensions dominate),
-    so multiprocessing is the right tool — threads would be GIL-bound.
+    File reading is I/O-bound and Polars CSV parsing releases the GIL (Rust),
+    so threads provide real parallelism without fork-safety issues in the GUI.
 
     max_workers: cap on the number of worker processes. Defaults to
     os.cpu_count(), which saturates the machine for the AI dataset.
@@ -212,7 +212,7 @@ def load_folder(folder, papersDict, max_workers=None):
     max_workers = max(1, min(max_workers, total))
 
     done = 0
-    with ProcessPoolExecutor(max_workers=max_workers) as pool:
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = {pool.submit(_process_file_worker, p): p for p in files}
         for fut in as_completed(futures):
             if globalVar.cancelProcess:
@@ -376,7 +376,7 @@ def compute_dedup_keys_parallel(papersDict, max_workers=None):
     chunk_size = (total + max_workers - 1) // max_workers
     chunks = [pairs[i : i + chunk_size] for i in range(0, total, chunk_size)]
 
-    with ProcessPoolExecutor(max_workers=max_workers) as pool:
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         results = list(pool.map(_dedup_keys_chunk, chunks))
 
     # Stitch key tuples back into the original dicts, in order.
