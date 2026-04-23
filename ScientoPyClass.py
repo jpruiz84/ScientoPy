@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
 import paperUtils
+import paperIO
 import paperSave
 import globalVar
 import os
@@ -61,6 +62,7 @@ class ScientoPyClass:
         self.trend = False
         self.yLog = False
         self.filter = ""
+        self.saveExtended = False
         self.fromGui = from_gui
 
         # Working variables
@@ -69,7 +71,9 @@ class ScientoPyClass:
         self.extResultsFileName = ''
         self.lastPreviousResults = ''
         self.preprocessBriefFileName = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.PREPROCESS_LOG_FILE)
-        self.preprocessDatasetFile = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+        self.preprocessDatasetFile = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_PARQUET)
+        self.legacyDatasetFile = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+        self.lastAnalysisFile = os.path.join(globalVar.RESULTS_FOLDER, globalVar.LAST_ANALYSIS_FILE)
         self.topicResults = []
         self.yearArray = []
         self.startYearIndex = 0
@@ -108,13 +112,16 @@ class ScientoPyClass:
         if not os.path.exists(os.path.join(globalVar.RESULTS_FOLDER)):
             os.makedirs(os.path.join(globalVar.RESULTS_FOLDER))
 
-        # Select the input file
+        # Select the input file.
+        #   --previousResults -> results/lastAnalysis.parquet (written by the
+        #       previous scientoPy run; small, fast, internal)
+        #   otherwise         -> dataPre/papersPreprocessed.parquet (canonical
+        #       preprocessed corpus). Falls back to the legacy CSV if a user
+        #       upgrades without re-running preprocess.
         if args.previousResults:
-            INPUT_FILE = os.path.join(globalVar.RESULTS_FOLDER, globalVar.OUTPUT_FILE_NAME)
+            INPUT_FILE = self.lastAnalysisFile
         else:
-            INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
-
-
+            INPUT_FILE = self.preprocessDatasetFile
 
         # Start the output list empty
         papersDictOut = []
@@ -133,23 +140,38 @@ class ScientoPyClass:
         if loadDataSet:
             self.papersDict = []
             self.lastPreviousResults = args.previousResults
-            # Open the storage database and add to sel.fpapersDict
-            if not os.path.isfile(INPUT_FILE):
-                raise ScientoPyError("File not found: %s\nMake sure you have run the preprocess step first." % INPUT_FILE)
 
-            ifile = open(INPUT_FILE, "r", encoding='utf-8')
-            print("Reading file: %s" % (INPUT_FILE))
-            globalVar.progressPer = 10
-
-            paperUtils.openFileToDict(ifile, self.papersDict)
-            ifile.close()
+            if os.path.isfile(INPUT_FILE):
+                print("Reading file: %s" % INPUT_FILE)
+                globalVar.progressPer = 10
+                self.papersDict = paperIO.read_preprocessed(INPUT_FILE)
+            elif not args.previousResults and os.path.isfile(self.legacyDatasetFile):
+                # Backwards-compat: a legacy papersPreprocessed.csv exists
+                # but no Parquet. Parse the CSV the old way, then write a
+                # Parquet next to it so the next run is fast.
+                print(
+                    "Reading legacy CSV (Parquet not found): %s" % self.legacyDatasetFile
+                )
+                globalVar.progressPer = 10
+                with open(self.legacyDatasetFile, "r", encoding="utf-8") as ifile:
+                    paperUtils.openFileToDict(ifile, self.papersDict)
+                try:
+                    paperIO.write_preprocessed(self.papersDict, self.preprocessDatasetFile)
+                    print("Converted legacy CSV -> Parquet: %s" % self.preprocessDatasetFile)
+                except Exception as e:
+                    print("WARN: could not write Parquet shim: %s" % e)
+            else:
+                raise ScientoPyError(
+                    "File not found: %s\nMake sure you have run the preprocess step first."
+                    % INPUT_FILE
+                )
 
             if globalVar.cancelProcess:
                 return
 
             # If reading previous results, remove possible duplicated from multiple topics
             if args.previousResults:
-                self.papersDict= paperUtils.removeDuplicates(self.papersDict)
+                self.papersDict = paperUtils.removeDuplicates(self.papersDict)
 
             print("Scopus papers: %s" % globalVar.papersScopus)
             print("WoS papers: %s" % globalVar.papersWoS)
@@ -502,12 +524,28 @@ class ScientoPyClass:
         if globalVar.cancelProcess:
             return
 
-        self.extResultsFileName = paperSave.saveExtendedResults(self.topicResults, args.criterion, args.savePlot)
+        # Extended-results CSV is NO LONGER written automatically. It can
+        # be huge (100 k+ rows on the AI corpus) and slow to save/load.
+        # Opt in via:
+        #   * the --saveExtended CLI flag on scientoPy.py
+        #   * the GUI Export tab (source = "Extended results (last analysis)")
+        # The in-memory data (self.topicResults) is always kept so the GUI
+        # Extended Results tab and the on-demand exporter can use it.
+        self.extResultsFileName = ""
+        if getattr(args, "saveExtended", False):
+            self.extResultsFileName = paperSave.saveExtendedResults(
+                self.topicResults, args.criterion, args.savePlot
+            )
 
-        # Only save results if that is result of a not previous result
+        # Persist the matched papers as a small Parquet so a follow-up
+        # scientoPy run with --previousResults can chain off of it.
+        # This is NOT the Scopus/WoS-style export the user would hand out;
+        # the Export tab / exportPapers.py CLI handles that explicitly.
         if not args.previousResults:
-            paperSave.saveResults(papersDictOut, os.path.join(globalVar.RESULTS_FOLDER,
-                                                              globalVar.OUTPUT_FILE_NAME))
+            try:
+                paperIO.write_preprocessed(papersDictOut, self.lastAnalysisFile)
+            except Exception as e:
+                print("WARN: could not write %s: %s" % (self.lastAnalysisFile, e))
         del papersDictInside
         globalVar.progressPer = 101
         print("\nAnalysis finished.")
@@ -520,8 +558,7 @@ class ScientoPyClass:
             return
 
         # If more than 100 results and not wordCloud, no plot.
-        if len(self.topicResults) > 100 and not args.graphType == "word_cloud" and not args.noPlot:
-            args.noPlot = True
+        if len(self.topicResults) > 100 and args.graphType != "word_cloud":
             print("\nERROR: Not allowed to graph more than 100 results")
             return
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,12 @@ import globalVar
 import argparse
 from ScientoPyClass import ScientoPyClass, ScientoPyError
 
-parser = argparse.ArgumentParser(description="Analyze the topics inside a criterion")
+parser = argparse.ArgumentParser(
+    description="Analyze the topics inside a criterion",
+    epilog="To export analysis results (the CSVs produced under results/) or "
+           "the full preprocessed corpus, run: "
+           "./exportPapers.py --source {results,preprocessed} --format {scopus,wos}",
+)
 
 parser.add_argument("-c","--criterion", choices=globalVar.validCriterion, default= "authorKeywords",
 help="Select the criterion to analyze the topics")
@@ -91,6 +96,12 @@ help="Get and graph the top trending topics, with the highest average growth rat
 
 parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.'
   'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
+
+parser.add_argument("--saveExtended",
+help="Also save the extended per-document results CSV "
+     "(results/<Criterion>_extended.csv). Disabled by default because the file "
+     "can reach hundreds of thousands of rows on large corpora. Also available "
+     "from the GUI Export tab.", action="store_true")
 
 
 def main():

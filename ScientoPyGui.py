@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,45 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
 import sys
+import threading
+
+# ── Startup splash ────────────────────────────────────────────────────────────
+# Appears before any heavy import (PySide6, matplotlib, polars, …) using only
+# tkinter (stdlib) so the user gets immediate feedback in < 0.2 s.
+_splash_done = threading.Event()
+
+def _run_splash():
+    try:
+        import tkinter as tk
+        root = tk.Tk()
+        root.overrideredirect(True)
+        root.attributes('-topmost', True)
+        root.configure(bg='#1a3a5c')
+        w, h = 320, 90
+        sw = root.winfo_screenwidth()
+        sh = root.winfo_screenheight()
+        root.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
+        tk.Label(root, text="ScientoPy", fg='white', bg='#1a3a5c',
+                 font=('Helvetica', 22, 'bold')).pack(expand=True)
+        tk.Label(root, text="Loading...", fg='#aaaacc', bg='#1a3a5c',
+                 font=('Helvetica', 11)).pack(pady=(0, 12))
+        root.update()
+        while not _splash_done.wait(timeout=0.05):
+            try:
+                root.update()
+            except Exception:
+                break
+        root.destroy()
+    except Exception:
+        pass
+
+_splash_thread = threading.Thread(target=_run_splash, daemon=True)
+_splash_thread.start()
+# ─────────────────────────────────────────────────────────────────────────────
+
 import os
 import json
 import csv
-import threading
 import webbrowser
 
 import matplotlib
@@ -40,14 +75,12 @@ from PySide6.QtWidgets import (
     QMenuBar, QSizePolicy, QSpacerItem,
     QTableWidget, QTableWidgetItem, QHeaderView,
     QStatusBar,
+    QRadioButton, QButtonGroup, QGroupBox,
 )
 from PySide6.QtGui import QPixmap, QIcon, QAction, QActionGroup, QPalette, QColor, QKeySequence, QShortcut
 from PySide6.QtCore import Qt, QTimer
 
 import globalVar
-from PreProcessClass import PreProcessClass
-from ScientoPyClass import ScientoPyClass, ScientoPyError
-from generateBibtex import generateBibtex
 
 def asset_path(filename):
     """Resolve asset path for both PyInstaller bundle and source mode."""
@@ -235,8 +268,8 @@ class ScientoPyGui(QMainWindow):
         super().__init__()
 
         self.config = load_config()
-        self.scientoPy = ScientoPyClass(from_gui=True)
-        self.preprocess = PreProcessClass(from_gui=True)
+        self._scientoPy = None   # lazy-initialized on first use
+        self._preprocess = None  # lazy-initialized on first use
 
         self.setWindowTitle("ScientoPy")
         self.setMinimumSize(853, 480)
@@ -272,8 +305,9 @@ class ScientoPyGui(QMainWindow):
         # Status bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Ready")
+        self.status_bar.showMessage("ScientoPy loading...")
         self._create_ext_results_tab()
+        self._create_export_tab()
 
         # Keyboard shortcuts
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.select_dataset)
@@ -282,9 +316,26 @@ class ScientoPyGui(QMainWindow):
         QShortcut(QKeySequence("Ctrl+2"), self, activated=lambda: self.tabs.setCurrentIndex(1))
         QShortcut(QKeySequence("Ctrl+3"), self, activated=lambda: self.tabs.setCurrentIndex(2))
         QShortcut(QKeySequence("Ctrl+4"), self, activated=lambda: self.tabs.setCurrentIndex(3))
+        QShortcut(QKeySequence("Ctrl+5"), self, activated=lambda: self.tabs.setCurrentIndex(4))
 
         # Apply saved appearance
         self._apply_appearance(self.config.get("appearance_mode", "System"))
+
+    # ── Lazy-loaded heavy dependencies ───────────────────────
+
+    @property
+    def scientoPy(self):
+        if self._scientoPy is None:
+            from ScientoPyClass import ScientoPyClass
+            self._scientoPy = ScientoPyClass(from_gui=True)
+        return self._scientoPy
+
+    @property
+    def preprocess(self):
+        if self._preprocess is None:
+            from PreProcessClass import PreProcessClass
+            self._preprocess = PreProcessClass(from_gui=True)
+        return self._preprocess
 
     # ── Menu Bar ──────────────────────────────────────────────
 
@@ -616,9 +667,13 @@ class ScientoPyGui(QMainWindow):
 
         layout.addLayout(bottom_row)
 
-        # Load existing results if available
+        # Defer pre-loading so heavy modules are not imported before the window shows
+        QTimer.singleShot(0, self._post_show_init)
+
+    def _post_show_init(self):
         if os.path.exists(self.scientoPy.preprocessBriefFileName):
             self._load_results_table()
+        self.status_bar.showMessage("Ready")
 
     def _load_results_table(self, filepath=None):
         if filepath is None:
@@ -742,23 +797,36 @@ class ScientoPyGui(QMainWindow):
         layout.addLayout(bottom_row)
 
     def _load_ext_results_table(self, filepath):
+        """Load an Extended Results CSV from disk (only used when the user
+        exports or when -- in legacy flows -- such a file already exists)."""
         if not os.path.exists(filepath):
             return
-
         with open(filepath, "r", newline="", encoding="utf-8") as f:
             reader = csv.reader(f)
             rows = list(reader)
-
         if not rows:
             return
+        self._populate_ext_results(
+            rows[0], rows[1:], source_label=os.path.basename(filepath)
+        )
 
-        headers = rows[0]
-        data = rows[1:]
+    def _populate_ext_results_from_topics(self, topicResults, criterion):
+        """Populate the Extended Results tab directly from the in-memory
+        topicResults produced by the last analysis — no CSV round-trip."""
+        import paperSave
+        headers, data = paperSave.extendedResultsRows(topicResults, criterion)
+        self._populate_ext_results(
+            headers, data, source_label="last analysis (in memory)"
+        )
+
+    def _populate_ext_results(self, headers, data, source_label=""):
+        total = len(data)
 
         self.ext_results_table.setSortingEnabled(False)
+        self.ext_results_table.clearContents()
 
         self.ext_results_table.setColumnCount(len(headers))
-        self.ext_results_table.setRowCount(len(data))
+        self.ext_results_table.setRowCount(total)
         self.ext_results_table.setHorizontalHeaderLabels(headers)
 
         for c, header in enumerate(headers):
@@ -766,28 +834,290 @@ class ScientoPyGui(QMainWindow):
             if item:
                 item.setToolTip(self._get_header_tooltip(header))
 
-        for r, row in enumerate(data):
-            for c, cell in enumerate(row):
-                text = cell.strip()
-                try:
-                    float(text)
-                    item = NumericTableWidgetItem(text)
-                    item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                except ValueError:
-                    item = QTableWidgetItem(text)
-                self.ext_results_table.setItem(r, c, item)
+        # Large-table handling: on the AI-scale corpus the extended-results
+        # CSV can run to 100 k+ rows. Blindly calling setItem 14 × 100 k
+        # times followed by per-column ResizeToContents + resizeRowsToContents
+        # (both O(rows × cols)) freezes the main thread long enough for
+        # Wayland to pop a "Not Responding" dialog. We mitigate with two
+        # techniques: (1) chunked loading with processEvents() every N rows
+        # so the UI stays responsive and a progress label updates, and
+        # (2) skipping the expensive resize-to-contents passes above a row
+        # threshold — users can drag header dividers on the rare column
+        # that needs widening.
+        CHUNK = 2000
+        RESIZE_LIMIT = 3000
+        app = QApplication.instance()
+        self.ext_results_table.setUpdatesEnabled(False)
+
+        try:
+            for r, row in enumerate(data):
+                for c, cell in enumerate(row):
+                    text = cell.strip()
+                    try:
+                        float(text)
+                        item = NumericTableWidgetItem(text)
+                        item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    except ValueError:
+                        item = QTableWidgetItem(text)
+                    self.ext_results_table.setItem(r, c, item)
+                if total > CHUNK and r and r % CHUNK == 0:
+                    # Temporarily re-enable updates so the user sees the new
+                    # chunk render, pump events, then disable again for the
+                    # next batch.
+                    self.ext_results_table.setUpdatesEnabled(True)
+                    self.ext_results_status_label.setText(
+                        "Loading extended results… %d / %d  (%d%%)"
+                        % (r, total, int(100 * r / total))
+                    )
+                    app.processEvents()
+                    self.ext_results_table.setUpdatesEnabled(False)
+        finally:
+            self.ext_results_table.setUpdatesEnabled(True)
 
         self.ext_results_table.setSortingEnabled(True)
 
-        for col in range(len(headers)):
-            self.ext_results_table.horizontalHeader().setSectionResizeMode(
-                col, QHeaderView.ResizeMode.ResizeToContents
+        if total <= RESIZE_LIMIT:
+            for col in range(len(headers)):
+                self.ext_results_table.horizontalHeader().setSectionResizeMode(
+                    col, QHeaderView.ResizeMode.ResizeToContents
+                )
+            self.ext_results_table.resizeRowsToContents()
+            self.ext_results_status_label.setText(
+                "Showing %d extended results from %s" % (total, source_label)
+            )
+        else:
+            # Sensible interactive defaults without paying for content
+            # measurement across every row.
+            for col in range(len(headers)):
+                self.ext_results_table.horizontalHeader().setSectionResizeMode(
+                    col, QHeaderView.ResizeMode.Interactive
+                )
+            self.ext_results_status_label.setText(
+                "Showing %d extended results from %s  "
+                "(column auto-resize skipped for large tables — drag the "
+                "header dividers to widen a column)"
+                % (total, source_label)
             )
 
-        self.ext_results_table.resizeRowsToContents()
-        self.ext_results_status_label.setText(
-            "Showing extended results from: %s" % os.path.basename(filepath)
+    # ── Export Tab ────────────────────────────────────────────
+
+    def _create_export_tab(self):
+        page = QWidget()
+        self.tabs.addTab(page, "5. Export")
+        layout = QVBoxLayout(page)
+
+        # Source
+        src_group = QGroupBox("Source")
+        src_layout = QVBoxLayout(src_group)
+        self.rb_src_preprocessed = QRadioButton(
+            "Preprocessed corpus (dataPre/papersPreprocessed.parquet)")
+        self.rb_src_preprocessed.setToolTip(
+            "Export the full deduplicated corpus as a single CSV.")
+        self.rb_src_results = QRadioButton(
+            "Last analysis results (results/*.csv)")
+        self.rb_src_results.setToolTip(
+            "Copy the CSVs produced by the last analysis run into the\n"
+            "chosen destination folder.")
+        self.rb_src_extended = QRadioButton(
+            "Extended results (last analysis, per-document)")
+        self.rb_src_extended.setToolTip(
+            "Write the detailed per-document extended-results CSV for the\n"
+            "last analysis still in memory. This file is no longer produced\n"
+            "automatically because it can be very large on big corpora.")
+        self.rb_src_preprocessed.setChecked(True)
+        self._src_group = QButtonGroup(self)
+        self._src_group.addButton(self.rb_src_preprocessed)
+        self._src_group.addButton(self.rb_src_results)
+        self._src_group.addButton(self.rb_src_extended)
+        src_layout.addWidget(self.rb_src_preprocessed)
+        src_layout.addWidget(self.rb_src_results)
+        src_layout.addWidget(self.rb_src_extended)
+        layout.addWidget(src_group)
+
+        # Format
+        fmt_group = QGroupBox("Format")
+        fmt_layout = QVBoxLayout(fmt_group)
+        self.rb_fmt_scopus = QRadioButton("Scopus fields")
+        self.rb_fmt_wos = QRadioButton("WoS fields")
+        self.rb_fmt_scopus.setChecked(True)
+        self._fmt_group = QButtonGroup(self)
+        self._fmt_group.addButton(self.rb_fmt_scopus)
+        self._fmt_group.addButton(self.rb_fmt_wos)
+        fmt_layout.addWidget(self.rb_fmt_scopus)
+        fmt_layout.addWidget(self.rb_fmt_wos)
+        layout.addWidget(fmt_group)
+
+        # Destination
+        dest_group = QGroupBox("Destination")
+        dest_layout = QHBoxLayout(dest_group)
+        self.export_path_entry = QLineEdit()
+        self.export_path_entry.setPlaceholderText(
+            "e.g., export/papersPreprocessed.csv  (or a folder for 'results')")
+        dest_layout.addWidget(self.export_path_entry, stretch=1)
+        browse_btn = QPushButton("Browse…")
+        browse_btn.clicked.connect(self._browse_export_path)
+        dest_layout.addWidget(browse_btn)
+        layout.addWidget(dest_group)
+
+        layout.addStretch(1)
+
+        # Bottom row
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        self.export_btn = QPushButton("Export")
+        self.export_btn.clicked.connect(self._run_export)
+        btn_row.addWidget(self.export_btn)
+        layout.addLayout(btn_row)
+
+        # Re-evaluate enabled state and default destination whenever the
+        # source selection changes, so the path field suggests a sensible
+        # default for each mode.
+        self._src_group.buttonClicked.connect(self._update_export_enabled)
+        self._update_export_enabled()
+
+    def _default_export_path(self):
+        if self.rb_src_preprocessed.isChecked():
+            return os.path.join("export", globalVar.OUTPUT_FILE_NAME)
+        if self.rb_src_extended.isChecked():
+            criterion = getattr(self.scientoPy, "criterion", "analysis")
+            crit = criterion[0].upper() + criterion[1:] if criterion else "analysis"
+            return os.path.join("export", crit + "_extended.csv")
+        return os.path.join("export", "results")
+
+    def _browse_export_path(self):
+        if self.rb_src_results.isChecked():
+            path = QFileDialog.getExistingDirectory(
+                self, "Select destination folder",
+                self.export_path_entry.text() or self._default_export_path(),
+            )
+        else:
+            path, _ = QFileDialog.getSaveFileName(
+                self, "Save CSV as",
+                self.export_path_entry.text() or self._default_export_path(),
+                "CSV files (*.csv);;All files (*.*)",
+            )
+        if path:
+            self.export_path_entry.setText(path)
+
+    def _update_export_enabled(self, *_):
+        # The Format group only applies to the preprocessed-corpus path.
+        fmt_applies = self.rb_src_preprocessed.isChecked()
+        for rb in (self.rb_fmt_scopus, self.rb_fmt_wos):
+            rb.setEnabled(fmt_applies)
+
+        # Disabled whenever the chosen source has no data to export.
+        if self.rb_src_preprocessed.isChecked():
+            parquet = os.path.join(
+                globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_PARQUET
+            )
+            legacy = os.path.join(
+                globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME
+            )
+            enabled = os.path.isfile(parquet) or os.path.isfile(legacy)
+            tip = "" if enabled else "No preprocessed corpus found. Run Preprocess first."
+        elif self.rb_src_results.isChecked():
+            results_dir = globalVar.RESULTS_FOLDER
+            enabled = os.path.isdir(results_dir) and any(
+                f.lower().endswith(".csv")
+                and f != globalVar.LAST_ANALYSIS_FILE
+                for f in os.listdir(results_dir)
+            )
+            tip = "" if enabled else "No results CSVs found. Run an analysis first."
+        else:  # extended
+            enabled = bool(self._scientoPy and getattr(self._scientoPy, "topicResults", []))
+            tip = ("" if enabled else
+                   "Run an analysis in this session before exporting extended results.")
+        self.export_btn.setEnabled(enabled)
+        self.export_btn.setToolTip(tip)
+
+        if not self.export_path_entry.text():
+            self.export_path_entry.setText(self._default_export_path())
+
+    def _run_export(self):
+        if self.rb_src_preprocessed.isChecked():
+            source = "preprocessed"
+        elif self.rb_src_results.isChecked():
+            source = "results"
+        else:
+            source = "extended"
+        fmt = "scopus" if self.rb_fmt_scopus.isChecked() else "wos"
+        output = self.export_path_entry.text().strip() or None
+
+        # Reset progress state and run the export on a worker thread so the
+        # GUI stays responsive and the ProgressDialog can poll progressText /
+        # progressPer in real time (banner on entry, percentage while the
+        # CSV is being written).
+        globalVar.cancelProcess = False
+        globalVar.progressPer = 0
+        globalVar.progressText = "Starting export…"
+
+        self._export_result = None
+        self._export_error = None
+
+        # Snapshot the in-memory analysis state (the worker thread runs off
+        # the main thread; grabbing references here keeps things simple).
+        topics = list(getattr(self.scientoPy, "topicResults", []) or [])
+        criterion = getattr(self.scientoPy, "criterion", "analysis")
+
+        def run_export():
+            try:
+                if source == "extended":
+                    import paperSave
+                    out = output or os.path.join(
+                        "export",
+                        (criterion[0].upper() + criterion[1:] if criterion else "analysis")
+                        + "_extended.csv",
+                    )
+                    globalVar.progressText = "Writing extended results"
+                    self._export_result = paperSave.saveExtendedResults(
+                        topics, criterion, "", outPath=out,
+                    )
+                else:
+                    import exportPapers
+                    self._export_result = exportPapers.export(source, fmt, output)
+            except FileNotFoundError as e:
+                self._export_error = ("missing", str(e))
+            except Exception as e:
+                self._export_error = ("failed", str(e))
+            finally:
+                # Make absolutely sure the ProgressDialog closes even if the
+                # export raised before reaching the finally block in export().
+                globalVar.progressPer = 101
+
+        self.status_bar.showMessage("Exporting…")
+        t = threading.Thread(target=run_export)
+        t.start()
+        dialog = ProgressDialog(self)
+        dialog.exec()
+        t.join()
+
+        if self._export_error is not None:
+            kind, msg = self._export_error
+            title = "Export failed" if kind == "failed" else "Export failed"
+            QMessageBox.critical(self, title, msg if kind == "missing"
+                                 else "Unexpected error: %s" % msg)
+            self.status_bar.showMessage("Export failed")
+            return
+
+        written = self._export_result
+        abs_path = os.path.abspath(written)
+        self.status_bar.showMessage("Exported to %s" % abs_path)
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setWindowTitle("Export complete")
+        msg.setText("Export finished successfully.")
+        msg.setInformativeText(
+            '<a href="file://%s">%s</a>' % (abs_path, abs_path)
         )
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        open_btn = msg.addButton("Open", QMessageBox.ButtonRole.ActionRole)
+        msg.addButton(QMessageBox.StandardButton.Ok)
+        msg.exec()
+        if msg.clickedButton() == open_btn:
+            webbrowser.open(
+                abs_path if os.path.isdir(abs_path) else os.path.dirname(abs_path)
+            )
 
     # ── Copy Helpers ──────────────────────────────────────────
 
@@ -912,15 +1242,17 @@ class ScientoPyGui(QMainWindow):
             QMessageBox.critical(self, "Error", "Dataset folder not found: %s" % dataset_path)
             return
 
-        # Validate folder contains CSV or TXT files
-        has_data_files = any(
-            f.lower().endswith(('.csv', '.txt'))
-            for f in os.listdir(dataset_path) if os.path.isfile(os.path.join(dataset_path, f))
-        )
+        # Validate folder contains CSV or TXT files (recursively).
+        has_data_files = False
+        for _root, _dirs, names in os.walk(dataset_path):
+            if any(n.lower().endswith(('.csv', '.txt')) for n in names):
+                has_data_files = True
+                break
         if not has_data_files:
             QMessageBox.critical(self, "Error",
-                                 "No CSV or TXT files found in: %s\n"
-                                 "Ensure the folder contains Scopus CSV or WoS TXT export files." % dataset_path)
+                                 "No CSV or TXT files found under: %s\n"
+                                 "Ensure the folder (or any sub-folder) contains\n"
+                                 "Scopus CSV or WoS TXT export files." % dataset_path)
             return
 
         try:
@@ -949,6 +1281,7 @@ class ScientoPyGui(QMainWindow):
                 apply_matplotlib_theme(QApplication.instance())
                 self.preprocess.graphBrief()
                 self._load_results_table()
+                self._update_export_enabled()
                 self.tabs.setCurrentIndex(2)  # Switch to Results tab
             elif globalVar.totalPapers == 0:
                 self.status_bar.showMessage("Preprocessing failed: no valid files")
@@ -966,6 +1299,7 @@ class ScientoPyGui(QMainWindow):
             QMessageBox.critical(self, "Error", "Preprocessing failed: %s" % str(e))
 
     def scientoPyRun(self):
+        from ScientoPyClass import ScientoPyError
         globalVar.cancelProcess = False
         globalVar.progressPer = 0
 
@@ -1025,12 +1359,35 @@ class ScientoPyGui(QMainWindow):
         apply_matplotlib_theme(QApplication.instance())
         self.scientoPy.plotResults()
 
+        # plotResults() calls plt.show(block=False), which queues Qt paint
+        # events for the new figure window. If we immediately start
+        # populating the extended-results table (can be 10 k+ rows with
+        # per-column ResizeToContents), Qt can't run those paint events
+        # until our heavy loop returns — the figure stays blank for ~5 s.
+        # Pump events once so the window appears, then defer the heavy
+        # table load to the next event-loop tick.
+        app = QApplication.instance()
+        app.processEvents()
+
+        # Results table is small (<= 200 rows); load it now.
         if self.scientoPy.resultsFileName:
             self._load_results_table(self.scientoPy.resultsFileName)
-        if self.scientoPy.extResultsFileName:
-            self._load_ext_results_table(self.scientoPy.extResultsFileName)
+        self._update_export_enabled()
         if self.scientoPy.resultsFileName:
             self.tabs.setCurrentIndex(2)  # Switch to Results tab
+        app.processEvents()
+
+        # Extended results can be very large — defer so the plot paints
+        # and the Results tab is interactive before we block the UI again.
+        # Populate from the in-memory topicResults (no disk round-trip;
+        # the CSV is only written on-demand via the Export tab / --saveExtended).
+        topics = list(self.scientoPy.topicResults)
+        criterion = self.scientoPy.criterion
+        if topics:
+            QTimer.singleShot(
+                0,
+                lambda t=topics, c=criterion: self._populate_ext_results_from_topics(t, c),
+            )
 
     def generate_bibtex(self):
         if not os.path.exists(self.scientoPy.preprocessDatasetFile):
@@ -1045,6 +1402,7 @@ class ScientoPyGui(QMainWindow):
         if not latex_file:
             return
 
+        from generateBibtex import generateBibtex
         out_file = generateBibtex(latex_file)
         self.status_bar.showMessage("BibTeX generated: %s" % os.path.basename(out_file))
         abs_path = os.path.abspath(out_file)
@@ -1090,6 +1448,10 @@ def runGui():
     app.setApplicationName("ScientoPy")
 
     window = ScientoPyGui()
+
+    _splash_done.set()
+    _splash_thread.join(timeout=0.5)
+
     window.show()
 
     sys.exit(app.exec())

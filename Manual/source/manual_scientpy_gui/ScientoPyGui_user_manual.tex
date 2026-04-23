@@ -119,7 +119,15 @@ pip install -r requirements.txt
 
 \section{Interface overview}
 
-ScientoPy uses a PySide6 (Qt 6) graphical interface with four tabs, a menu bar, and a status bar. The window is resizable with a minimum size of 853$\times$480 pixels.
+ScientoPy uses a PySide6 (Qt 6) graphical interface with five tabs, a menu bar, and a status bar. The window is resizable with a minimum size of 853$\times$480 pixels. The five tabs are:
+
+\begin{enumerate}
+\item \textbf{1. Pre-processing} -- select the dataset folder and run the parallel Polars-based preprocessing pipeline.
+\item \textbf{2. Analysis} -- configure and run a scientometric analysis.
+\item \textbf{3. Results} -- browse the top-topic table from the last analysis (or the preprocessing brief right after a preprocess run).
+\item \textbf{4. Extended Results} -- per-document table with the papers that contributed to each top topic.
+\item \textbf{5. Export} -- on-demand CSV export of the preprocessed corpus or the analysis results (Scopus- or WoS-style fields).
+\end{enumerate}
 
 \begin{center}
 	\includegraphics[width=0.85\textwidth]{./figures/gui_preprocess_tab.png}
@@ -134,7 +142,7 @@ ScientoPy uses a PySide6 (Qt 6) graphical interface with four tabs, a menu bar, 
 \begin{itemize}
 \item \textbf{Ctrl+O} -- Browse and select a dataset folder
 \item \textbf{Ctrl+R} -- Run (preprocess on Tab 1, analysis on Tab 2)
-\item \textbf{Ctrl+1/2/3/4} -- Switch to the corresponding tab
+\item \textbf{Ctrl+1/2/3/4/5} -- Switch to the corresponding tab
 \item \textbf{Ctrl+C} -- Copy selected cells in the Results or Extended Results tables
 \end{itemize}
 
@@ -191,15 +199,15 @@ First we need to preprocess the downloaded dataset. This preprocess merges all t
 \end{center}
 
 \begin{enumerate}
-\item Click the \verb|Browse| button, and select the folder that contains the downloaded dataset. For the example dataset, select the folder \verb|dataInExample| inside the ScientoPy directory. Alternatively, use the keyboard shortcut \textbf{Ctrl+O}.
+\item Click the \verb|Browse| button, and select the folder that contains the downloaded dataset. The folder is scanned \textbf{recursively}, so Scopus and WoS exports can be placed in sub-directories. For the example dataset, select the folder \verb|dataInExample| inside the ScientoPy directory. Alternatively, use the keyboard shortcut \textbf{Ctrl+O}.
 \item Ensure the \verb|Remove duplicated documents| checkbox is checked (default).
-\item Click the \verb|Run preprocess| button (or press \textbf{Ctrl+R}). A progress dialog will appear showing the preprocessing status.
+\item Click the \verb|Run preprocess| button (or press \textbf{Ctrl+R}). A progress dialog appears and shows each stage of the pipeline: \verb|[1/4] Loading papers|, \verb|[2/4] Disambiguating Scopus author names|, \verb|[3/4] Removing duplicates|, and \verb|[4/4] Saving preprocessed corpus|, with a progress bar per stage.
 \item After preprocessing completes, the preprocess brief graph will appear and the application will automatically switch to the \textbf{3. Results} tab showing the preprocess brief table.
 \end{enumerate}
 
 As result, inside the folder \verb|ScientoPy/dataPre| you will find the following files:
 \begin{itemize}
-\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used as input data for the analysis.
+\item \textbf{papersPreprocessed.parquet:} canonical preprocessed corpus (Apache Parquet, Zstd-compressed). This is the input used by every subsequent analysis. To get a Scopus- or WoS-style CSV copy, use the \textbf{5. Export} tab (Section~\ref{sec_export_tab}).
 \item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statistics results, such as duplicated papers removed, types of documents, and others.
 \end{itemize}
 
@@ -326,7 +334,7 @@ To find the top trending topics, check the \verb|Trend analysis| checkbox and cl
 
 \subsection{Analysis based on the previous results}
 
-ScientoPy generates an output file with all the output documents from the last run. For example, if you run an analysis with criterion \verb|country| and custom topic \verb|Canada|, ScientoPy creates a documents output file (\verb|results/papersPreprocessed.csv|) with all documents that have authors with affiliation in Canada.
+ScientoPy generates a lightweight internal file with all the output documents from the last run so that subsequent analyses can chain off it. For example, if you run an analysis with criterion \verb|country| and custom topic \verb|Canada|, ScientoPy writes \verb|results/lastAnalysis.parquet| with every document whose authors are affiliated in Canada. In previous versions this file was a CSV called \verb|results/papersPreprocessed.csv|; analyses no longer write any CSV automatically. Use the \textbf{5. Export} tab (Section~\ref{sec_export_tab}) if you need a CSV copy.
 
 This output file can be used as input for a subsequent analysis by checking the \verb|Use previous results| checkbox. For example, you could then select criterion \verb|authorKeywords| to find the top author keywords from Canadian papers, or select criterion \verb|country| to find which countries have the most co-authored documents with Canada.
 
@@ -376,6 +384,34 @@ The table is sortable by clicking column headers and supports cell selection wit
 \item \textbf{Copy Selection:} copy the selected cells to the clipboard.
 \item \textbf{Copy All:} copy the entire table to the clipboard.
 \end{itemize}
+
+
+\section{Export tab (Tab 5)}
+\label{sec_export_tab}
+
+The Export tab produces on-demand Scopus- or WoS-style CSV files from either the full preprocessed corpus or the most recent analysis results. Exports are opt-in: neither preprocessing nor analysis writes CSV by itself anymore (the canonical on-disk format is Parquet, which is much smaller and loads faster).
+
+\begin{center}
+	\includegraphics[width=0.85\textwidth]{./figures/gui_export_tab.png}
+\end{center}
+
+\begin{enumerate}
+\item \textbf{Source.}
+	\begin{itemize}
+	\item \textbf{Preprocessed corpus} -- export \verb|dataPre/papersPreprocessed.parquet| as a single CSV.
+	\item \textbf{Last analysis results} -- copy all CSVs currently under \verb|results/| into the chosen destination folder.
+	\item \textbf{Extended results (last analysis, per-document)} -- write the detailed per-document \verb|*_extended.csv| for the analysis that is still in memory from the last \verb|Run|. This file is no longer produced automatically because it can reach hundreds of thousands of rows on large corpora. The option is disabled until you have run an analysis in the current session.
+	\end{itemize}
+\item \textbf{Format.} Only applies to \emph{Preprocessed corpus}; greyed out for the other sources.
+	\begin{itemize}
+	\item \textbf{Scopus fields} -- Scopus column-naming convention (\verb|Authors|, \verb|Title|, \verb|EID|, \ldots).
+	\item \textbf{WoS fields} -- Web of Science field tags (\verb|AU|, \verb|TI|, \verb|UT|, \ldots).
+	\end{itemize}
+\item \textbf{Destination.} A file path for Preprocessed corpus (default \verb|export/papersPreprocessed.csv|) or Extended results (default \verb|export/<Criterion>_extended.csv|), or a folder path for Last analysis results (default \verb|export/results/|). Use the \verb|Browse...| button to pick an alternative path.
+\item \textbf{Export.} Click the \verb|Export| button. A progress dialog appears and updates through the stages \verb|Reading preprocessed corpus...| and \verb|Writing CSV (scopus fields)| with a live 0\%--100\% bar during the write. On completion, a confirmation dialog offers an \verb|Open| button to reveal the output file or folder.
+\end{enumerate}
+
+The \verb|Export| button is automatically disabled when the chosen Source has nothing to export (e.g.\ no preprocessed corpus has been produced yet, or \verb|results/| is empty). The same export functionality is available from the command line via \verb|exportPapers.py| (run \verb|python3 exportPapers.py -h| for the full list of options).
 
 
 \section{Generate BibTeX}

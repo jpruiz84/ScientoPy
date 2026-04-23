@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,11 @@ import argparse
 from PreProcessClass import PreProcessClass
 
 # Parse arguments
-parser = argparse.ArgumentParser(description="Pre process and remove duplicates documents from Scopus and WoS")
+parser = argparse.ArgumentParser(
+    description="Pre process and remove duplicates documents from Scopus and WoS",
+    epilog="To export the preprocessed corpus as a Scopus- or WoS-style CSV "
+           "afterwards, run: ./exportPapers.py --source preprocessed --format {scopus,wos}",
+)
 
 parser.add_argument("dataInFolder", help="Folder where the Scopus or WoS data is located")
 

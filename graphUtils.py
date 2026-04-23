@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal

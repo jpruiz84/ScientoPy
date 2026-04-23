@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@
 # OR OTHER DEALINGS IN THE SOFTWARE.
 
 import paperUtils
+import paperIO
 import paperSave
 import globalVar
 import os
@@ -65,15 +66,23 @@ def generateBibtex(inputLatexFile):
     print("%d cites found." % len(citesDict))
 
     # Start paper list empty
-    papersDict = []
     papersToBib = []
 
-    # Open the storage database and add to papersDict
-    INPUT_FILE = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
-    ifile = open(INPUT_FILE, "r", encoding='utf-8')
-    print("Reading file: %s" % (INPUT_FILE))
-    paperUtils.openFileToDict(ifile, papersDict)
-    ifile.close()
+    # Prefer the canonical Parquet store; fall back to the legacy CSV so
+    # older installs still work until the user re-runs preprocess.
+    parquet_file = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_PARQUET)
+    legacy_csv = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+    if os.path.isfile(parquet_file):
+        print("Reading file: %s" % parquet_file)
+        papersDict = paperIO.read_preprocessed(parquet_file)
+    elif os.path.isfile(legacy_csv):
+        print("Reading legacy file: %s" % legacy_csv)
+        papersDict = []
+        with open(legacy_csv, "r", encoding="utf-8") as ifile:
+            paperUtils.openFileToDict(ifile, papersDict)
+    else:
+        print("ERROR: preprocessed dataset not found at %s or %s" % (parquet_file, legacy_csv))
+        return ""
     print("Loaded %d documents" % (len(papersDict)))
 
     # Find the number of total papers per year

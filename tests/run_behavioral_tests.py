@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+
+# The MIT License (MIT)
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+# OR OTHER DEALINGS IN THE SOFTWARE.
+
 """
 Behavioral test runner for ScientoPy.
 
@@ -115,8 +137,27 @@ def main():
             cwd=work_dir,
         )
 
+        parquet_path = os.path.join(work_dir, "dataPre", "papersPreprocessed.parquet")
         preprocessed_path = os.path.join(work_dir, "dataPre", "papersPreprocessed.csv")
         brief_path = os.path.join(work_dir, "dataPre", "PreprocessedBrief.csv")
+
+        # ── T00: Parquet is the canonical output of preprocess ──
+        check("T00a", "Parquet store exists after preprocess",
+              os.path.isfile(parquet_path),
+              "expected %s" % parquet_path)
+        check("T00b", "Legacy CSV NOT auto-written by preprocess",
+              not os.path.isfile(preprocessed_path),
+              "found stray %s" % preprocessed_path)
+
+        # Re-materialize the Scopus-style CSV via exportPapers so the rest of
+        # the test suite (which asserts on Scopus field names) still applies.
+        print("\n--- exportPapers: preprocessed -> Scopus CSV ---")
+        run_cmd(
+            [python, os.path.join(PROJECT_ROOT, "exportPapers.py"),
+             "--source", "preprocessed", "--format", "scopus",
+             "-o", preprocessed_path],
+            cwd=work_dir,
+        )
 
         # ── T01: Total papers after dedup ──
         print("\n--- Preprocess tests ---")
@@ -126,7 +167,8 @@ def main():
             check("T01", "Preprocess total papers == 26", len(papers) == 26,
                   f"got {len(papers)}")
         else:
-            check("T01", "papersPreprocessed.csv exists", False, "file not found")
+            check("T01", "papersPreprocessed.csv exists (via export)", False,
+                  "export did not produce %s" % preprocessed_path)
             papers = []
 
         # ── T02–T04: Brief file checks ──
@@ -490,6 +532,32 @@ def main():
         else:
             check("T12", "DataBase.csv exists", False, "file not found")
 
+        # ── T-N01: No implicit CSV write during analysis ──
+        results_csv = os.path.join(work_dir, "results", "papersPreprocessed.csv")
+        check("T-N01", "Analysis does NOT auto-write results/papersPreprocessed.csv",
+              not os.path.isfile(results_csv),
+              "found stray %s" % results_csv)
+        last_analysis_parquet = os.path.join(work_dir, "results", "lastAnalysis.parquet")
+        check("T-N02", "Analysis writes results/lastAnalysis.parquet for -r chaining",
+              os.path.isfile(last_analysis_parquet),
+              "expected %s" % last_analysis_parquet)
+
+        # ── T-N03: Extended results CSV is opt-in only ──
+        ext_csv = os.path.join(work_dir, "results", "AuthorKeywords_extended.csv")
+        check("T-N03", "Extended results CSV NOT auto-written",
+              not os.path.isfile(ext_csv),
+              "found stray %s" % ext_csv)
+
+        # ── T-N04: --saveExtended flag produces the extended CSV ──
+        run_cmd(
+            [python, os.path.join(PROJECT_ROOT, "scientoPy.py"),
+             "-c", "authorKeywords", "--saveExtended", "--noPlot"],
+            cwd=work_dir,
+        )
+        check("T-N04", "--saveExtended writes results/<Criterion>_extended.csv",
+              os.path.isfile(ext_csv),
+              "expected %s after --saveExtended" % ext_csv)
+
         # T13: Previous results chaining
         print("\n=== Stage 2: previous results chaining ===")
         # Step 1: filter country = United States
@@ -514,6 +582,29 @@ def main():
                   f"BETA found with total {beta4['Total']}" if beta4 else "")
         else:
             check("T13", "AuthorKeywords.csv exists (chaining)", False, "file not found")
+
+        # ── T-E01/E02: exportPapers CLI round-trip ──
+        print("\n=== Stage 3: exportPapers CLI ===")
+        wos_csv = os.path.join(work_dir, "export_wos.csv")
+        run_cmd([python, os.path.join(PROJECT_ROOT, "exportPapers.py"),
+                 "--source", "preprocessed", "--format", "wos", "-o", wos_csv],
+                cwd=work_dir)
+        check("T-E01", "exportPapers --format wos produced a CSV",
+              os.path.isfile(wos_csv),
+              f"expected {wos_csv}")
+
+        export_results_dir = os.path.join(work_dir, "export_results")
+        run_cmd([python, os.path.join(PROJECT_ROOT, "exportPapers.py"),
+                 "--source", "results", "--format", "scopus", "-o", export_results_dir],
+                cwd=work_dir)
+        # Should copy at least one analysis CSV (e.g., AuthorKeywords.csv)
+        exported_any = (
+            os.path.isdir(export_results_dir)
+            and any(f.endswith(".csv") for f in os.listdir(export_results_dir))
+        )
+        check("T-E02", "exportPapers --source results copied CSVs",
+              exported_any,
+              f"no CSVs in {export_results_dir}")
 
     finally:
         print(f"\nTest data preserved in: {work_dir}")

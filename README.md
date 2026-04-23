@@ -4,7 +4,9 @@ ScientoPy is a open-source Python based scientometric analysis tool.
 It has the following main characteristics: 
 
  
-- Import Clarivate Web of Science (WoS) and Scopus data set
+- Import Clarivate Web of Science (WoS) and Scopus data sets (recursive folder scan)
+- Parallel, multi-core preprocessing pipeline (Polars CSV reader + process-pool row normalization)
+- Apache Parquet as the canonical on-disk format — ~10× smaller and ~20× faster to load than CSV
 - Filter publications by document type
 - Merge WoS and Scopus data set based on a field tags correlation table
 - Find and remove duplicated documents
@@ -17,7 +19,8 @@ It has the following main characteristics:
 - Trending topics using the top average growth rate (AGR)
 - Five different visualization graphs: bar, bar trends, timeline, evolution, and word cloud
 - Automatic BibTeX bibliography generation from LaTeX documents using paper EIDs as cite keys
-- Graphical user interface
+- On-demand CSV export (Scopus or WoS field style) via `exportPapers.py` or the GUI Export tab
+- Graphical user interface with five tabs (Pre-processing, Analysis, Results, Extended Results, Export)
 
 
 Download Pre-built Releases
@@ -91,19 +94,32 @@ Preprocessing
 -------------
 
 First we need to preprocess the downloaded dataset. This preprocess
-merge all the downloaded files from one folder to a single file. Also,
-this process remove the duplicated files. To preprocess the example
-dataset (“Bluetooth low energy” located in dataInExample) run
-this command inside ScientoPy folder:
+merges all the downloaded files from the input folder into a single
+file. Also, this process removes the duplicated documents. To preprocess
+the example dataset (“Bluetooth low energy” located in dataInExample)
+run this command inside ScientoPy folder:
 
     python3 preProcess.py dataInExample
+
+The input folder is scanned **recursively**, so Scopus and WoS exports
+can be organized in sub-folders. The pipeline is multi-core (parallel
+Polars CSV reader + per-file row normalization) and prints its progress
+as four numbered steps:
+
+    [1/4] Loading papers
+    [2/4] Disambiguating Scopus author names
+    [3/4] Removing duplicates
+    [4/4] Saving preprocessed corpus
 
 Then, inside the folder `ScientoPy/dataPre` you will find the following
 files:
 
--   **papersPreprocessed.csv:** this file contains the information of
-    all papers after the pre-process. This file will be used by the
-    others scripts as the input data.
+-   **papersPreprocessed.parquet:** canonical preprocessed corpus stored
+    as Apache Parquet (Zstd-compressed). Replaces the previous
+    `papersPreprocessed.csv`. Used as input by every other ScientoPy
+    script. Typically 5-15× smaller than the equivalent CSV and loads in
+    well under a second even for 300 k-paper datasets. To obtain a CSV
+    copy, use `exportPapers.py` (see below).
 
 -   **PreprocessedBrief.csv:** this file briefs the pre-process statics
     results, such as duplicated papers removed, types of documents, and
@@ -238,31 +254,73 @@ PDF manual:
 Analysis based on the previous results
 --------------------------------------
 
-ScientoPy generates an output file with all the output documents from
-the last run script. For example if we run the command:
+ScientoPy writes a lightweight internal file with all the output
+documents from the last run so subsequent analyses can chain off it.
+For example:
 
     python3 scientoPy.py -c country -t "Canada" --noPlot
 
-ScientoPy will create a documents output file
-(`results/papersPreprocessed.csv`) with all documents that have authors
-with affiliation in Canada. This output file can be used by ScientoPy to
-perform an analysis based on this, in that way if we run the following
-command with the option `-r` or `--previousResults` after the previous
-one to analyze based on the previous results:
+ScientoPy writes `results/lastAnalysis.parquet` with every document
+whose authors are affiliated in Canada. Pass `-r` (or
+`--previousResults`) on the next call to analyze that subset:
 
     python3 scientoPy.py -c authorKeywords -r -g bar
 
-we will obtain the top author keywords from papers where the author
-affiliation correspond to Canada. Also, we can run the following command
-to know which are the countries that have more common documents with
-Canada:
+returns the top author keywords from papers affiliated in Canada.
 
     python3 scientoPy.py -c country -r -g bar
 
-**Note:** the ScientoPy documents output file is only generated when the
-`-r` or `--previousResults` is not used. In that way, if we run many
-times a ScientoPy command with this option, the documents output file
-will not overwritten.
+returns the countries that most commonly co-publish with Canada.
+
+**Notes:**
+
+-   `lastAnalysis.parquet` is only produced when `-r` /
+    `--previousResults` is **not** used, so chained analyses do not
+    overwrite it.
+-   In previous versions this file was a CSV named
+    `results/papersPreprocessed.csv`, re-written on every analysis. It
+    is now replaced by the Parquet file; analyses no longer write any
+    CSV automatically. Use `exportPapers.py` (or the **5. Export** GUI
+    tab) to re-materialize a CSV on demand.
+
+Exporting to CSV
+----------------
+
+The preprocessed corpus and the analysis results can be exported to
+Scopus- or WoS-style CSVs on demand with `exportPapers.py`:
+
+    # Full preprocessed corpus -> export/papersPreprocessed.csv (Scopus fields)
+    python3 exportPapers.py
+
+    # Same, but WoS-style field names
+    python3 exportPapers.py --format wos
+
+    # Copy the latest results/*.csv into export/results/
+    python3 exportPapers.py --source results
+
+    # Custom destination
+    python3 exportPapers.py --source preprocessed --format scopus -o my_corpus.csv
+
+Running `exportPapers.py` with no flags defaults to
+`--source preprocessed --format scopus` and writes to
+`export/papersPreprocessed.csv`. For the full option list run:
+
+    python3 exportPapers.py -h
+
+### Extended results (per-document)
+
+The detailed extended-results CSV (`results/<Criterion>_extended.csv`,
+one row per paper) is **not produced automatically** because it can
+reach hundreds of thousands of rows on large corpora. To produce it,
+either pass `--saveExtended` on the CLI:
+
+    python3 scientoPy.py -c authorKeywords --saveExtended
+
+or pick **Extended results (last analysis, per-document)** in the GUI
+**5. Export** tab after running an analysis.
+
+All export options are also available from the GUI in the **5. Export**
+tab.
 
 Output files and directories
 ----------------------------
@@ -278,10 +336,11 @@ following folder and files structure described bellow:
 -   **dataPre:** output folder for the preprocess results, and input
     folder for scientoPy script.
 
-    -   **papersPreprocessed.csv:** preprocesed papers data with all input
-        documents merged, filtered, and duplication removed. This is the
-        input file that scientoPy script uses.
-    
+    -   **papersPreprocessed.parquet:** canonical preprocessed corpus
+        (Apache Parquet, Zstd-compressed). Replaces the old
+        `papersPreprocessed.csv` as the input for every other ScientoPy
+        script. Use `exportPapers.py` to obtain a CSV copy.
+
     -   **PreprocessedBrief.csv:** preproceses brief table that shows the
         preprocess results related to total papers found per data base, the
         omitted papers, the duplicated papers count per data base, and the
@@ -305,11 +364,14 @@ following folder and files structure described bellow:
     -   **AuthorKeywords\_extended.csv:** scientoPy output file for the
         selected criterion (in this case authorKeywords) that show the top
         or custom topics with the documents related to each one.
-    
-    -   **papersPreprocessed.csv:** inside the results folder, this file
-        contains the output papers from the last scientoPy used script. This
-        is used as an input for scientoPy script when it use the option `-r`
-        or `--previousResults`
+
+    -   **lastAnalysis.parquet:** internal file with the output papers
+        from the last scientoPy script run. Used as input when the
+        option `-r` or `--previousResults` is passed on the next run.
+
+-   **export:** populated on demand by `exportPapers.py`. Default
+    destinations are `export/papersPreprocessed.csv` (preprocessed
+    corpus) and `export/results/` (copy of analysis CSVs).
 
 BibTeX generation
 -----------------
@@ -329,7 +391,7 @@ This will create `latexExample/article_example_bibliography.bib` next to
 the input file. The script:
 
 - Extracts all `\cite{}` keys from the LaTeX document body
-- Matches them against the preprocessed dataset (`dataPre/papersPreprocessed.csv`)
+- Matches them against the preprocessed dataset (`dataPre/papersPreprocessed.parquet`)
 - Generates `@Article{}` entries for journals/reviews and `@Inproceedings{}` for conference papers
 - Handles author name formatting and LaTeX special character escaping
 

@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,40 @@ import csv
 import globalVar
 import os
 import math
+import sys
+
+
+def _progress_printer(total, label="Saving"):
+    """Return a `tick(i)` callback that prints a live percentage to stdout
+    whenever i crosses a whole-percent boundary. The final 100% line ends
+    with a newline so subsequent prints don't sit on the progress row.
+
+    Also updates globalVar.progressPer so the GUI progress dialog moves in
+    sync during this stage.
+    """
+    last_pct = [-1]
+
+    def tick(i):
+        if total <= 0:
+            return
+        pct = int((i + 1) * 100 / total)
+        if pct == last_pct[0]:
+            return
+        last_pct[0] = pct
+        globalVar.progressPer = pct
+        end = "\n" if pct >= 100 else ""
+        sys.stdout.write("\r  %s... %3d%% (%d/%d)%s" % (label, pct, i + 1, total, end))
+        sys.stdout.flush()
+
+    return tick
+
 
 def saveResults(paperDict, outFileName):
 
   if globalVar.SAVE_RESULTS_ON == "SCOPUS_FIELDS":
 
     print("Saving results on: %s, with Scopus fields, total %d papers" % (outFileName, len(paperDict)))
+    tick = _progress_printer(len(paperDict))
 
     ofile = open(outFileName, 'w', encoding='utf-8')
 
@@ -47,7 +75,7 @@ def saveResults(paperDict, outFileName):
 
     writer.writeheader()
 
-    for paperOut in paperDict:
+    for _i, paperOut in enumerate(paperDict):
 
       paperDicWrite = {}
 
@@ -102,12 +130,14 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["Open Access"] = paperOut["openAccess"]
 
       writer.writerow(paperDicWrite)
+      tick(_i)
 
     ofile.close()
 
   elif globalVar.SAVE_RESULTS_ON == "WOS_FIELDS":
 
-    print("Saving results on: %s, with WoS fields" % outFileName)
+    print("Saving results on: %s, with WoS fields, total %d papers" % (outFileName, len(paperDict)))
+    tick = _progress_printer(len(paperDict))
 
     ofile = open(outFileName, 'w', encoding='utf-8')
 
@@ -124,7 +154,7 @@ def saveResults(paperDict, outFileName):
 
     writer.writeheader()
 
-    for paperOut in paperDict:
+    for _i, paperOut in enumerate(paperDict):
       paperDicWrite = {}
       paperDicWrite["AU"] = paperOut["author"]
       paperDicWrite["TI"] = paperOut["title"]
@@ -147,6 +177,7 @@ def saveResults(paperDict, outFileName):
       paperDicWrite["OA"] = paperOut["openAccess"]
 
       writer.writerow(paperDicWrite)
+      tick(_i)
 
     ofile.close()
 
@@ -199,60 +230,97 @@ def saveTopResults(topicResults, criterionIn, plotName):
   return fileName
 
 
-def saveExtendedResults(topicResults, criterionIn, plotName):
+EXT_FIELDNAMES = [
+  "Pos.", "Topic ", "Total", "Cited by", "EID", "Year", "Title",
+  "Abstract", "Document type", "Authors", "Author keywords",
+  "Both keywords", "Country", "EID2",
+]
 
-  Name = ''
-  if plotName != '':
-    Name = os.path.splitext(plotName)[0]
 
-  # Upper first character
+def extendedResultsRows(topicResults, criterionIn):
+  """Return (headers, rows) for the extended-results table.
+
+  Shared source of truth between the on-disk exporter (saveExtendedResults)
+  and the GUI Extended Results tab, which now populates itself directly
+  from the in-memory topicResults rather than a CSV round-trip.
+
+  Row shape matches the legacy saveExtendedResults CSV:
+    * For every topic: one header row (Pos, Topic, Total) with the rest blank.
+    * Then one row per paper with Cited by / EID / Year / Title / Abstract /
+      Document type / Authors / Author keywords / Both keywords / Country /
+      EID2 (duplicated-in EIDs joined by ';').
+  """
   criterion = criterionIn[0].upper() + criterionIn[1:]
+  headers = [
+    "Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "Year", "Title",
+    "Abstract", "Document type", "Authors", "Author keywords",
+    "Both keywords", "Country", "EID2",
+  ]
+  idx = {h: i for i, h in enumerate(headers)}
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, criterion + Name + "_extended.csv")
-  ofile = open(fileName, 'w', encoding='utf-8')
-
-  fieldnames = ["Pos.", "Topic " + criterion, "Total", "Cited by", "EID", "Year", "Title", "Abstract", "Document type",  "Authors",
-                "Author keywords", "Both keywords", "Country", "EID2",]
-
-  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
-  writer.writeheader()
-
+  rows = []
   sortedResults = sorted(topicResults, key=lambda x: x["PapersTotal"], reverse=True)
-
   count = 1
   for value in sortedResults:
-    dictWriter = {}
-    dictWriter["Pos."] = str(count)
-    dictWriter["Topic " + criterion] = value["name"]
-    dictWriter["Total"] = value["PapersTotal"]
-
+    row = [""] * len(headers)
+    row[idx["Pos."]] = str(count)
+    row[idx["Topic " + criterion]] = value["name"]
+    row[idx["Total"]] = str(value["PapersTotal"])
+    rows.append(row)
     count += 1
-    writer.writerow(dictWriter)
 
-    # Sort papers by cited by count
-    papersIn = value["papers"]
-    papersIn = sorted(papersIn, key=lambda x: int(x["citedBy"]), reverse=True)
-
+    papersIn = sorted(value["papers"], key=lambda x: int(x["citedBy"]), reverse=True)
     for paper in papersIn:
-      dictWriter = {}
-      dictWriter["Title"] = paper["title"]
-      dictWriter["Year"] = paper["year"]
-      dictWriter["Authors"] = paper["author"]
-      dictWriter["Country"] = paper["country"]
-      dictWriter["Author keywords"] = paper["authorKeywords"]
-      dictWriter["Both keywords"] = paper["bothKeywords"]
-      dictWriter["Abstract"] = paper["abstract"]
-      dictWriter["Document type"] = paper["documentType"]
-      dictWriter["Cited by"] = paper["citedBy"]
-      dictWriter["EID"] = paper["eid"]
-      dictWriter["EID2"] = ";".join(paper["duplicatedIn"])
-      writer.writerow(dictWriter)
+      row = [""] * len(headers)
+      row[idx["Cited by"]] = str(paper["citedBy"])
+      row[idx["EID"]] = paper["eid"]
+      row[idx["Year"]] = paper["year"]
+      row[idx["Title"]] = paper["title"]
+      row[idx["Abstract"]] = paper["abstract"]
+      row[idx["Document type"]] = paper["documentType"]
+      row[idx["Authors"]] = paper["author"]
+      row[idx["Author keywords"]] = paper["authorKeywords"]
+      row[idx["Both keywords"]] = paper["bothKeywords"]
+      row[idx["Country"]] = paper["country"]
+      row[idx["EID2"]] = ";".join(paper["duplicatedIn"])
+      rows.append(row)
+  return headers, rows
 
-  ofile.close()
 
-  print("Saved extended top results on: %s" % fileName)
+def saveExtendedResults(topicResults, criterionIn, plotName, outPath=None):
+  """Write the extended-results CSV from in-memory topicResults.
 
-  return fileName
+  Called explicitly — never during a normal analysis anymore. Triggered by:
+    * the ``--saveExtended`` CLI flag on scientoPy.py
+    * the GUI Export tab's "Extended results (last analysis)" source
+    * exportPapers.py when the extended rows happen to be passed in
+
+  ``outPath`` overrides the default ``results/<Criterion>[_plotname]_extended.csv``
+  destination (used by the GUI Export tab so users can pick their own path).
+  """
+  if outPath is None:
+    Name = ''
+    if plotName != '':
+      Name = '_' + os.path.splitext(plotName)[0]
+    criterion = criterionIn[0].upper() + criterionIn[1:]
+    outPath = os.path.join(globalVar.RESULTS_FOLDER, criterion + Name + "_extended.csv")
+
+  # Make sure the destination folder exists (the CLI default is results/,
+  # but GUI users may target export/... for the first time).
+  os.makedirs(os.path.dirname(os.path.abspath(outPath)) or ".", exist_ok=True)
+
+  headers, rows = extendedResultsRows(topicResults, criterionIn)
+  tick = _progress_printer(len(rows), label="Saving extended")
+
+  with open(outPath, 'w', encoding='utf-8') as ofile:
+    writer = csv.writer(ofile, dialect=csv.excel, lineterminator='\n')
+    writer.writerow(headers)
+    for i, r in enumerate(rows):
+      writer.writerow(r)
+      tick(i)
+
+  print("Saved extended top results on: %s" % outPath)
+  return outPath
 
 def saveTopCited(papersDic):
 

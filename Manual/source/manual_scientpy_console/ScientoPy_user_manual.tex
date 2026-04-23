@@ -183,9 +183,11 @@ To preprocess the example dataset (``Bluetooth low energy'' downloaded in April 
 python3 preProcess.py dataInExample
 \end{verbatim}
 
+\noindent The preprocessing script scans the input folder \textbf{recursively} (sub-directories of Scopus/WoS exports are picked up automatically) and uses a parallel Polars-based reader to saturate all CPU cores. Progress is shown as four numbered steps: \verb|[1/4] Loading papers|, \verb|[2/4] Disambiguating Scopus author names|, \verb|[3/4] Removing duplicates|, \verb|[4/4] Saving preprocessed corpus|.
+
 Then, inside the folder \verb|ScientoPy/dataPre| you will find the following files:
 \begin{itemize}
-\item \textbf{papersPreprocessed.csv:} this file contains the information of all papers after the pre-process. This file will be used by the others scripts as the input data.
+\item \textbf{papersPreprocessed.parquet:} the canonical preprocessed corpus, stored as Apache Parquet (Zstd-compressed). Replaces the previous \verb|papersPreprocessed.csv| as the input for every other ScientoPy script. Typically 5--15\,$\times$ smaller than the equivalent CSV and loads sub-second even for 300\,k-paper datasets. To obtain a Scopus- or WoS-style CSV copy, use \verb|exportPapers.py| (see section below).
 \item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statics results. The columns in this table are:
 \begin{itemize}
 \item \textbf{Info:} description of the preprocessing statistic.
@@ -393,13 +395,13 @@ This script will find the top 200 topics, then it calculates the AGR for the las
 
 \subsection{Analysis based on the previous results}
 
-ScientoPy generates an output file with all the output documents from the last run script. For example if we run the command:
+ScientoPy generates a lightweight internal file with all the output documents from the last analysis run so that subsequent calls can chain off of it. For example if we run the command:
 
 \begin{verbatim}
 python3 scientoPy.py -c country -t "Canada" --noPlot
 \end{verbatim}
 
-ScientoPy will create a documents output file (\verb|results/papersPreprocessed.csv|) with all documents that have authors with affiliation in Canada. This output file can be used by ScientoPy to perform an analysis based on this, in that way if we run the following command with the option  \verb|-r| or \verb|--previousResults| after the previous one to analyze based on the previous results:
+ScientoPy will write \verb|results/lastAnalysis.parquet| with every document whose authors have an affiliation in Canada. This internal file can then be consumed by another call that passes  \verb|-r| or \verb|--previousResults|:
 
 \begin{verbatim}
 python3 scientoPy.py -c authorKeywords -r -g bar
@@ -411,7 +413,40 @@ we will obtain the top author keywords from papers where the author affiliation 
 python3 scientoPy.py -c country -r -g bar
 \end{verbatim}
 
-\textbf{Note:} the ScientoPy documents output file is only generated when the \verb|-r| or \verb|--previousResults| is not used. In that way, if we run many times a ScientoPy command with this option, the documents output file will not overwritten.
+\textbf{Notes:}
+\begin{itemize}
+\item \verb|lastAnalysis.parquet| is only produced when \verb|-r|/\verb|--previousResults| is \emph{not} used, so chained analyses do not overwrite it.
+\item In previous ScientoPy versions this file was a CSV named \verb|results/papersPreprocessed.csv|, re-written on every analysis. It is now replaced by the Parquet file; analyses no longer write any CSV automatically. Use \verb|exportPapers.py| (section below) to re-materialize a CSV on demand.
+\end{itemize}
+
+\subsection{Exporting to CSV}
+
+The preprocessed corpus and the analysis results can be exported to Scopus- or WoS-style CSVs on demand with \verb|exportPapers.py|:
+
+\begin{verbatim}
+# Full preprocessed corpus -> export/papersPreprocessed.csv (Scopus fields)
+python3 exportPapers.py
+
+# Same, but WoS-style field names
+python3 exportPapers.py --format wos
+
+# Copy the latest results/*.csv into export/results/
+python3 exportPapers.py --source results
+
+# Custom destination
+python3 exportPapers.py --source preprocessed --format scopus -o my_corpus.csv
+\end{verbatim}
+
+Running with no flags defaults to \verb|--source preprocessed --format scopus| and writes to \verb|export/papersPreprocessed.csv|. Run \verb|python3 exportPapers.py -h| for the full list of options.
+
+\paragraph{Extended per-document results.}
+The detailed \verb|results/<Criterion>_extended.csv| file (one row per paper, with abstract and metadata) is \textbf{not produced automatically} because it can reach hundreds of thousands of rows on large corpora. To produce it, either pass \verb|--saveExtended| on the CLI:
+
+\begin{verbatim}
+python3 scientoPy.py -c authorKeywords --saveExtended
+\end{verbatim}
+
+or pick \textbf{Extended results (last analysis, per-document)} in the GUI \textbf{5. Export} tab after running an analysis.
 
 \subsection{Output files and directories}
 
@@ -422,13 +457,15 @@ After run some ScientoPy commands or after run all the example commands by execu
 	.1 ScientoPy.
 	.2 dataInExample.
 	.2 dataPre.
-	.3 papersPreprocessed.csv.
+	.3 papersPreprocessed.parquet.
 	.3 PreprocessedBrief.csv.
 	.2 graphs.
 	.2 Manual.
 	.2 results.
 	.3 AuthorKeywords.csv.
 	.3 AuthorKeywords\_extended.csv.
+	.3 lastAnalysis.parquet.
+	.2 export.
 	.3 papersPreprocessed.csv.
 }
 
@@ -436,10 +473,10 @@ These folders and output files are described bellow:
 
 \begin{itemize}
 	\item \textbf{dataInExample: } contains Scopus and WoS example data set for the search criteria "Bluetooth low energy" downloaded in April 2, 2026. This is the input example for preprocess script.
-	
+
 	\item \textbf{dataPre: } output folder for the preprocess results, and input folder for scientoPy script.
-	
-	\item \textbf{papersPreprocessed.csv: } preprocesed papers data with all input documents merged, filtered, and duplication removed. This is the input file that scientoPy script uses.
+
+	\item \textbf{papersPreprocessed.parquet: } canonical preprocessed corpus (Apache Parquet, Zstd-compressed). Replaces the old \verb|papersPreprocessed.csv| as the input for every other ScientoPy script. Obtain a CSV copy via \verb|exportPapers.py|.
 	
 	\item \textbf{PreprocessedBrief.csv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
 	
@@ -462,8 +499,10 @@ These folders and output files are described bellow:
 	\end{itemize}
 
 	\item \textbf{AuthorKeywords\_extended.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that show the top or custom topics with the documents related to each one.
-	
-	\item \textbf{papersPreprocessed.csv: } inside the results folder, this file contains the output papers from the last scientoPy used script. This is used as an input for scientoPy script when it use the option \verb|-r| or \verb|--previousResults|
+
+	\item \textbf{lastAnalysis.parquet: } inside the results folder, this file contains the output papers from the last scientoPy script. It is used as an input for scientoPy when the option \verb|-r| or \verb|--previousResults| is passed. Internal format; not intended for user consumption.
+
+	\item \textbf{export: } on-demand CSV exports produced by \verb|exportPapers.py|. Not created by preprocess or analysis; only populated when the user runs an export.
 \end{itemize}
 
 \newpage
@@ -561,7 +600,7 @@ The \verb|generateBibtex.py| script performs the following steps:
 
 \begin{enumerate}
 \item Reads the input LaTeX file and extracts all \verb|\cite{key}| references from the document body (between \verb|\begin{document}| and \verb|\begin{thebibliography}|).
-\item Loads the preprocessed dataset (\verb|dataPre/papersPreprocessed.csv|).
+\item Loads the preprocessed dataset (\verb|dataPre/papersPreprocessed.parquet|).
 \item Matches each citation key against the EID field of the papers in the dataset.
 \item Generates BibTeX entries for matched papers:
 \begin{itemize}
@@ -575,7 +614,7 @@ The \verb|generateBibtex.py| script performs the following steps:
 
 \subsection{Usage}
 
-\textbf{Prerequisites:} The preprocessing step must be completed first, so that the file \verb|dataPre/papersPreprocessed.csv| exists.
+\textbf{Prerequisites:} The preprocessing step must be completed first, so that the file \verb|dataPre/papersPreprocessed.parquet| exists.
 
 \subsubsection{Using the cite keys}
 

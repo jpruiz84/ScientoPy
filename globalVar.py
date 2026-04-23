@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,9 @@ DEFAULT_PLOT_HEIGHT = 4.8
 
 # Default output files and folders
 PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
-OUTPUT_FILE_NAME = "papersPreprocessed.csv"
+OUTPUT_FILE_NAME = "papersPreprocessed.csv"         # legacy CSV (explicit export only)
+OUTPUT_FILE_PARQUET = "papersPreprocessed.parquet"  # canonical preprocessed store
+LAST_ANALYSIS_FILE = "lastAnalysis.parquet"         # internal, for --previousResults
 OUTPUT_FILE_BIB = "bibliography.bib"
 DATA_OUT_FOLDER = "dataPre"
 GRAPHS_OUT_FOLDER = "graphs"
@@ -71,9 +73,11 @@ _MARKERS_BASE = ('o', '^', 's', 'p', '*', 'd', 'D', '8', 'v', '>', 'v', '<', 'h'
 MARKERS = _MARKERS_BASE * 8
 
 
-# Save the papersPreprocessed format
+# Default export format (Scopus-style vs WoS-style field names).
+# Deprecated as a hard-coded global: exportPapers.py accepts --format at the CLI;
+# this value is only used as the default when no format is specified explicitly.
+# Values: "SCOPUS_FIELDS" | "WOS_FIELDS".
 SAVE_RESULTS_ON = "SCOPUS_FIELDS"
-#SAVE_RESULTS_ON = "WOS_FIELDS"
 
 # Global variables
 logFile = 0

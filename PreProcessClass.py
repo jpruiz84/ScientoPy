@@ -1,5 +1,5 @@
 # The MIT License (MIT)
-# Copyright (c) 2018 - Universidad del Cauca, Juan Ruiz-Rosero
+# Copyright (c) 2026 - Universidad del Cauca, Juan Ruiz-Rosero
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,35 @@
 
 import csv
 import paperUtils
+import paperIO
 import paperSave
 import globalVar
 import os
 import argparse
 import sys
+import time
 import matplotlib.pyplot as plt
 import graphUtils
+
+
+# Number of user-visible pipeline stages. Bumped if a new step is added.
+_PIPELINE_STEPS = 4
+
+
+def _announce_step(n, label, from_gui=False):
+    """Print a [n/M] step header to the CLI and update globalVar so the GUI
+    progress dialog shows the same text. Resets progressPer to 0 so each
+    stage starts from a fresh bar.
+    """
+    text = "[%d/%d] %s" % (n, _PIPELINE_STEPS, label)
+    bar = "─" * max(30, len(text))
+    print("\n%s\n%s" % (text, bar))
+    globalVar.progressText = text
+    globalVar.progressPer = 0
+    if from_gui:
+        # Tiny yield so the GUI's 100 ms progress poll sees the new text
+        # before the stage's heavy work starts.
+        time.sleep(0.01)
 
 
 class PreProcessClass:
@@ -90,38 +112,36 @@ class PreProcessClass:
         self.preProcessBrief["percenRemPapersScopus"] = 0
         self.preProcessBrief["percenRemPapersWos"] = 0
 
-        files_to_read = len(os.listdir(os.path.join(args.dataInFolder, "")))
-        print("Files to read: %d" % files_to_read)
+        pipeline_t0 = time.time()
 
-        globalVar.progressPer = 0
-        globalVar.progressText = "Reading input files"
+        # ── Step 1/4 ── Parallel CSV/TXT read + per-row normalization.
+        _announce_step(1, "Loading papers", self.fromGui)
+        step_t0 = time.time()
+        paperIO.load_folder(args.dataInFolder, paperDict)
+        step1_elapsed = time.time() - step_t0
+        print(
+            "  ✓ Loaded %d papers from %d files in %.1fs"
+            % (len(paperDict), globalVar.loadedPapers, step1_elapsed)
+        )
 
-        files_counter = 0
-        # Read files from the dataInFolder
-        for file in os.listdir(os.path.join(args.dataInFolder, "")):
-            files_counter += 1
-            globalVar.progressPer = int(
-                float(files_counter) / float(files_to_read) * 100
-            )
-            if globalVar.cancelProcess:
-                return
-            if file.endswith(".csv") or file.endswith(".txt"):
-                print("Reading file: %s" % (os.path.join(args.dataInFolder, "") + file))
-                ifile = open(
-                    os.path.join(args.dataInFolder, "") + file, "r", encoding="utf-8"
-                )
-                paperUtils.openFileToDict(ifile, paperDict)
+        if globalVar.cancelProcess:
+            return
 
         # If not documents found
         if globalVar.loadedPapers == 0:
             print(
-                "ERROR: 0 documents found from " + os.path.join(args.dataInFolder, "")
+                "\nERROR: 0 documents found under " + args.dataInFolder
             )
             print("")
             globalVar.progressPer = 101
             return
 
+        # ── Step 2/4 ── Scopus author-name disambiguation.
+        _announce_step(2, "Disambiguating Scopus author names", self.fromGui)
+        step_t0 = time.time()
         paperDict = paperUtils.disam_names_scopus(paperDict)
+        globalVar.progressPer = 100
+        print("  ✓ Done in %.1fs" % (time.time() - step_t0))
 
         globalVar.OriginalTotalPapers = len(paperDict)
 
@@ -203,13 +223,22 @@ class PreProcessClass:
         print("Scopus papers: %s" % globalVar.papersScopus)
         paperUtils.sourcesStatics(paperDict, logWriter)
 
-        # Removing duplicates
+        # ── Step 3/4 ── Duplicate removal.
         if not args.noRemDupl:
+            _announce_step(3, "Removing duplicates", self.fromGui)
+            step_t0 = time.time()
+            # Parallelize the per-paper titleB / firstAuthorLastName
+            # normalization across cores so removeDuplicates only has to
+            # sort + sweep.
+            paperIO.compute_dedup_keys_parallel(paperDict)
             paperDict = paperUtils.removeDuplicates(
                 paperDict, logWriter, self.preProcessBrief
             )
+            print("  ✓ Done in %.1fs" % (time.time() - step_t0))
         # if not remove duplicates
         else:
+            _announce_step(3, "Skipping duplicate removal (--noRemDupl)", self.fromGui)
+            globalVar.progressPer = 100
             self.preProcessBrief["totalAfterRemDupl"] = self.preProcessBrief[
                 "papersAfterRemOmitted"
             ]
@@ -260,18 +289,31 @@ class PreProcessClass:
             logWriter.writerow({"Info": "Statics after duplication removal filter"})
             paperUtils.sourcesStatics(paperDict, logWriter)
 
-        # Save final results
-        paperSave.saveResults(
-            paperDict,
-            os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME),
+        # ── Step 4/4 ── Persist the canonical corpus. Legacy CSV is no
+        # longer produced automatically; users can re-materialize it via
+        # exportPapers.py --source preprocessed --format scopus (or wos).
+        _announce_step(4, "Saving preprocessed corpus", self.fromGui)
+        step_t0 = time.time()
+        parquet_path = os.path.join(
+            globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_PARQUET
+        )
+        paperIO.write_preprocessed(paperDict, parquet_path)
+        globalVar.progressPer = 100
+        print(
+            "  ✓ Wrote %d papers to %s (%.1fs)"
+            % (len(paperDict), parquet_path, time.time() - step_t0)
         )
 
         # Close log file
         logFile.close()
 
-        print("\nPreprocess finished.")
+        total_elapsed = time.time() - pipeline_t0
+        print("\n" + "═" * 50)
+        print("Preprocess finished in %.1fs — %d papers ready" % (total_elapsed, len(paperDict)))
+        print("═" * 50)
 
         globalVar.totalPapers = len(paperDict)
+        globalVar.progressText = "Done"
         globalVar.progressPer = 101
 
     def graphBrief(self, args=""):
