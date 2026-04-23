@@ -15,11 +15,13 @@
 -->
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
   <zip-file>
-    <!-- Sign the main executable -->
-    <pe-binary path="ScientoPyGui.exe" />
-    <!-- Sign all bundled PE DLLs (PyInstaller ships many) -->
-    <pe-binary path="*.dll" />
-    <!-- Sign Python extension modules (.pyd are PE DLLs on Windows) -->
-    <pe-binary path="*.pyd" />
+    <pe-file path="ScientoPyGui.exe">
+      <authenticode-sign />
+    </pe-file>
+    <pe-file-set>
+      <include path="*.dll" />
+      <include path="*.pyd" />
+      <authenticode-sign />
+    </pe-file-set>
   </zip-file>
 </artifact-configuration>
