@@ -134,15 +134,16 @@ jobs:
           name: ScientoPy-windows-x64-unsigned
           path: unsigned/ScientoPy-windows-x64.zip
 
-      # SignPath code signing — requires SIGNPATH_API_TOKEN secret and
-      # organization/project setup at https://signpath.io
-      # To enable: add these secrets to the GitHub repository settings:
-      #   - SIGNPATH_API_TOKEN
-      #   - SIGNPATH_ORGANIZATION_ID
-      #   - SIGNPATH_PROJECT_SLUG
-      #   - SIGNPATH_SIGNING_POLICY_SLUG
+      # SignPath code signing (OSS Foundation program).
+      # Required GitHub repository secrets:
+      #   SIGNPATH_API_TOKEN          — API token from SignPath dashboard
+      #   SIGNPATH_ORGANIZATION_ID    — SignPath organization ID (UUID)
+      #   SIGNPATH_PROJECT_SLUG       — project slug set in SignPath (e.g. "scientopy")
+      #   SIGNPATH_SIGNING_POLICY_SLUG— signing policy slug (e.g. "release-signing")
+      #
+      # The artifact configuration that tells SignPath which files to sign is
+      # in .signpath/artifact-configuration.xml (committed to this repository).
       - name: Sign with SignPath
-        if: env.SIGNPATH_API_TOKEN != ''
         id: signpath
         uses: signpath/github-action-submit-signing-request@v1
         with:
@@ -153,23 +154,12 @@ jobs:
           github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: signed
-        env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
 
       - name: Upload signed artifact
-        if: steps.signpath.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ScientoPy-windows-x64-signed
           path: signed/ScientoPy-windows-x64.zip
-
-      # If signing is not configured, pass through the unsigned artifact
-      - name: Pass through unsigned artifact
-        if: steps.signpath.outcome == 'skipped' || steps.signpath.outcome == ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ScientoPy-windows-x64-signed
-          path: unsigned/ScientoPy-windows-x64.zip
 
   release:
     needs: [build, sign-windows]

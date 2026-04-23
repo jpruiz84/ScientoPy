@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  SignPath artifact configuration for ScientoPy (Windows build).
+
+  The Windows GitHub Actions job produces ScientoPy-windows-x64.zip whose
+  root contains the PyInstaller one-folder output:
+    ScientoPyGui.exe          ← main executable  (signed)
+    *.dll / *.pyd             ← PE binaries bundled by PyInstaller (signed)
+    *.py / *.pyc / data files ← non-PE files      (not signed)
+
+  Signing policy: authenticode-signing (test certificate initially,
+  replaced with the production certificate after SignPath review).
+
+  Reference: https://about.signpath.io/documentation/artifact-configuration/
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <!-- Sign the main executable -->
+    <pe-binary path="ScientoPyGui.exe" />
+    <!-- Sign all bundled PE DLLs (PyInstaller ships many) -->
+    <pe-binary path="*.dll" />
+    <!-- Sign Python extension modules (.pyd are PE DLLs on Windows) -->
+    <pe-binary path="*.pyd" />
+  </zip-file>
+</artifact-configuration>
