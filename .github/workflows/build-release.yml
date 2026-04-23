@@ -136,10 +136,11 @@ jobs:
 
       # SignPath code signing (OSS Foundation program).
       # Required GitHub repository secrets:
-      #   SIGNPATH_API_TOKEN          — API token from SignPath dashboard
-      #   SIGNPATH_ORGANIZATION_ID    — SignPath organization ID (UUID)
-      #   SIGNPATH_PROJECT_SLUG       — project slug set in SignPath (e.g. "scientopy")
-      #   SIGNPATH_SIGNING_POLICY_SLUG— signing policy slug (e.g. "release-signing")
+      #   SIGNPATH_API_TOKEN              — API token from SignPath dashboard
+      #   SIGNPATH_ORGANIZATION_ID        — SignPath organization ID (UUID)
+      #   SIGNPATH_PROJECT_SLUG           — project slug set in SignPath (e.g. "ScientoPy")
+      #   SIGNPATH_ARTIFACT_CONFIG_SLUG   — artifact configuration slug (e.g. "initial-version")
+      #   SIGNPATH_SIGNING_POLICY_SLUG    — signing policy slug (e.g. "test-signing")
       #
       # The artifact configuration that tells SignPath which files to sign is
       # in .signpath/artifact-configuration.xml (committed to this repository).
@@ -150,6 +151,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
           signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
           github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
           wait-for-completion: true
