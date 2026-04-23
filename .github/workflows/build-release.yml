@@ -121,15 +121,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Download to get the artifact-id output; the ID is passed directly to
-      # SignPath so the artifact is not re-uploaded (which would add a second
-      # ZIP wrapper and hide ScientoPyGui.exe from the artifact configuration).
-      - name: Get Windows artifact
-        id: get-artifact
+      # Download the build artifact (extracts files into unsigned/).
+      # Then re-upload the directory — not a pre-made ZIP — so GitHub creates
+      # a single-layer ZIP with ScientoPyGui.exe at the root. Uploading a
+      # file would double-wrap it (GitHub ZIP → our ZIP) and hide the exe
+      # from the SignPath artifact configuration.
+      - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
           name: ScientoPy-windows-x64
           path: unsigned
+
+      - name: Re-upload as directory for SignPath
+        id: upload-for-signing
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScientoPy-windows-x64-for-signing
+          path: unsigned/
 
       # SignPath code signing (OSS Foundation program).
       # Required GitHub repository secrets:
@@ -149,7 +157,7 @@ jobs:
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
           artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
           signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
-          github-artifact-id: ${{ steps.get-artifact.outputs.artifact-id }}
+          github-artifact-id: ${{ steps.upload-for-signing.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: signed
 
