@@ -42,7 +42,7 @@ def _announce_step(n, label, from_gui=False):
     stage starts from a fresh bar.
     """
     text = "[%d/%d] %s" % (n, _PIPELINE_STEPS, label)
-    bar = "─" * max(30, len(text))
+    bar = "-" * max(30, len(text))
     print("\n%s\n%s" % (text, bar))
     globalVar.progressText = text
     globalVar.progressPer = 0
@@ -120,7 +120,7 @@ class PreProcessClass:
         paperIO.load_folder(args.dataInFolder, paperDict)
         step1_elapsed = time.time() - step_t0
         print(
-            "  ✓ Loaded %d papers from %d files in %.1fs"
+            "  OK Loaded %d papers from %d files in %.1fs"
             % (len(paperDict), globalVar.loadedPapers, step1_elapsed)
         )
 
@@ -141,7 +141,7 @@ class PreProcessClass:
         step_t0 = time.time()
         paperDict = paperUtils.disam_names_scopus(paperDict)
         globalVar.progressPer = 100
-        print("  ✓ Done in %.1fs" % (time.time() - step_t0))
+        print("  OK Done in %.1fs" % (time.time() - step_t0))
 
         globalVar.OriginalTotalPapers = len(paperDict)
 
@@ -234,7 +234,7 @@ class PreProcessClass:
             paperDict = paperUtils.removeDuplicates(
                 paperDict, logWriter, self.preProcessBrief
             )
-            print("  ✓ Done in %.1fs" % (time.time() - step_t0))
+            print("  OK Done in %.1fs" % (time.time() - step_t0))
         # if not remove duplicates
         else:
             _announce_step(3, "Skipping duplicate removal (--noRemDupl)", self.fromGui)
@@ -300,7 +300,7 @@ class PreProcessClass:
         paperIO.write_preprocessed(paperDict, parquet_path)
         globalVar.progressPer = 100
         print(
-            "  ✓ Wrote %d papers to %s (%.1fs)"
+            "  OK Wrote %d papers to %s (%.1fs)"
             % (len(paperDict), parquet_path, time.time() - step_t0)
         )
 
@@ -308,9 +308,9 @@ class PreProcessClass:
         logFile.close()
 
         total_elapsed = time.time() - pipeline_t0
-        print("\n" + "═" * 50)
-        print("Preprocess finished in %.1fs — %d papers ready" % (total_elapsed, len(paperDict)))
-        print("═" * 50)
+        print("\n" + "=" * 50)
+        print("Preprocess finished in %.1fs - %d papers ready" % (total_elapsed, len(paperDict)))
+        print("=" * 50)
 
         globalVar.totalPapers = len(paperDict)
         globalVar.progressText = "Done"

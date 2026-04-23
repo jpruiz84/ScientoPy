@@ -47,13 +47,13 @@ def _banner(source, fmt, output_path):
     progress dialog shows the same text before the first percentage tick.
     """
     title = "ScientoPy Export"
-    bar = "═" * max(50, len(title))
+    bar = "=" * max(50, len(title))
     print("\n%s\n%s" % (title, bar))
     print("  Source:      %s" % source)
     print("  Format:      %s" % fmt)
     print("  Destination: %s" % output_path)
     print(bar)
-    globalVar.progressText = "Exporting (%s → %s)" % (source, fmt)
+    globalVar.progressText = "Exporting (%s -> %s)" % (source, fmt)
     globalVar.progressPer = 0
 
 
@@ -68,9 +68,9 @@ def export_preprocessed(fmt, output_path):
         )
 
     t0 = time.time()
-    globalVar.progressText = "Reading preprocessed corpus…"
+    globalVar.progressText = "Reading preprocessed corpus..."
     globalVar.progressPer = 0
-    print("  Reading %s …" % parquet)
+    print("  Reading %s ..." % parquet)
     papers = paperIO.read_preprocessed(parquet)
     print("  Loaded %d papers in %.1fs" % (len(papers), time.time() - t0))
 
