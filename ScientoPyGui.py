@@ -170,6 +170,7 @@ DARK_MATPLOTLIB_STYLE = {
 def load_config():
     defaults = {
         "appearance_mode": "System",
+        "graph_appearance": "Light",
         "last_dataset_folder": "",
         "window_geometry": "1000x600",
         "splitter_sizes": [280, 600],
@@ -207,12 +208,18 @@ def is_dark_mode(app):
     return bg.lightnessF() < 0.5
 
 
-def apply_matplotlib_theme(app):
-    if is_dark_mode(app):
+def apply_matplotlib_theme(app, graph_mode="Same as UI"):
+    if graph_mode == "Dark":
         matplotlib.rcParams.update(DARK_MATPLOTLIB_STYLE)
-    else:
+    elif graph_mode == "Light":
         matplotlib.rcParams.update(matplotlib.rcParamsDefault)
         matplotlib.rcParams['figure.dpi'] = 100
+    else:  # "Same as UI"
+        if is_dark_mode(app):
+            matplotlib.rcParams.update(DARK_MATPLOTLIB_STYLE)
+        else:
+            matplotlib.rcParams.update(matplotlib.rcParamsDefault)
+            matplotlib.rcParams['figure.dpi'] = 100
 
 
 class NumericTableWidgetItem(QTableWidgetItem):
@@ -343,19 +350,28 @@ class ScientoPyGui(QMainWindow):
         menu_bar = self.menuBar()
 
         view_menu = menu_bar.addMenu("View")
-        appearance_menu = view_menu.addMenu("Appearance")
 
+        appearance_menu = view_menu.addMenu("Appearance")
         self.appearance_group = QActionGroup(self)
         self.appearance_group.setExclusive(True)
-
         for mode in ("System", "Light", "Dark"):
             action = QAction(mode, self, checkable=True)
-            action.setData(mode)
             if mode == self.config.get("appearance_mode", "System"):
                 action.setChecked(True)
             action.triggered.connect(lambda checked, m=mode: self._apply_appearance(m))
             self.appearance_group.addAction(action)
             appearance_menu.addAction(action)
+
+        graph_appearance_menu = view_menu.addMenu("Graph appearance")
+        self.graph_appearance_group = QActionGroup(self)
+        self.graph_appearance_group.setExclusive(True)
+        for mode in ("Same as UI", "Light", "Dark"):
+            action = QAction(mode, self, checkable=True)
+            if mode == self.config.get("graph_appearance", "Same as UI"):
+                action.setChecked(True)
+            action.triggered.connect(lambda checked, m=mode: self._apply_graph_appearance(m))
+            self.graph_appearance_group.addAction(action)
+            graph_appearance_menu.addAction(action)
 
     def _apply_appearance(self, mode):
         app = QApplication.instance()
@@ -388,10 +404,14 @@ class ScientoPyGui(QMainWindow):
             app.setPalette(palette)
 
         # Update matplotlib theme
-        apply_matplotlib_theme(app)
+        apply_matplotlib_theme(app, self.config.get("graph_appearance", "Same as UI"))
 
         # Update logo if we have both variants
         self._update_logo()
+
+    def _apply_graph_appearance(self, mode):
+        self.config["graph_appearance"] = mode
+        apply_matplotlib_theme(QApplication.instance(), mode)
 
     def _update_logo(self):
         if not hasattr(self, 'logo_label'):
@@ -1278,7 +1298,7 @@ class ScientoPyGui(QMainWindow):
             elif globalVar.totalPapers > 0:
                 self.status_bar.showMessage(
                     "Preprocessing complete \u2014 %d papers" % globalVar.totalPapers)
-                apply_matplotlib_theme(QApplication.instance())
+                apply_matplotlib_theme(QApplication.instance(), self.config.get("graph_appearance", "Same as UI"))
                 self.preprocess.graphBrief()
                 self._load_results_table()
                 self._update_export_enabled()
@@ -1356,7 +1376,7 @@ class ScientoPyGui(QMainWindow):
         self.status_bar.showMessage(
             "Analysis complete \u2014 %d topics found" % topic_count)
 
-        apply_matplotlib_theme(QApplication.instance())
+        apply_matplotlib_theme(QApplication.instance(), self.config.get("graph_appearance", "Same as UI"))
         self.scientoPy.plotResults()
 
         # plotResults() calls plt.show(block=False), which queues Qt paint
