@@ -1377,6 +1377,21 @@ class ScientoPyGui(QMainWindow):
             "Analysis complete \u2014 %d topics found" % topic_count)
 
         apply_matplotlib_theme(QApplication.instance(), self.config.get("graph_appearance", "Same as UI"))
+
+        if self.scientoPy.graphType == "word_cloud":
+            globalVar.progressText = "Generating word cloud..."
+            globalVar.progressPer = 0
+            globalVar.cancelProcess = False
+
+            def _compute_wc():
+                self.scientoPy.computeWordCloud()
+                globalVar.progressPer = 101
+
+            t_wc = threading.Thread(target=_compute_wc)
+            t_wc.start()
+            ProgressDialog(self).exec()
+            t_wc.join()
+
         self.scientoPy.plotResults()
 
         # plotResults() calls plt.show(block=False), which queues Qt paint

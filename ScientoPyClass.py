@@ -81,6 +81,31 @@ class ScientoPyClass:
 
     def closePlot(self):
         plt.close()
+        self._precomputed_wc = None
+
+    def computeWordCloud(self, args=''):
+        """Pre-compute the WordCloud object off the main thread.
+
+        Only meaningful when graphType == 'word_cloud'. The result is
+        stored in self._precomputed_wc and consumed by plotResults() so
+        the slow placement algorithm doesn't block the Qt event loop.
+        """
+        if args == '':
+            args = self
+        if args.graphType != 'word_cloud' or not self.topicResults:
+            return
+        from wordcloud import WordCloud
+        freq = {t["name"]: t["PapersTotal"] for t in self.topicResults}
+        if args.wordCloudMask:
+            imageMask = np.array(Image.open(args.wordCloudMask))
+            wc = WordCloud(background_color="white", max_words=5000,
+                           width=1960, height=1080, colormap="tab10",
+                           mask=imageMask)
+        else:
+            wc = WordCloud(background_color="white", max_words=5000,
+                           width=1960, height=1080, colormap="tab10")
+        wc.generate_from_frequencies(freq)
+        self._precomputed_wc = wc
 
     def scientoPy(self, args=''):
         globalVar.cancelProcess = False
@@ -566,24 +591,27 @@ class ScientoPyClass:
             graphUtils.plot_evolution(plt, self.topicResults, self.yearArray[self.startYearIndex], self.yearArray[self.endYearIndex], args)
 
         if args.graphType == "word_cloud":
-            from wordcloud import WordCloud
             my_dpi = 96
             plt.figure(figsize=(1960 / my_dpi, 1080 / my_dpi), dpi=my_dpi)
 
-            if args.wordCloudMask:
-                imageMask = np.array(Image.open(args.wordCloudMask))
-                wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10",
-                                mask=imageMask)
-            else:
-                wc = WordCloud(background_color="white", max_words=5000, width=1960, height=1080, colormap="tab10")
+            # Use pre-computed word cloud if available (GUI path: computeWordCloud()
+            # ran in a worker thread to avoid blocking the Qt event loop).
+            wc = getattr(self, '_precomputed_wc', None)
+            self._precomputed_wc = None  # consume it
+            if wc is None:
+                # CLI / fallback path: compute synchronously here.
+                from wordcloud import WordCloud
+                freq = {t["name"]: t["PapersTotal"] for t in self.topicResults}
+                if args.wordCloudMask:
+                    imageMask = np.array(Image.open(args.wordCloudMask))
+                    wc = WordCloud(background_color="white", max_words=5000,
+                                   width=1960, height=1080, colormap="tab10",
+                                   mask=imageMask)
+                else:
+                    wc = WordCloud(background_color="white", max_words=5000,
+                                   width=1960, height=1080, colormap="tab10")
+                wc.generate_from_frequencies(freq)
 
-            freq = {}
-            for topicItem in self.topicResults:
-                freq[topicItem["name"]] = topicItem["PapersTotal"]
-            # generate word cloud
-            wc.generate_from_frequencies(freq)
-
-            # show
             plt.imshow(wc, interpolation="bilinear")
             plt.axis("off")
             fig = plt.gcf()
