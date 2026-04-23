@@ -51,13 +51,10 @@ jobs:
         include:
           - os: windows-latest
             platform: windows-x64
-            artifact_ext: zip
           - os: ubuntu-22.04
             platform: linux-x64
-            artifact_ext: tar.gz
           - os: macos-14
             platform: macos-arm64
-            artifact_ext: zip
 
     runs-on: ${{ matrix.os }}
 
@@ -93,27 +90,30 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller ScientoPyGui.spec --noconfirm
 
-      - name: Package artifact (Windows)
+      # Windows: upload the directory directly so GitHub creates the artifact
+      # ZIP from the raw files. This avoids a double-ZIP layer that would
+      # prevent SignPath from finding ScientoPyGui.exe inside.
+      - name: Upload artifact (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Compress-Archive -Path dist/ScientoPyGui/* -DestinationPath ScientoPy-${{ matrix.platform }}.zip
-
-      - name: Package artifact (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          tar -czf ScientoPy-${{ matrix.platform }}.tar.gz -C dist ScientoPyGui
-
-      - name: Package artifact (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          cd dist && zip -r ../ScientoPy-${{ matrix.platform }}.zip ScientoPyGui
-
-      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ScientoPy-${{ matrix.platform }}
-          path: ScientoPy-${{ matrix.platform }}.${{ matrix.artifact_ext }}
+          path: dist/ScientoPyGui/
+
+      - name: Package artifact (Linux)
+        if: runner.os == 'Linux'
+        run: tar -czf ScientoPy-${{ matrix.platform }}.tar.gz -C dist ScientoPyGui
+
+      - name: Package artifact (macOS)
+        if: runner.os == 'macOS'
+        run: cd dist && zip -r ../ScientoPy-${{ matrix.platform }}.zip ScientoPyGui
+
+      - name: Upload artifact (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScientoPy-${{ matrix.platform }}
+          path: ScientoPy-${{ matrix.platform }}.*
 
   sign-windows:
     needs: build
@@ -121,18 +121,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download Windows artifact
+      # Download to get the artifact-id output; the ID is passed directly to
+      # SignPath so the artifact is not re-uploaded (which would add a second
+      # ZIP wrapper and hide ScientoPyGui.exe from the artifact configuration).
+      - name: Get Windows artifact
+        id: get-artifact
         uses: actions/download-artifact@v4
         with:
           name: ScientoPy-windows-x64
           path: unsigned
-
-      - name: Upload unsigned artifact for signing
-        id: upload-unsigned
-        uses: actions/upload-artifact@v4
-        with:
-          name: ScientoPy-windows-x64-unsigned
-          path: unsigned/ScientoPy-windows-x64.zip
 
       # SignPath code signing (OSS Foundation program).
       # Required GitHub repository secrets:
@@ -142,8 +139,7 @@ jobs:
       #   SIGNPATH_ARTIFACT_CONFIG_SLUG   — artifact configuration slug (e.g. "initial-version")
       #   SIGNPATH_SIGNING_POLICY_SLUG    — signing policy slug (e.g. "test-signing")
       #
-      # The artifact configuration that tells SignPath which files to sign is
-      # in .signpath/artifact-configuration.xml (committed to this repository).
+      # Artifact configuration: .signpath/artifact-configuration.xml
       - name: Sign with SignPath
         id: signpath
         uses: signpath/github-action-submit-signing-request@v1
@@ -153,15 +149,20 @@ jobs:
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
           artifact-configuration-slug: ${{ secrets.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
           signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
-          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          github-artifact-id: ${{ steps.get-artifact.outputs.artifact-id }}
           wait-for-completion: true
           output-artifact-directory: signed
+
+      # SignPath extracts the signed files into signed/. Repackage as a ZIP
+      # so the release asset has the same format as Linux/macOS.
+      - name: Package signed artifact
+        run: cd signed && zip -r ../ScientoPy-windows-x64.zip . && cd ..
 
       - name: Upload signed artifact
         uses: actions/upload-artifact@v4
         with:
           name: ScientoPy-windows-x64-signed
-          path: signed/ScientoPy-windows-x64.zip
+          path: ScientoPy-windows-x64.zip
 
   release:
     needs: [build, sign-windows]
