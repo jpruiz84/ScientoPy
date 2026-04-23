@@ -21,7 +21,9 @@
     <pe-file-set>
       <include path="*.dll" />
       <include path="*.pyd" />
-      <authenticode-sign />
+      <for-each>
+        <authenticode-sign />
+      </for-each>
     </pe-file-set>
   </zip-file>
 </artifact-configuration>
