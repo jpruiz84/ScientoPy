@@ -83,6 +83,56 @@ After the workflow finishes:
   Get-AuthenticodeSignature .\ScientoPyGui.exe | Format-List
   ```
 
+## Testing
+
+The project has two test suites — both run in CI on every PR and push (`.github/workflows/build-release.yml`, the `test` job, matrix: Linux + macOS + Windows). Run them locally before opening a PR or cutting a release.
+
+### Test suites at a glance
+
+| Suite | File | Type | Coverage |
+|---|---|---|---|
+| **Unit tests** | `tests/test_unit.py` | pytest | Pure-function logic: `globalVar` constants, `paperUtils` dedup, source counting, open-access normalization, error classes |
+| **Behavioral tests** | `tests/run_behavioral_tests.py` | Custom runner | End-to-end pipeline: generates synthetic Scopus + WoS data via `tests/generate_test_data.py`, runs `preProcess.py` and `scientoPy.py`, asserts outputs against the spec in `doc/behavioral_test_spec.md` |
+
+### Running the tests locally
+
+```bash
+# Unit tests (~2 s)
+python -m pytest tests/test_unit.py -v
+
+# Behavioral tests (~30-60 s — exercises the full pipeline)
+python tests/run_behavioral_tests.py
+```
+
+Expected counts (as of v3.1.2): **19 unit tests** and **81 behavioral checks**. If counts differ unexpectedly, investigate before assuming tests are passing.
+
+### Which tests to run after a change
+
+Match the change category to the suite — but **always run both before pushing a release tag**.
+
+| You changed... | Run |
+|---|---|
+| A pure helper in `paperUtils.py`, `globalVar.py`, error classes | Unit tests first; behavioral if the helper feeds into the pipeline |
+| Preprocessing logic (`preProcess.py`, `PreProcessClass.py`, `paperIO.py`, dedup, field mapping, OA normalization, country/institution extraction) | **Both suites** — preprocessing is covered end-to-end by behavioral tests |
+| Analysis logic (`scientoPy.py`, `ScientoPyClass.py`, criterion handling, year filtering, custom topics, `--saveExtended`, previous-results chaining) | Behavioral suite (Stage 2 covers all `-c` criteria, year ranges, custom topics, dataBase grouping) |
+| Export / CLI tools (`exportPapers.py`, `generateBibtex.py`) | Behavioral suite (Stage 3 covers `exportPapers` round-trip) |
+| GUI code only (`ScientoPyGui.py`, splash screen, graph theming, dialogs) | Unit tests + **manual GUI smoke test** — there is no automated GUI test harness; launch the app and exercise the affected feature |
+| Bug fix | Both suites — and add a new test that fails without the fix, then passes with it. Add unit-level if the bug was in a pure function, behavioral if it surfaced in the pipeline |
+| New feature | Both suites — and add behavioral checks for the new user-visible behavior, even if the implementation is unit-testable. Update `doc/behavioral_test_spec.md` if the expected output table changes |
+| Version bump / release notes / CI workflow only | Unit tests are enough; CI re-runs everything on the tag push anyway |
+| Dependency bump in `requirements.txt` | **Both suites** — dependency changes can break pipeline output silently |
+
+### Adding new tests
+
+- **New unit test:** add a `test_*` method inside an existing `TestX` class in `tests/test_unit.py`, or create a new class if the area isn't covered. Follow the existing arrange-act-assert style; no fixtures or conftest needed.
+- **New behavioral test:** add a `check(test_id, description, condition, detail)` call in `tests/run_behavioral_tests.py` in the relevant stage section. Assign a sequential test ID (`T14`, `T-M17`, `T-N05`, `T-E03`). If new synthetic data is required, extend `tests/generate_test_data.py` *and* update the expected-output tables in `doc/behavioral_test_spec.md` to keep the spec the source of truth.
+- **Regression test for a bug:** name the test/check after the symptom (`test_doi_duplicate`, `T-N03: Extended results CSV NOT auto-written`) so it's easy to find later.
+
+### Notes
+
+- `tests/tmp_test_data/` is left in place after `run_behavioral_tests.py` finishes — useful for inspecting outputs when a check fails. It is gitignored.
+- There are three pre-existing `SyntaxWarning`s about regex escape sequences in `paperUtils.py` (lines 538, 547, 711). These are not test failures and are unrelated to most changes — only worry about them if you're touching `paperUtils.py` regexes.
+
 ## SignPath secrets
 
 The Windows signing job needs these GitHub repository secrets:
