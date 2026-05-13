@@ -469,6 +469,11 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 <br>
 
+# Additional Information
+- ScientoPy will not transfer any information to other networked systems unless explicitly requested by any party involved with installing or operating it
+
+<br>
+
 # Sponsors
 <table>
  <tbody>
