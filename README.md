@@ -468,3 +468,14 @@ The bibtex entry for this is:
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
 
+<br><br>
+
+# Sponsors
+<table>
+ <tbody>
+  <tr>
+   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
+   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
+  </tr>
+ </tbody>
+</table>
