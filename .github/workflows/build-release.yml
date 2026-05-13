@@ -95,7 +95,7 @@ jobs:
       # prevent SignPath from finding ScientoPyGui.exe inside.
       - name: Upload artifact (Windows)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ScientoPy-${{ matrix.platform }}
           path: dist/ScientoPyGui/
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload artifact (Linux/macOS)
         if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ScientoPy-${{ matrix.platform }}
           path: ScientoPy-${{ matrix.platform }}.*
@@ -127,14 +127,14 @@ jobs:
       # file would double-wrap it (GitHub ZIP → our ZIP) and hide the exe
       # from the SignPath artifact configuration.
       - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ScientoPy-windows-x64
           path: unsigned
 
       - name: Re-upload as directory for SignPath
         id: upload-for-signing
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ScientoPy-windows-x64-for-signing
           path: unsigned/
@@ -167,7 +167,7 @@ jobs:
         run: cd signed && zip -r ../ScientoPy-windows-x64.zip . && cd ..
 
       - name: Upload signed artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ScientoPy-windows-x64-signed
           path: ScientoPy-windows-x64.zip
@@ -179,19 +179,19 @@ jobs:
 
     steps:
       - name: Download signed Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ScientoPy-windows-x64-signed
           path: artifacts/ScientoPy-windows-x64
 
       - name: Download Linux artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ScientoPy-linux-x64
           path: artifacts/ScientoPy-linux-x64
 
       - name: Download macOS artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ScientoPy-macos-arm64
           path: artifacts/ScientoPy-macos-arm64
