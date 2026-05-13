@@ -467,8 +467,7 @@ The bibtex entry for this is:
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
-
-<br><br>
+<br>
 
 # Sponsors
 <table>
