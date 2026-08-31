@@ -1,0 +1,163 @@
+---
+title: The graphical interface
+description: The five tabs of ScientoPyGui, and how they map onto the CLI.
+---
+
+import { Callout, Badge, Terminal, FileTree } from './_components.jsx'
+
+# The graphical interface
+
+`ScientoPyGui.py` is a PySide6 (Qt) desktop application that wraps the same
+classes the CLI uses — `PreProcessClass` and `ScientoPyClass` — so a GUI run and
+a CLI run with equivalent settings produce identical output.
+
+<Terminal title="bash">
+{`python3 ScientoPyGui.py`}
+</Terminal>
+
+Or launch the pre-built binary from the
+[releases page](https://github.com/jpruiz84/ScientoPy/releases). A small
+Tk splash window appears immediately while Qt, matplotlib and Polars import in
+the background — startup on a cold cache would otherwise look like a hang.
+
+The five tabs are numbered because they are meant to be used in order.
+
+## 1. Pre-processing
+
+Logo, version, and the one control that matters: **Dataset folder** (with
+**Browse**), a **Remove duplicated documents** checkbox — checked by default,
+unchecking it is `--noRemDupl` — and **Run preprocess**.
+
+A modal progress dialog shows the same `[n/4]` stage labels the CLI prints, with
+a **Cancel** button. Cancellation is cooperative: it sets a flag the pipeline
+checks between units of work, so it takes effect at the next checkpoint rather
+than instantly.
+
+The chosen folder is remembered between sessions.
+
+## 2. Analysis
+
+Every `scientoPy.py` flag that matters, as a form. Each control carries a
+tooltip explaining it.
+
+| Control | CLI equivalent |
+| --- | --- |
+| Criterion | `-c` |
+| Graph type | `-g` |
+| Start Year / End Year | `--startYear` / `--endYear` |
+| Topics length | `-l` |
+| Skip first | `-s` |
+| Window (years) | `--windowWidth` |
+| Use previous results | `-r` |
+| Trend analysis | `--trend` |
+| **Custom topics** text area | `-t` |
+
+The custom-topics box takes the same syntax as the CLI — `;` between topics, `,`
+between spellings to merge — and being a multi-line editor, it is markedly more
+comfortable than quoting a long list in a shell.
+
+Four buttons: **Generate BibTeX** (opens a file picker for a `.tex`, see
+[Exporting](./exporting.mdx)), **Clear topics**, **Reset defaults**, and **Run**.
+
+<Callout type="tip" title="The GUI keeps the corpus in memory">
+`ScientoPyClass` caches the loaded corpus between runs, and reloads only when
+you toggle *Use previous results*. Successive analyses in one session skip the
+read entirely — this is where the GUI is genuinely faster than repeated CLI
+invocations.
+</Callout>
+
+## 3. Results
+
+A sortable, read-only table. Before any analysis it shows
+`dataPre/PreprocessedBrief.csv`; afterwards it shows the ranking from
+`results/<Criterion>.csv`. Column headers carry tooltips defining AGR, ADY,
+PDLY and h-index, and numeric columns sort numerically rather than
+lexicographically.
+
+Bottom bar: **Copy Selection**, **Copy All** (both also on <kbd>Ctrl</kbd>+<kbd>C</kbd>,
+tab-separated so it pastes into a spreadsheet), and **Analyze selection** —
+which copies the topic names of the selected rows into the Analysis tab's custom
+topics box.
+
+<Callout type="tip" title="Analyze selection is the discovery loop">
+Run a top-N analysis, sort by whatever interests you, select a handful of rows,
+click **Analyze selection**, then refine on tab 2. Much faster than reading
+names off a plot and retyping them.
+</Callout>
+
+## 4. Extended Results
+
+The per-document view: for each topic, a header row followed by one row per
+matching paper — cited-by, EID, year, title, abstract, document type, authors,
+author keywords, both keywords, country, and the EIDs of any duplicates that
+were folded in.
+
+This tab is populated **from memory**, from the analysis you just ran, and does
+not require the extended CSV to exist on disk. It appears only after an analysis
+in the current session.
+
+## 5. Export
+
+Three sources, two formats, one destination.
+
+**Source**
+- *Preprocessed corpus* — the whole deduplicated corpus from
+  `dataPre/papersPreprocessed.parquet`, as one CSV.
+- *Last analysis results* — copies the CSVs currently in `results/` into a
+  folder you pick.
+- *Extended results (per-document)* — writes the tab-4 table to a CSV. Requires
+  an analysis in this session.
+
+**Format** — *Scopus fields* or *WoS fields*. Only meaningful for the
+preprocessed-corpus source; the radio buttons disable themselves for the other
+two, because a results table is a ScientoPy-native table, not a database record.
+
+**Destination** — pre-filled with a sensible default, editable, with **Browse…**.
+
+The **Export** button disables itself with an explanatory tooltip when the
+selected source has no data yet — "No preprocessed corpus found. Run Preprocess
+first."
+
+## View menu
+
+**Appearance** — *System* / *Light* / *Dark*. Dark applies a hand-built Qt
+palette.
+
+**Graph appearance** — *Same as UI* / *Light* / *Dark*, controlling matplotlib
+independently of the UI chrome. Worth knowing: figures you export for a paper
+almost always want **Light** even when you work in a dark UI, which is exactly
+why this is a separate setting.
+
+## Saved preferences
+
+<FileTree>
+{`scientopy_config.json      (written in the current working directory)`}
+</FileTree>
+
+Holds appearance mode, graph appearance, last dataset folder, window geometry,
+splitter sizes, and the last-used criterion, graph type, year range, topics
+length, skip-first and window width. Missing or corrupt, it is silently replaced
+with defaults.
+
+<Callout type="note" title="It is relative to the working directory">
+Like `dataPre/`, `results/`, `graphs/` and `export/`, the config file lives in
+whatever directory you launched from. Launching from two different directories
+gives you two independent workspaces and two independent sets of preferences.
+</Callout>
+
+## What the GUI does not expose
+
+A few CLI flags have no widget: `--savePlot`, `--graphTitle`, `--plotWidth`,
+`--plotHeight`, `--pYear`, `--yLog`, `--agrForGraph`, `--onlyFirst`,
+`-f/--filter`, `--wordCloudMask`. For camera-ready figures and for the
+institution-by-country filter, use the CLI.
+
+<Callout type="warning" title="There is no automated GUI test suite">
+The unit and behavioral suites cover the engine, not the widgets. After changing
+GUI code, launch the app and exercise the affected feature by hand — the
+project's own `CLAUDE.md` says the same.
+</Callout>
+
+## Next
+
+[Exporting and BibTeX](./exporting.mdx).

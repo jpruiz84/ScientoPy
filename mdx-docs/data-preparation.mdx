@@ -1,0 +1,173 @@
+---
+title: Preparing your dataset
+description: Exporting from Scopus and Web of Science, folder layout, and how columns are mapped onto one record.
+---
+
+import { Callout, Badge, Terminal, FileTree } from './_components.jsx'
+
+# Preparing your dataset
+
+ScientoPy never fetches anything. You run a search in Scopus or Web of Science,
+export the results, drop the files in a folder, and point `preProcess.py` at
+that folder.
+
+## What the loader accepts
+
+The input folder is walked **recursively**, and every file whose name ends in
+`.csv` or `.txt` is treated as a candidate export. The delimiter is
+auto-detected from the first line: a tab anywhere in the header means *WoS*,
+otherwise *comma* means *Scopus*.
+
+<FileTree>
+{`myDataset/
+├── scopus/
+│   ├── scopus_2026_04_02_1-2000.csv
+│   └── scopus_2026_04_02_2001-4000.csv
+└── wos/
+    ├── wos_2026_04_02_1000.txt
+    └── wos_2026_04_02_2000.txt`}
+</FileTree>
+
+Both databases cap a single export at a couple of thousand records, so a real
+dataset is always several files. Just export them all into the folder; the
+subdirectory layout above is a convenience for you, not a requirement.
+
+<Callout type="warning" title="Everything ending in .txt or .csv is opened">
+There is no filename convention and no allow-list. A stray notes file in the
+input folder is read, fails to parse, and is reported as
+`Reading file: … (empty or failed)` — harmless, but it will appear in the log.
+The bundled `dataInExample/searchCriteria.txt` does exactly this on every run.
+</Callout>
+
+## Exporting from Scopus
+
+1. Run your search on [scopus.com](https://www.scopus.com).
+2. Select all results, then **Export → CSV**.
+3. Under *Customise export*, tick **everything** — at minimum you need
+   Citation information, Bibliographical information, Abstract & keywords, and
+   **Affiliations** (country and institution extraction depends on it).
+4. Repeat in blocks until the whole result set is downloaded.
+
+The columns ScientoPy reads are `Authors`, `Title`, `Year`, `Source title`,
+`Volume`, `Issue`, `Art. No.`, `Page start`, `Page end`, `Page count`,
+`Cited by`, `DOI`, `Link`, `Affiliations`, `Authors with affiliations`,
+`Abstract`, `Author Keywords`, `Index Keywords`, `Correspondence Address`,
+`Editors`, `Publisher`, `Publisher Address`, `Conference name`,
+`Conference date`, `Conference location`, `ISSN`, `ISBN`, `CODEN`,
+`PubMed ID`, `Language of Original Document`, `Abbreviated Source Title`,
+`Document Type`, `Source`, `EID` and `Open Access`.
+
+Elsevier's API-style column names are also recognized, so a dataset pulled with
+`pybliometrics` or a similar client works too: `author_names`, `author_ids`,
+`title`, `publicationName`, `citedby_count`, `doi`, `description`,
+`authkeywords`, `subtypeDescription`, `eid`, `coverDate`,
+`affiliation_country`.
+
+## Exporting from Web of Science
+
+1. Run your search on the Web of Science platform.
+2. **Export → Tab delimited file**.
+3. Record content: **Full Record and Cited References** (or at least Full
+   Record — the `C1` address field is what feeds institution extraction).
+4. Repeat in 1,000-record blocks.
+
+The WoS two-letter tags ScientoPy reads:
+
+| Tag | Meaning | Canonical field |
+| --- | --- | --- |
+| `AU` | Authors | `author` |
+| `AF` | Authors, full name | `authorFull` |
+| `TI` | Title | `title` |
+| `SO` | Publication name | `sourceTitle` |
+| `PY` | Year published | `year` |
+| `DT` | Document type | `documentType` |
+| `DE` | Author keywords | `authorKeywords` |
+| `ID` | Keywords Plus | `indexKeywords` |
+| `AB` | Abstract | `abstract` |
+| `C1` | Author address | `affiliations` |
+| `EM` | E-mail address | `correspondenceAddress` |
+| `SC` | Research areas | `subject` |
+| `Z9` | **Total** times cited | `citedBy` |
+| `CR` | Cited references | `citedReferences` |
+| `DI` | DOI | `doi` |
+| `UT` | Accession number | `eid` |
+| `OA` | Open access status | `openAccess` |
+| `OI` | ORCID | `orcid` |
+| `LA` `CT` `CY` `CL` `PU` `PA` `SN` `BN` `J9` `VL` `IS` `BP` `EP` `AR` `PG` `PM` `BE` | language, conference title/date/location, publisher, address, ISSN, ISBN, abbrev. source, volume, issue, pages, article no., page count, PubMed ID, editors | mapped 1:1 |
+
+<Callout type="note" title="Citations come from Z9, not TC">
+For WoS records ScientoPy takes the citation count from **`Z9`** (total times
+cited across all indexes), not from `TC` (Core Collection only). The `TC`
+mapping is present in the source but commented out. That means WoS citation
+counts — and therefore every h-index — are slightly higher than a Core
+Collection-only reading would give.
+</Callout>
+
+## What is required for a row to survive
+
+Each raw row is normalized and then judged. Three checks drop a record
+silently, before it is even counted as loaded:
+
+| Check | Rule |
+| --- | --- |
+| **Year** | `year` must be all digits and fall in `1900…2100`. |
+| **Title** | must be non-empty. |
+| **EID** | must start with `WOS` (→ database `WoS`) or `2-` (→ database `Scopus`). Anything else is dropped. |
+
+<Callout type="danger" title="The EID prefix is how the database is identified">
+There is no other signal. If your export is missing the `EID` / `UT` column, or
+carries identifiers in some other format, **every row is discarded** and
+preprocessing ends with `ERROR: 0 documents found`. This is the single most
+common cause of an empty run.
+</Callout>
+
+A fourth check *keeps* the record but marks it **omitted**: the document type
+must intersect the included list.
+
+```python
+INCLUDED_TYPES = ["Conference Paper", "Article",
+                  "Review", "Proceedings Paper", "Article in Press"]
+```
+
+Editorials, notes, letters, book chapters, errata and everything else are
+omitted, counted in the brief, and excluded from the corpus. To widen or narrow
+the scope, edit `INCLUDED_TYPES` in `globalVar.py` and re-run preprocessing.
+
+## Fields ScientoPy derives for you
+
+These do not exist in either export. They are computed during preprocessing and
+then become analyzable criteria in their own right.
+
+| Field | How it is built |
+| --- | --- |
+| `country` | For each author affiliation, take the last comma-separated section, strip dots, and pass it through a normalization table: `ENGLAND` / `SCOTLAND` / `WALES` / `UK` → *United Kingdom*; `USA` → *United States*; any `CHINA` → *China*; any `RUSSIA` → *Russian Federation*; `VIET NAM` → *Vietnam*; `U ARAB EMIRATES` → *United Arab Emirates*; `KINGDOM OF SAUDI ARABIA` → *Saudi Arabia*; `TRINID & TOBAGO`, `BOSNIA & HERCEG` → full names. Duplicates within one paper are collapsed case-insensitively. |
+| `institution` | The **second** comma-separated section of each affiliation — WoS records only. |
+| `institutionWithCountry` | `"institution, country"`, with internal commas stripped from both parts. WoS records only. |
+| `bothKeywords` | Author keywords followed by index keywords, de-duplicated case-insensitively, order preserved. |
+| `emailHost` | The host part after `@` in the correspondence address; `"No email"` when absent. |
+| `duplicatedIn` | List of EIDs of the duplicate copies that were folded into this record. |
+| `openAccess` | WoS `OA` and Scopus `Open Access` tags normalized to one vocabulary (Gold / Hybrid / Bronze / Green). |
+
+<Callout type="warning" title="Institution extraction is WoS-only">
+`institution` and `institutionWithCountry` are populated **only** for records
+whose `dataBase` is `WoS`. Scopus affiliation strings are parsed for country but
+not for institution. On a Scopus-only corpus these two criteria return nothing —
+that is by design in the current code, not a configuration you can flip.
+</Callout>
+
+## Record the search criteria
+
+Both the bundled example and good practice put a plain-text note next to the
+data describing exactly what was searched:
+
+<Terminal title="dataInExample/searchCriteria.txt">
+{`"Bluetooth low energy", downloaded in 2026.04.02`}
+</Terminal>
+
+Six months later this is the only thing that tells you whether a corpus is
+comparable to a new one. Keep it — and accept the one cosmetic "empty or
+failed" line it produces in the load log.
+
+## Next
+
+Once the folder is assembled, go to [Preprocessing](./preprocessing.mdx).

@@ -1,0 +1,166 @@
+---
+title: Graph types
+description: The five visualizations, what each one encodes, and when it is the right choice.
+---
+
+import { Callout, Badge, Terminal } from './_components.jsx'
+
+# Graph types
+
+Five plot types, selected with `-g / --graphType`. All of them are matplotlib
+figures: they open in an interactive window by default, or go straight to a file
+with `--savePlot`.
+
+| `-g` value | Encodes | Best for |
+| --- | --- | --- |
+| [`bar`](#bar) | Total documents per topic | A plain ranking |
+| [`bar_trends`](#bar_trends) *(default)* | Total, split by window, annotated with PDLY | One summary figure |
+| [`time_line`](#time_line) | Documents per year, per topic | Showing trajectories |
+| [`evolution`](#evolution) | Accumulative curve **and** an ADY/AGR × PDLY scatter | Positioning topics against each other |
+| [`word_cloud`](#word_cloud) | Term frequency as type size | Hundreds of terms at a glance |
+
+## bar
+
+Horizontal bars of `PapersTotal`, longest at the top.
+
+```bash
+python3 scientoPy.py -c sourceTitle -g bar -l 15
+```
+
+Nothing but volume. Use it when the ranking *is* the finding — top journals, top
+institutions, top countries — and growth is not the question.
+
+## bar_trends
+
+The default. Same bars as `bar`, but each is split into two segments — documents
+before the window's start year, and documents inside the window — with the PDLY
+percentage printed at the end of the bar.
+
+```bash
+python3 scientoPy.py -c authorKeywords -g bar_trends
+```
+
+This is the most information-dense single figure ScientoPy produces: rank,
+volume, recency and share, in one panel. If you can only publish one plot, this
+is usually it.
+
+<Callout type="note" title="It auto-grows past 20 topics">
+Above twenty bars the figure height is scaled by `len(topics)/17` so labels stay
+readable. Explicit `--plotHeight` sets the base that gets scaled, not the final
+height.
+</Callout>
+
+## time_line
+
+One line per topic, documents on Y against publication year on X, with a
+distinct marker per topic.
+
+```bash
+python3 scientoPy.py -c authorKeywords -g time_line --startYear 2010 --endYear 2025
+```
+
+The honest choice for "when did this happen". Two flags matter here:
+
+- `--yLog` — log Y axis, for topics separated by orders of magnitude.
+- `--pYear` — plot each topic's *share of that year's output* instead of counts;
+  the Y label changes to `% of documents per year`.
+
+<Callout type="tip" title="Leading zeros are suppressed">
+Years before a topic's first paper are plotted as gaps rather than as a flat line
+along zero, so lines start where the topic starts. That is deliberate: a run of
+zeros reads as data when it is really absence.
+</Callout>
+
+## evolution
+
+Two panels side by side, and the richest of the five.
+
+```bash
+python3 scientoPy.py -c authorKeywords \
+  -t "WSN, Wireless sensor network; RFID, RADIO FREQUENCY IDENTIFICATION" \
+  -g evolution
+```
+
+**Left panel** — accumulative documents per topic against year, smoothed with a
+radial basis function so the curves read as trajectories rather than staircases.
+A marker sits at the end of each curve.
+
+**Right panel** — a scatter with **PDLY on X** and **ADY on Y** (or AGR on Y with
+`--agrForGraph`), one point per topic, with dashed lines through the origin. Read
+it as four quadrants:
+
+|  | Low PDLY | High PDLY |
+| --- | --- | --- |
+| **High ADY / AGR** | Large and still active | **Hot** — small history, high current rate |
+| **Low ADY / AGR** | Dormant or historical | Small and recent, not yet established |
+
+Pairing `--trend --agrForGraph -g evolution` is the canonical "what is taking
+off" figure: topics selected by growth, then plotted with growth on the Y axis.
+
+<Callout type="warning" title="Smoothing is cosmetic">
+The left panel interpolates with an RBF (`smooth=0.4`) over 300 sample points.
+Curves can therefore bulge slightly off the true integer counts between years.
+Read exact values from the results CSV, never off this panel.
+</Callout>
+
+## word_cloud
+
+Type size proportional to `PapersTotal`, up to 5,000 words, rendered at
+1960×1080.
+
+```bash
+python3 scientoPy.py -c authorKeywords -l 500 -g word_cloud --savePlot cloud.png
+```
+
+Raise `-l` well above the default 10 — a cloud of ten words is pointless. This is
+the only graph type exempt from the 100-topic plotting limit.
+
+`--wordCloudMask mask.png` shapes the cloud to a PNG image: opaque pixels are
+filled, white pixels are left empty.
+
+<Callout type="note" title="Save clouds as PNG">
+The other four plots are vector-friendly (EPS/PDF/SVG). A word cloud is a raster
+layout — save it as `.png`, as `exampleGenerateGraphs.sh` does.
+</Callout>
+
+## Flags that apply to all plots
+
+| Flag | Effect |
+| --- | --- |
+| `--savePlot NAME` | Write to `graphs/NAME` instead of opening a window. Extension picks the format: `.eps`, `.pdf`, `.svg`, `.png`. |
+| `--graphTitle TEXT` | Figure-level title (`suptitle`), with layout adjusted to fit. |
+| `--plotWidth N` / `--plotHeight N` | Size in inches. Defaults 6.4 × 4.8. |
+| `--noPlot` | Compute and save tables, draw nothing. |
+| `--yLog` | Log Y axis — honored by `time_line` and by the left panel of `evolution`. |
+| `--pYear` | Percentage-per-year scaling. See [the caveat](./metrics.mdx#percentage-mode---pyear). |
+
+<Callout type="danger" title="Hard limit: 100 topics">
+Any graph type except `word_cloud` refuses to plot more than 100 topics —
+`ERROR: Not allowed to graph more than 100 results`. The analysis still
+completes and the CSV is still written, so pair a large `-l` with `--noPlot`, or
+switch to `word_cloud`.
+</Callout>
+
+## Colors and markers
+
+`globalVar.py` holds the palettes: `COLORS_TAB10` and `COLORS_TAB20` are
+matplotlib's tab10/tab20 repeated to cover 100+ topics, and `MARKERS` cycles
+fourteen shapes. Because they repeat rather than extend, **topics past index 10
+reuse an earlier color** — with a legend that is fine, but don't rely on color
+identity in a 30-line time line. Edit those lists to change the house style
+globally.
+
+## Reproducing the manual's figures
+
+```bash
+./exampleGenerateGraphs.sh
+```
+
+Fourteen worked invocations against `dataInExample`, writing every figure into
+`graphs/`. It is the fastest way to see all five types, plus trend analysis,
+grouping, filtering and result chaining. The PDF manuals in `Manual/` show the
+rendered output.
+
+## Next
+
+[The graphical interface](./gui.mdx), or [Exporting and BibTeX](./exporting.mdx).

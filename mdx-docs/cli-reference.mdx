@@ -1,0 +1,160 @@
+---
+title: CLI reference
+description: Every flag of every ScientoPy command, in one place.
+---
+
+import { Callout, Badge, Terminal } from './_components.jsx'
+
+# CLI reference
+
+Four command-line entry points. All paths are relative to the current working
+directory — ScientoPy has no notion of a project root, so run everything from
+the same directory.
+
+<Callout type="note" title="Installed entry points">
+After `pip install -e .` the same commands are available as `scientopy`,
+`scientopy-preprocess` and `scientopy-export`.
+</Callout>
+
+## `preProcess.py`
+
+```
+python3 preProcess.py <dataInFolder> [--noRemDupl]
+                      [--savePlot NAME] [--graphTitle TEXT]
+```
+
+| Argument | Type | Default | Description |
+| --- | --- | --- | --- |
+| `dataInFolder` | path | *required* | Folder holding Scopus/WoS exports. Scanned recursively for `.csv` and `.txt`. |
+| `--noRemDupl` | flag | off | Skip duplicate removal; keep both copies of every paper. |
+| `--savePlot` | filename | *(interactive)* | Write the brief graph to `graphs/NAME`. Format from the extension. |
+| `--graphTitle` | text | none | Title for the brief graph. |
+
+**Writes** `dataPre/papersPreprocessed.parquet`, `dataPre/PreprocessedBrief.csv`,
+and optionally `graphs/NAME`.
+
+## `scientoPy.py`
+
+```
+python3 scientoPy.py [-c CRITERION] [-g GRAPHTYPE] [-l N] [-s N] [-t TOPICS]
+                     [--startYear Y] [--endYear Y] [--windowWidth N]
+                     [--trend] [-r] [-f FILTER] [--onlyFirst]
+                     [--pYear] [--yLog] [--agrForGraph]
+                     [--noPlot] [--savePlot NAME] [--graphTitle TEXT]
+                     [--plotWidth N] [--plotHeight N]
+                     [--wordCloudMask PNG] [--saveExtended]
+```
+
+### Selecting data
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| `-c`, `--criterion` | choice | `authorKeywords` | Field to analyze. One of `author`, `sourceTitle`, `subject`, `authorKeywords`, `indexKeywords`, `bothKeywords`, `abstract`, `documentType`, `dataBase`, `country`, `institution`, `institutionWithCountry`. |
+| `-t`, `--topics` | string | *(top N)* | Explicit topics. `;` separates topics, `,` merges spellings into one topic, `*` is a wildcard. |
+| `-l`, `--length` | int | `10` | Number of topics to keep. |
+| `-s`, `--skipFirst` | int | `0` | Drop the first N topics from the ranking. |
+| `--startYear` | int | `1990` | First year included. |
+| `--endYear` | int | *last calendar year* | Last year included. |
+| `-f`, `--filter` | string | none | Keep only values whose part after the first comma matches. Built for `institutionWithCountry`. |
+| `--onlyFirst` | flag | off | Count only the first value of a multi-valued field (first author, lead country…). |
+| `-r`, `--previousResults` | flag | off | Analyze `results/lastAnalysis.parquet` instead of the full corpus. |
+
+### Indicators and ranking
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--windowWidth` | int ≥ 1 | `2` | Width in years of the trailing window for AGR / ADY / PDLY. |
+| `--trend` | flag | off | Rank the top 200 topics by AGR instead of by volume, then apply `-s` and `-l`. |
+| `--pYear` | flag | off | Express per-year counts as a share of that year's total output. |
+
+### Plotting
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| `-g`, `--graphType` | choice | `bar_trends` | `bar`, `bar_trends`, `time_line`, `evolution`, `word_cloud`. |
+| `--noPlot` | flag | off | Skip plotting entirely. |
+| `--savePlot` | filename | *(interactive)* | Write to `graphs/NAME`; also suffixes the results CSV name. |
+| `--graphTitle` | text | none | Figure title. |
+| `--plotWidth` | int | `6.4` | Inches. |
+| `--plotHeight` | int | `4.8` | Inches. |
+| `--yLog` | flag | off | Log Y axis (`time_line`, `evolution`). |
+| `--agrForGraph` | flag | off | Plot AGR instead of ADY on the evolution scatter's Y axis. |
+| `--wordCloudMask` | PNG path | none | Shape mask for `word_cloud`. |
+
+### Output
+
+| Flag | Type | Default | Description |
+| --- | --- | --- | --- |
+| `--saveExtended` | flag | off | Also write `results/<Criterion>_extended.csv` (one row per paper). |
+
+**Always writes** `results/<Criterion>[_plotname].csv`.
+**Writes unless `-r` is given** `results/lastAnalysis.parquet`.
+
+<Callout type="warning" title="Two silent overwrites">
+Successive runs on one criterion overwrite that criterion's results CSV — for
+example `results/AuthorKeywords.csv` — unless you vary `--savePlot`. And any
+run without `-r` replaces `lastAnalysis.parquet`,
+discarding the subset a previous run set up for chaining.
+</Callout>
+
+## `exportPapers.py`
+
+```
+python3 exportPapers.py [--source {preprocessed,results}]
+                        [--format {scopus,wos}] [-o PATH]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--source` | `preprocessed` | `preprocessed`: the whole corpus as one CSV. `results`: copy `results/*.csv` into a folder. |
+| `--format` | `scopus` | Column-naming profile. Only applies to `--source preprocessed`. |
+| `--output`, `-o` | `export/papersPreprocessed.csv` / `export/results/` | Destination file or directory. |
+
+## `generateBibtex.py`
+
+```
+python3 generateBibtex.py <file.tex>
+```
+
+Extracts `\cite{}` keys from between `\begin{document}` and
+`\begin{thebibliography}`, matches them against the corpus by EID, and writes
+`<file>_bibliography.bib` beside the input. No flags.
+
+## `ScientoPyGui.py`
+
+```
+python3 ScientoPyGui.py
+```
+
+No arguments. See [The graphical interface](./gui.mdx).
+
+## Configuration in `globalVar.py`
+
+A handful of behaviors are constants rather than flags. Change them in
+`globalVar.py` and re-run the affected stage.
+
+| Constant | Default | Effect |
+| --- | --- | --- |
+| `DEFAULT_START_YEAR` | `1990` | Default `--startYear`. |
+| `DEFAULT_END_YEAR` | `now.year - 1` | Default `--endYear`. |
+| `INCLUDED_TYPES` | 5 document types | Which documents survive preprocessing. **Requires re-running preprocess.** |
+| `TOP_TREND_SIZE` | `200` | Candidate pool size for `--trend`. |
+| `DEFAULT_PLOT_WIDTH` / `_HEIGHT` | `6.4` / `4.8` | Plot size in inches. |
+| `COLORS_TAB10`, `COLORS_TAB20`, `MARKERS` | matplotlib palettes | Plot styling. |
+| `USE_COLOR_MAP` | `True` | Use the color map rather than the literal color list. |
+| `SAVE_RESULTS_ON` | `"SCOPUS_FIELDS"` | Default export profile when `--format` is not given. |
+| `DATA_OUT_FOLDER`, `RESULTS_FOLDER`, `GRAPHS_OUT_FOLDER` | `dataPre`, `results`, `graphs` | Output directory names. |
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Success — including "no papers found in the range", which prints an error line but exits cleanly. |
+| `1` | `ScientoPyError` from `scientoPy.py` (missing input file, `windowWidth < 1`, `startYear > endYear`), or a missing source in `exportPapers.py`. |
+
+## Environment
+
+| Variable | Use |
+| --- | --- |
+| `MPLBACKEND=Agg` | Force a non-interactive matplotlib backend on a headless machine. |
+| `POLARS_MAX_THREADS` | Cap Polars' Rust worker threads. Set to `1` automatically inside each preprocess worker. |

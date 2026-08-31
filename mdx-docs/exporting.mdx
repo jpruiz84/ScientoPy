@@ -1,0 +1,217 @@
+---
+title: Exporting and BibTeX
+description: On-demand CSV exports, the extended per-document table, and generating a bibliography from a LaTeX document.
+---
+
+import { Callout, Badge, Terminal, Steps, Step, FileTree } from './_components.jsx'
+
+# Exporting and BibTeX
+
+Since v3.1, **nothing writes a CSV export unless you ask for it.** Preprocessing
+writes Parquet; analysis writes its ranking table and an internal Parquet. Every
+database-shaped CSV is produced by an explicit command.
+
+<Callout type="note" title="Why the change">
+The old behavior re-wrote `papersPreprocessed.csv` on every single analysis run.
+At ~40 columns × 300k rows that dominated the runtime of a command whose actual
+job took a fraction of the time — and produced a file most users never opened.
+</Callout>
+
+## `exportPapers.py`
+
+```bash
+# Full preprocessed corpus → export/papersPreprocessed.csv, Scopus-style fields
+python3 exportPapers.py
+
+# Same corpus, WoS-style field names
+python3 exportPapers.py --format wos
+
+# Copy the CSVs currently in results/ into export/results/
+python3 exportPapers.py --source results
+
+# Custom destination
+python3 exportPapers.py --source preprocessed --format scopus -o my_corpus.csv
+```
+
+| Flag | Values | Default |
+| --- | --- | --- |
+| `--source` | `preprocessed`, `results` | `preprocessed` |
+| `--format` | `scopus`, `wos` | `scopus` |
+| `--output` / `-o` | file (for `preprocessed`) or directory (for `results`) | `export/papersPreprocessed.csv` / `export/results/` |
+
+<Terminal title="python3 exportPapers.py">
+{`ScientoPy Export
+==================================================
+  Source:      preprocessed
+  Format:      scopus
+  Destination: export/papersPreprocessed.csv
+==================================================
+  Reading dataPre/papersPreprocessed.parquet ...
+  Loaded 5524 papers in 0.1s
+  Saving... 100% (5524/5524)
+Exported 5524 papers to export/papersPreprocessed.csv (scopus format)`}
+</Terminal>
+
+### Scopus format versus WoS format
+
+Not symmetric — this matters.
+
+**Scopus fields** (43 columns) is the lossless profile. It carries every
+canonical field, including the ones ScientoPy derived: `country`,
+`institution`, `institutionWithCountry`, `bothKeywords`, `emailHost`,
+`authorFull`, `duplicatedIn`, `Subject`, `Open Access`. The `Authors` column is
+written back with `,` separators to match a genuine Scopus export.
+
+**WoS fields** (69 columns of two-letter tags) is **lossy**. Only ~15 tags are
+actually populated — `AU`, `TI`, `PY`, `SO`, `DI`, `AB`, `DE`, `ID`, `DT`, `C1`,
+`SC`, `TC`, `CR`, `UT`, `OA` — plus `duplicatedIn` and `country`. The remaining
+columns are emitted empty, and the derived fields other than `country` are
+dropped.
+
+<Callout type="danger" title="Use Scopus format unless a downstream tool demands WoS tags">
+`--format wos` exists for feeding tools that parse WoS tag files. It is not a
+round-trippable archive of your corpus: re-importing it into ScientoPy loses
+institution, both-keywords, e-mail host and full author names.
+</Callout>
+
+<Callout type="note" title="--format is ignored for --source results">
+A results CSV is a ScientoPy-native table (position, total, AGR, ADY, PDLY,
+h-index, year columns), not a bibliographic record, so there is no Scopus or WoS
+rendering of it. `--source results` copies files verbatim.
+</Callout>
+
+## Extended results
+
+`results/<Criterion>_extended.csv` is the per-document table: for each topic, a
+header row with position/name/total, then one row per matching paper.
+
+| Column | Contents |
+| --- | --- |
+| `Cited by` | Post-deduplication citation count |
+| `EID` | The surviving record's identifier |
+| `Year`, `Title`, `Abstract`, `Document type` | Bibliographic detail |
+| `Authors`, `Author keywords`, `Both keywords`, `Country` | Analyzable fields |
+| `EID2` | `;`-joined EIDs of duplicates folded into this record |
+
+Papers are sorted by citation count within each topic, so the top of every block
+is that topic's most-cited work — which is what you usually want it for.
+
+Two ways to produce it:
+
+```bash
+python3 scientoPy.py -c authorKeywords --saveExtended
+```
+
+or, after any analysis, the GUI **5. Export** tab with source *Extended results
+(last analysis, per-document)*.
+
+<Callout type="warning" title="It is opt-in because it is enormous">
+Rows ≈ topics + Σ(papers per topic), and a paper matching several topics appears
+once per topic. On a large corpus with `-l 200` this reaches hundreds of
+thousands of rows including full abstracts.
+</Callout>
+
+## BibTeX generation
+
+ScientoPy can build a `.bib` for a LaTeX document straight from your corpus,
+using **paper EIDs as cite keys**. No manual reference entry, and no risk of the
+bibliography disagreeing with the analyzed dataset.
+
+<Steps>
+  <Step title="Find the EID">
+    From the `EID` column of `results/*_extended.csv`, or the Extended Results
+    tab in the GUI.
+  </Step>
+  <Step title="Cite it by EID in your .tex">
+    <Terminal title="article_example.tex">
+{`Location fingerprinting with BLE beacons is well studied
+\\cite{WOS:000363238300013}.`}
+    </Terminal>
+  </Step>
+  <Step title="Generate">
+    <Terminal title="bash">
+{`python3 generateBibtex.py latexExample/article_example.tex`}
+    </Terminal>
+    Writes `latexExample/article_example_bibliography.bib` next to the input.
+  </Step>
+  <Step title="Reference it">
+    <Terminal title="article_example.tex">
+{`\\bibliographystyle{unsrt}
+\\bibliography{article_example_bibliography}`}
+    </Terminal>
+  </Step>
+</Steps>
+
+<Terminal title="python3 generateBibtex.py latexExample/article_example.tex">
+{`Generating BibTeX
+=================`}
+{"\n\n"}
+{`13 cites found.
+Reading file: dataPre/papersPreprocessed.parquet
+Loaded 5524 documents
+Added paper(WOS:000363238300013): Location Fingerprinting With Bluetooth Low Energy Beacons
+Added paper(WOS:000403973600278): Mobile Application for Smart Campus System with iBeacon-uBeacon
+…
+Finished, total references generated: 13`}
+</Terminal>
+
+Produced entries look like this:
+
+```bibtex
+@Inproceedings{WOS:000376613200033,
+  Author  = "Wu, Yilang and Wang, Junbo and Jing, Lei and Zhou, Yinghui and Cheng, Zixue",
+  Title   = "A CICO System based on BLE Proximity",
+  Publisher = "IEEE",
+  Note    = "In Proceedings of the 7th IEEE International Conference on Awareness
+              Science and Technology (iCAST), NE Univ, Qinhuangdao, PEOPLES R CHINA,
+              SEP 21-24, 2015",
+  Pages   = "180-183",
+  Year    = "2015",
+  ISSN    = "2325-5986",
+  ISBN    = "978-1-4673-7657-0",
+}
+```
+
+### How it decides the entry type
+
+| Document type | Entry |
+| --- | --- |
+| `Article`, `Review`, `Article in Press` | `@Article` — journal, volume, pages, article number, ISSN, DOI |
+| `Conference Paper`, `Proceedings Paper` | `@Inproceedings` — publisher, a `Note` built from conference title/location/date, pages, ISBN, DOI |
+
+Author names are reformatted per database (`;`-separated for WoS, comma-parsed
+for Scopus), accents are stripped with `unidecode`, and `&` and `_` are escaped.
+
+`latexExample/` ships a `Makefile` that chains bibliography generation with
+`pdflatex` + `bibtex`. Run `make` inside it.
+
+<Callout type="warning" title="Silent omissions">
+A cite key with no matching EID in the corpus is skipped without an error.
+Compare the reported `N cites found` against `total references generated` — if
+they differ, a key is wrong or its paper was filtered out by document type or
+year during preprocessing.
+</Callout>
+
+<Callout type="note" title="Cite keys carry the database prefix">
+WoS keys look like `WOS:000363238300013`, Scopus keys like
+`2-s2.0-84962246672`. Both are literal EID values from the corpus, so a mixed
+bibliography is fine.
+</Callout>
+
+## Where exports land
+
+<FileTree>
+{`export/
+├── papersPreprocessed.csv      --source preprocessed
+├── <Criterion>_extended.csv    GUI extended-results export
+└── results/                    --source results
+    ├── AuthorKeywords.csv
+    └── Country.csv`}
+</FileTree>
+
+`results/lastAnalysis.parquet` is deliberately excluded from
+`--source results` — it is internal plumbing for `-r`, not a deliverable.
+
+## Next
+
+[CLI reference](./cli-reference.mdx), or [How it works inside](./internals.mdx).

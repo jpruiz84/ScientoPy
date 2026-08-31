@@ -1,0 +1,155 @@
+---
+title: Installation
+description: Pre-built binaries, running from source, and what Python needs to be present.
+---
+
+import { Callout, Badge, Terminal, Steps, Step } from './_components.jsx'
+
+# Installation
+
+Two ways in. If you only want to use the GUI, take the pre-built binary. If you
+want the CLI, want to script ScientoPy, or want to modify it, run from source.
+
+## Option A — pre-built release <Badge>no Python needed</Badge>
+
+Download from the [releases page](https://github.com/jpruiz84/ScientoPy/releases).
+Each asset is a self-contained PyInstaller bundle.
+
+| Platform | Asset | How to launch |
+| --- | --- | --- |
+| Windows x64 | `ScientoPy-windows-x64.zip` | Extract, run `ScientoPyGui.exe` |
+| Linux x64 | `ScientoPy-linux-x64.tar.gz` | Extract, `chmod +x ScientoPyGui/ScientoPyGui`, then run it |
+| macOS (Apple Silicon) | `ScientoPy-macos-arm64.zip` | Extract, right-click → **Open**, or `xattr -cr ScientoPyGui/` first |
+
+<Callout type="note" title="The Windows build is code-signed">
+Windows binaries are Authenticode-signed through SignPath (certificate donated
+by the SignPath Foundation). You can verify before running:
+
+```powershell
+Get-AuthenticodeSignature .\ScientoPyGui.exe | Format-List
+```
+
+The signature must report **Valid** with the expected publisher.
+</Callout>
+
+<Callout type="warning" title="macOS Gatekeeper">
+The macOS bundle is not notarized, so Gatekeeper will block a plain
+double-click. Right-click → **Open** once, or strip the quarantine attribute
+with `xattr -cr ScientoPyGui/`.
+</Callout>
+
+## Option B — from source
+
+**Requires Python 3.9 or newer.** The GUI additionally needs a working Qt
+platform (PySide6 ships its own) and, on Linux, Tk for the startup splash
+screen.
+
+<Steps>
+  <Step title="System packages (Ubuntu / Debian)">
+
+```bash
+sudo apt-get install python3 python3-tk python3-pip \
+                     python3-pil python3-pil.imagetk
+```
+
+On macOS and Windows the Python.org installers already include Tk.
+
+  </Step>
+  <Step title="Clone the repository">
+
+```bash
+git clone https://github.com/jpruiz84/ScientoPy
+cd ScientoPy
+```
+
+  </Step>
+  <Step title="Create a virtual environment and install dependencies">
+
+```bash
+python3 -m venv venv
+source venv/bin/activate        # Linux / macOS
+# venv\Scripts\activate         # Windows
+
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+  </Step>
+  <Step title="Confirm it works on the bundled corpus">
+
+```bash
+python3 preProcess.py dataInExample
+python3 scientoPy.py -c authorKeywords --noPlot
+```
+
+The first command should finish with `5524 papers ready`; the second should
+print a ten-row ranking headed by *Bluetooth Low Energy*.
+
+  </Step>
+</Steps>
+
+## What gets installed, and why
+
+| Package | Used for |
+| --- | --- |
+| `polars` | Multi-core CSV/TSV parsing and the Parquet reader/writer. The reason preprocessing is fast. |
+| `pyarrow` | Parquet backend behind Polars. |
+| `numpy` | Indicator arithmetic (`mean`, `sum`) across the year vectors. |
+| `pandas` | Legacy dependency; still declared, no longer on the hot path. |
+| `scipy` | RBF and spline smoothing for the accumulative curve in the evolution plot. |
+| `matplotlib` | All five plot types. |
+| `unidecode` | Accent stripping in author names, titles and column headers, so that "Müller" and "Muller" dedupe together. |
+| `Pillow` | Reading a PNG mask for `--wordCloudMask`, and GUI images. |
+| `wordcloud` | The word-cloud layout engine. A vendored copy also lives in `wordcloudFiles/`. |
+| `PySide6` | The Qt GUI. **Not needed for the CLI** — it is in `requirements.txt` but only an optional extra in `pyproject.toml`. |
+
+<Callout type="tip" title="CLI-only install">
+If you never intend to open the GUI, install the project's core dependency set
+and skip Qt entirely:
+
+```bash
+pip install -e .          # core deps from pyproject.toml, no PySide6
+pip install -e '.[gui]'   # add PySide6 later if you change your mind
+```
+
+`pyproject.toml` also declares console entry points, so an editable install
+gives you `scientopy`, `scientopy-preprocess` and `scientopy-export` on your
+`PATH`.
+</Callout>
+
+## Verifying an install
+
+Two test suites ship with the repository, and both run in CI on Linux, macOS
+and Windows.
+
+<Terminal title="bash">
+{`pip install pytest`}
+{"\n\n"}
+{`# Unit tests — pure functions, ~1 s
+python -m pytest tests/test_unit.py -v`}
+{"\n\n"}
+{`# Behavioral tests — generates synthetic Scopus + WoS data and drives the
+# whole pipeline end to end, ~30-60 s
+python tests/run_behavioral_tests.py`}
+</Terminal>
+
+Expected as of v3.1.2: **19 unit tests** and **81 behavioral checks**, all
+passing. The behavioral runner leaves its scratch data in
+`tests/tmp_test_data/` on purpose, so you can inspect outputs when a check
+fails.
+
+<Callout type="note" title="Harmless warnings">
+`paperUtils.py` raises three `SyntaxWarning`s about regex escape sequences (the
+affiliation-splitting patterns). They are pre-existing and unrelated to test
+outcomes.
+</Callout>
+
+## Headless environments
+
+Every plot goes through matplotlib, which needs a display by default. On a
+server or in CI, either pass `--noPlot`, or save straight to a file, or force
+the non-interactive backend:
+
+```bash
+MPLBACKEND=Agg python3 scientoPy.py -c country --savePlot countries.eps
+```

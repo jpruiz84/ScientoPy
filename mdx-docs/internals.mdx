@@ -1,0 +1,270 @@
+---
+title: How it works inside
+description: Module map, the canonical paper record, the analysis algorithm, parallelism, and why Parquet.
+---
+
+import { Callout, Badge, Terminal, PipelineDiagram, FileTree } from './_components.jsx'
+
+# How it works inside
+
+For anyone modifying ScientoPy, reviewing its methodology, or wondering why a
+number came out the way it did.
+
+<PipelineDiagram />
+
+## Module map
+
+<FileTree>
+{`Entry points
+  preProcess.py          argparse → PreProcessClass
+  scientoPy.py           argparse → ScientoPyClass
+  exportPapers.py        argparse → paperSave (also the GUI's export library)
+  generateBibtex.py      LaTeX → .bib
+  ScientoPyGui.py        PySide6 GUI over the same two classes`}
+{"\n\n"}
+{`Engine
+  PreProcessClass.py     orchestrates the 4 preprocessing stages
+  ScientoPyClass.py      the analysis engine: topics, indicators, plotting
+  paperIO.py             Polars readers, Parquet round-trip, parallel dedup keys
+  paperUtils.py          row → canonical dict, dedup, statistics, name disambiguation
+  paperSave.py           CSV writers (Scopus / WoS profiles, rankings, extended)
+  graphUtils.py          the five matplotlib plot functions
+  globalVar.py           constants + mutable global state`}
+{"\n\n"}
+{`Vendored
+  wordcloudFiles/        a copy of the wordcloud package`}
+</FileTree>
+
+The GUI is a *wrapper*, not a reimplementation: it instantiates
+`PreProcessClass(from_gui=True)` and `ScientoPyClass(from_gui=True)` and sets
+their attributes where the CLI would pass an argparse namespace. Both classes
+accept `args=''`, in which case they read parameters off `self`. That is the
+seam that keeps CLI and GUI behavior identical.
+
+## `globalVar` is genuinely global
+
+Beyond constants, `globalVar` holds mutable process state: `progressPer`,
+`progressText`, `cancelProcess`, `loadedPapers`, `omittedPapers`,
+`papersScopus`, `papersWoS`, `totalAfterRemDupl`.
+
+This is how progress reporting and cancellation cross the thread boundary: the
+pipeline writes `globalVar.progressPer`, a Qt timer polls it every 100 ms, and
+**Cancel** sets `globalVar.cancelProcess`, which the pipeline checks between
+units of work.
+
+<Callout type="warning" title="Consequences of module-level state">
+ScientoPy is single-run-per-process by design. Two analyses in the same
+interpreter at the same time would corrupt each other's counters. Anything
+importing these modules as a library should run one pipeline at a time —
+which is exactly what the GUI does, on one worker thread.
+</Callout>
+
+## The canonical paper record
+
+Everything downstream of parsing operates on a `list[dict]`, one dict per
+document, ~45 string-valued keys. `_process_paper_row_pure(header, row)` in
+`paperUtils.py` is the single place where a raw export row becomes one of these.
+
+```python
+{
+  # identity
+  "eid": "WOS:000363238300013", "doi": "10.1109/JSEN.2015.2464233",
+  "dataBase": "WoS", "source": "WoS", "duplicatedIn": ["2-s2.0-84941..."],
+
+  # bibliographic
+  "author": "Faragher, R.;Harle, R.", "authorFull": "Faragher, Ramsey; …",
+  "title": "…", "year": "2015", "sourceTitle": "IEEE Sensors Journal",
+  "volume": "…", "issue": "…", "artNo": "…",
+  "pageStart": "…", "pageEnd": "…", "pageCount": "…",
+  "publisher": "…", "publisherAddress": "…", "editors": "…",
+  "issn": "…", "isbn": "…", "coden": "…", "pubMedId": "…",
+  "abbreviatedSourceTitle": "…", "languageOfOriginalDocument": "English",
+  "documentType": "Article", "link": "…", "citedBy": "216",
+
+  # conference
+  "conferenceTitle": "…", "conferenceLocation": "…", "conferenceDate": "…",
+
+  # content
+  "abstract": "…", "authorKeywords": "…", "indexKeywords": "…",
+  "bothKeywords": "…", "subject": "…",
+
+  # affiliations, raw and derived
+  "affiliations": "…", "authorsWithAffiliations": "…",
+  "correspondenceAddress": "…", "emailHost": "cam.ac.uk",
+  "country": "United Kingdom", "institution": "Univ Cambridge",
+  "institutionWithCountry": "Univ Cambridge, United Kingdom",
+
+  # misc
+  "openAccess": "…", "orcid": "…", "citedReferences": "…", "cr": "…",
+}
+```
+
+Two conventions to internalize:
+
+**Everything is a string, including `citedBy`.** Callers do `int(paper["citedBy"])`
+at the point of use. It is kept as text so the Parquet column stays
+homogeneously UTF-8 — mixing ints and strings in one column would force Polars
+into a non-strict fallback.
+
+**Multi-valued fields are `;`-joined**, and the analysis engine splits on `;` and
+trims. `duplicatedIn` is the one genuine list, stored natively as a Parquet list
+column.
+
+### Where the parsing quirks live
+
+`_process_paper_row_pure` is a long `if headerCol == "…"` chain over each
+column, which is why the same canonical field can be fed from several source
+names (`Title` / `title` / `Titles`; `Cited by` / `citedby_count`; `DOI` /
+`doi`). Column headers are passed through `unidecode` first, so accented or
+BOM-prefixed headers still match.
+
+After mapping, author names are normalized in place: WoS `;` becomes `,`,
+accents are stripped, a dot is forced after each uppercase initial, `.-` becomes
+`.`, and finally `.,` becomes `.;` so the author list uses the project-wide `;`
+convention. `paperSave` reverses that last step when writing a Scopus-style CSV.
+
+## Preprocessing internals
+
+`PreProcessClass.preprocess()` runs four announced stages, each printing
+`[n/4]` and its elapsed time.
+
+**Stage 1** — `paperIO.load_folder()` walks the tree, sorts the file list for
+run-to-run stability, and submits one `_process_file_worker` per file to a
+`ThreadPoolExecutor` sized to `os.cpu_count()`. Threads rather than processes:
+Polars' CSV parser is Rust and releases the GIL, and threads avoid fork-safety
+problems under Qt. Each worker returns
+`(papers, loaded, omitted, scopus, wos, read_ok)` and the main thread aggregates
+the counters — the worker itself never touches `globalVar`.
+
+Per-file parsing detail: `infer_schema_length=0` keeps every column as Utf8;
+`ignore_errors` and `truncate_ragged_lines` tolerate malformed exports; and for
+tab-separated WoS files `quote_char=None` disables CSV quote handling entirely,
+because WoS abstracts contain unescaped `"` that would otherwise swallow the
+rest of the file. If Polars still fails, `_legacy_read` re-reads with the stdlib
+`csv` module at `QUOTE_NONE` and pads ragged rows.
+
+**Stage 2** — `disam_names_scopus()` partitions the corpus into Scopus and
+non-Scopus, and returns them **Scopus-first** (preserving the ordering the older
+pandas implementation happened to produce). When `author_ids` is present it
+builds an `id → name` map, first spelling winning, and rewrites each Scopus
+paper's author list through it.
+
+**Stage 3** — `compute_dedup_keys_parallel()` then `removeDuplicates()`. The
+parallel step deliberately ships only `(title, author)` string tuples to
+workers, not whole paper dicts: pickling 45-field dicts would cost more than the
+regex and `unidecode` work it parallelizes. Below 5,000 papers it runs serially.
+The algorithm itself is described in [Preprocessing](./preprocessing.mdx#deduplication-precisely).
+
+**Stage 4** — `write_preprocessed()` builds Polars columns with a
+list-comprehension per column rather than `pl.from_dicts`, because row-wise
+schema inference costs seconds at 300k rows. Zstd level 3.
+
+## Analysis internals
+
+`ScientoPyClass.scientoPy()` in order:
+
+1. **Validate** `windowWidth >= 1` and `startYear <= endYear`, raising
+   `ScientoPyError` otherwise. Create `graphs/` and `results/`.
+2. **Choose input** — `results/lastAnalysis.parquet` with `-r`, otherwise
+   `dataPre/papersPreprocessed.parquet`, with a legacy-CSV fallback that
+   transparently writes a Parquet shim.
+3. **Load, or reuse.** The corpus is cached on `self.papersDict`; a reload
+   happens only on the first run, when `-r` is used, or when the `-r` state
+   changed since the last run. This is why the GUI is faster than repeated CLI
+   invocations.
+4. **De-duplicate on `-r`.** A paper matching several topics was written once per
+   match, so the chained subset is de-duplicated on load.
+5. **Filter years** — drop non-numeric years, then restrict to the range, and
+   tally documents per year (needed for `--pYear`).
+6. **Discover topics.** With `-t`, split on `;` then `,`, trimming. Without it,
+   count every `;`-separated value of the criterion, upper-cased, honoring
+   `-f` and `--onlyFirst`, and take `[skipFirst : skipFirst+length]` — or the
+   top `TOP_TREND_SIZE` (200) when `--trend` is set.
+7. **Match.** Build an `exactLookup` dict from upper-cased subtopic → topic
+   indices, plus a list of compiled wildcard regexes (wildcards only exist when
+   `-t` was given). Then one pass over papers × criterion values does O(1)
+   exact lookup plus a linear scan of wildcard patterns. This replaced a
+   quadratic scan and is the single biggest analysis speedup.
+8. **Accumulate** per-year counts, citation counts, the paper list, and the set
+   of literal spellings matched (`topicsFound`, which is what the wildcard
+   report prints).
+9. **Compute indicators** — accumulative series, `PapersCountRate` (first
+   difference), then AGR, ADY, `PapersInLastYears`, PDLY. See
+   [The indicators](./metrics.mdx).
+10. **Apply `--pYear`** — after the indicators, dividing per-year counts by that
+    year's total ÷ 100.
+11. **h-index** per topic from its papers sorted by citation count.
+12. **Sort** by name, then stably by `PapersTotal` descending. With `--trend`,
+    re-sort by `int(agr)` descending and slice.
+13. **Save** `results/<Criterion>.csv`; the extended CSV only with
+    `--saveExtended`; and `results/lastAnalysis.parquet` unless `-r`.
+
+<Callout type="note" title="topicResults is the analysis's whole output">
+Each entry is a dict of `name`, `upperName`, `allTopics`, `topicsFound`,
+`year`, `PapersCount`, `PapersCountAccum`, `PapersCountRate`, `PapersTotal`,
+`AverageDocPerYear`, `PapersInLastYears`, `PerInLastYears`, `CitedByCount`,
+`CitedByCountAccum`, `CitedByTotal`, `hIndex`, `agr`, and `papers` — the actual
+paper dicts. It is kept in memory so the GUI's Extended Results tab and the
+on-demand exporter can render without a CSV round-trip.
+</Callout>
+
+## Why Parquet
+
+Measured on the reference 300k-paper corpus, the CSV-centric pipeline spent
+>100 s reading input, dominated by a serial `csv.reader` doing hundreds of string
+comparisons per row, and then re-parsed its own output CSV before *every*
+analysis. Parquet is columnar, typed, and Zstd-compressed:
+
+| | CSV | Parquet |
+| --- | --- | --- |
+| Size | baseline | ~5–15× smaller |
+| Load | full re-parse and re-normalize | typed columnar read, sub-second |
+| Round-trip fidelity | strings only, `duplicatedIn` flattened | native list column preserved |
+
+`read_preprocessed()` still normalizes two things on load — `citedBy` back to a
+string, `duplicatedIn` back to a list — so a Parquet written by an older version
+still loads.
+
+## Testing
+
+| Suite | Runner | Scope |
+| --- | --- | --- |
+| `tests/test_unit.py` | pytest | Pure functions: `globalVar` constants, dedup helpers, source counting, open-access normalization, error classes. **19 tests.** |
+| `tests/run_behavioral_tests.py` | custom | End-to-end: `tests/generate_test_data.py` synthesizes Scopus + WoS files with known-in-advance answers, then drives `preProcess.py`, `scientoPy.py` and `exportPapers.py` and asserts every output. **81 checks.** |
+
+<Terminal title="bash">
+{`python -m pytest tests/test_unit.py -v          # 19 passed
+python tests/run_behavioral_tests.py            # 81 passed, 0 failed`}
+</Terminal>
+
+The behavioral suite's expected values are specified in
+`doc/behavioral_test_spec.md`, which is the source of truth: change pipeline
+output and you update the spec table as well as the runner. Both suites run in
+CI on Linux, macOS and Windows for every push and pull request.
+
+## Release and distribution
+
+`.github/workflows/build-release.yml`, triggered by a `v*` tag: run both suites
+on three platforms → build PyInstaller bundles for Linux x64, macOS arm64 and
+Windows x64 → submit the Windows artifact to SignPath for Authenticode signing →
+publish a GitHub Release with all three assets.
+
+The version number lives in **four** places and all must agree:
+`globalVar.SCIENTOPY_VERSION`, `pyproject.toml`, and two spots in
+`version_info.py` (the tuple form and the string form of the Windows EXE
+metadata). `CLAUDE.md` documents the bump procedure, including the
+`grep -rn "OLD_VERSION"` check.
+
+## Design specifications in the repository
+
+| Document | Subject |
+| --- | --- |
+| `doc/performance_improvement_spec.md` | The Polars + Parquet re-architecture, with the measured bottlenecks it addressed. |
+| `doc/behavioral_test_spec.md` | The synthetic dataset and every expected output value. |
+| `doc/ui_modernization_spec.md` | The PySide6 GUI redesign. |
+| `doc/distribution_spec.md` | PyInstaller bundling and code signing. |
+| `doc/release_notes/v*.md` | Per-release user-facing changelogs. |
+
+## Next
+
+[Gotchas](./gotchas.mdx) — the behaviors most likely to surprise you.

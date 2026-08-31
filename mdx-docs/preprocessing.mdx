@@ -1,0 +1,206 @@
+---
+title: Preprocessing
+description: The four-stage merge pipeline, the deduplication algorithm, and how to read the statistics brief.
+---
+
+import { Callout, Badge, Terminal, Steps, Step, FileTree } from './_components.jsx'
+
+# Preprocessing
+
+Preprocessing is the expensive step, and you run it **once per dataset**. It
+turns a folder of heterogeneous exports into a single canonical corpus that
+every later command loads in a fraction of a second.
+
+<Terminal title="bash">
+{`python3 preProcess.py dataInExample`}
+</Terminal>
+
+| Flag | Effect |
+| --- | --- |
+| `dataInFolder` | *(positional, required)* folder to scan recursively. |
+| `--noRemDupl` | Skip stage 3 entirely. Keeps both copies of every duplicated paper. |
+| `--savePlot NAME` | Write the brief graph to `graphs/NAME` instead of opening a window. |
+| `--graphTitle TEXT` | Title for that graph. |
+
+## The four stages
+
+<Steps>
+  <Step title="Loading papers">
+    Every `.csv`/`.txt` under the folder is parsed by **Polars** — one worker
+    per file, capped at `os.cpu_count()` — and each row is pushed through the
+    same normalization function the serial code used. Delimiter is sniffed per
+    file. WoS exports are parsed with CSV quoting **disabled**, because their
+    abstracts contain unescaped double quotes that would otherwise corrupt the
+    rest of the file. If Polars refuses a file outright, a lenient
+    `csv`-module fallback re-reads it and the run prints a
+    `(lenient fallback for …)` notice naming the file.
+  </Step>
+  <Step title="Disambiguating Scopus author names">
+    Scopus spells the same person inconsistently across records. When the
+    export carries `author_ids`, ScientoPy builds an `author_id → name` map
+    across the whole Scopus subset (first spelling seen wins) and rewrites
+    every record's author list through it. When `author_ids` is absent — older
+    exports — the stage is a no-op. WoS records are never touched.
+  </Step>
+  <Step title="Removing duplicates">
+    Normalization keys are computed in parallel, then a single sorted sweep
+    plus a DOI pass folds duplicates together. Detailed below.
+  </Step>
+  <Step title="Saving the preprocessed corpus">
+    The surviving records are written as one Zstd-compressed **Parquet** file.
+    No CSV is produced — that is now an explicit
+    [export](./exporting.mdx) step.
+  </Step>
+</Steps>
+
+## Deduplication, precisely
+
+This is the part people most need to trust, so here is exactly what happens.
+
+**Two normalized keys per paper.** `titleB` is the title with accents stripped,
+upper-cased, anything inside `(…)` or `[…]` removed, and then every
+non-alphanumeric character deleted. `firstAuthorLastName` is the author string
+with accents stripped, upper-cased, split on the first `;`, `.` or `,`, and
+reduced to letters only.
+
+```text
+"Location Fingerprinting with BLE Beacons (Extended)"
+  → LOCATIONFINGERPRINTINGWITHBLEBEACONS
+
+"Faragher, R.; Harle, R."
+  → FARAGHER
+```
+
+**Sorting decides who survives.** The list is sorted by `dataBase` descending —
+which puts `WoS` before `Scopus` — and then by `titleB`. In the adjacent sweep
+the earlier record is the keeper, so **the WoS copy is the one that survives**
+and the Scopus copy is dropped.
+
+**Two records match if either condition holds:**
+
+- same `firstAuthorLastName` **and** same `titleB`, or
+- both have a non-empty `doi` and the DOIs are equal.
+
+**When a match is folded in**, the discarded record's `eid` is appended to the
+keeper's `duplicatedIn` list, and the keeper's citation count becomes the
+integer mean of the two.
+
+**A second pass catches DOI duplicates that sorting separated.** Papers with
+identical DOIs but different titles (a preprint and its journal version, a
+typo) are not adjacent after sorting by `titleB`, so a DOI index is swept
+independently afterwards.
+
+<Callout type="warning" title="Citation averaging is pairwise and sequential">
+With three or more copies of one paper the counts are averaged repeatedly, not
+all at once: three records with 10, 20 and 30 citations end up at
+`((10+20)/2 + 30)/2 = 22`, not `20`. Averaging also happens **after** the two
+values are compared, and the `duplicatedIn` list is the audit trail if you need
+to reconstruct the originals.
+</Callout>
+
+<Callout type="note" title="Expect a high Scopus removal rate">
+On the bundled example, 71.5% of Scopus records are removed against only 1.0%
+of WoS records. That asymmetry is the intended consequence of preferring WoS —
+not a sign that Scopus data was mishandled. The overlap between two databases
+searching the same topic is genuinely large.
+</Callout>
+
+### Skipping it
+
+`--noRemDupl` keeps everything. Useful when you want to characterize the two
+databases separately (`-c dataBase`), or when you're comparing coverage rather
+than counting unique papers. Do not use it for a headline document count.
+
+## What lands on disk
+
+<FileTree>
+{`dataPre/
+├── papersPreprocessed.parquet   canonical corpus — every later command reads this
+└── PreprocessedBrief.csv        the statistics table below`}
+</FileTree>
+
+`papersPreprocessed.parquet` is one row per surviving document, ~45 columns,
+Zstd level 3. Roughly 5–15× smaller than the equivalent CSV and an order of
+magnitude faster to reload, which is what makes iterative analysis pleasant.
+
+<Callout type="tip" title="Need a CSV of the corpus?">
+It is no longer written automatically. Ask for it:
+
+```bash
+python3 exportPapers.py                     # Scopus-style fields
+python3 exportPapers.py --format wos        # WoS-style fields
+```
+</Callout>
+
+## Reading `PreprocessedBrief.csv`
+
+This is the table you cite in a methods section. From the bundled example:
+
+| Info | Number | Percentage |
+| --- | --- | --- |
+| Loaded papers | 9,664 | |
+| Omitted papers by document type | 285 | 2.9% |
+| Total papers after omitted papers removed | 9,379 | |
+| Loaded papers from WoS | 4,045 | 43.1% |
+| Loaded papers from Scopus | 5,334 | 56.9% |
+| **Duplicated papers found** | **3,855** | **41.1%** |
+| Removed duplicated papers from WoS | 42 | 1.0% |
+| Removed duplicated papers from Scopus | 3,813 | 71.5% |
+| Documents with different cited-by across copies | 2,740 | 71.1% |
+| **Total papers after rem. dupl.** | **5,524** | |
+| Papers from WoS | 4,003 | 72.5% |
+| Papers from Scopus | 1,521 | 27.5% |
+
+Two blocks of per-type counts follow — one before deduplication, one after —
+broken down by database:
+
+| Source | Conference Paper | Article | Review | Proceedings Paper | Article in Press | Total |
+| --- | --- | --- | --- | --- | --- | --- |
+| WoS | 0 | 1,705 | 45 | 2,295 | 0 | 4,045 |
+| Scopus | 3,366 | 1,921 | 46 | 0 | 1 | 5,334 |
+
+<Callout type="note" title="Why the type distributions look so different">
+The two databases label conference output differently — WoS says *Proceedings
+Paper*, Scopus says *Conference Paper*. Both are in `INCLUDED_TYPES`, so
+nothing is lost, but do not read the split as a difference in coverage. The
+"different cited-by" row is a useful data-quality signal: 71% of duplicate
+pairs disagreed on citation count, which is exactly why the tool averages them.
+</Callout>
+
+The same numbers are drawn as a horizontal bar chart — loaded documents per
+database with the removed-duplicate fraction shaded — either on screen or into
+`graphs/` via `--savePlot`.
+
+## Re-running
+
+Preprocessing overwrites `dataPre/` wholesale. Re-run it when you add export
+files, change `INCLUDED_TYPES`, or upgrade ScientoPy across a version that
+changed field extraction. You do **not** need to re-run it to change the
+analysis year range, criterion, or topics — that is all decided at analysis
+time.
+
+<Callout type="warning" title="Upgrading from a pre-3.1 install">
+If `dataPre/` still holds a legacy `papersPreprocessed.csv` and no Parquet,
+`scientoPy.py` parses the CSV the old way, then writes a Parquet beside it so
+the next run is fast. It is a compatibility shim, not a supported state —
+re-run `preProcess.py` when convenient.
+</Callout>
+
+## Performance notes
+
+On the reference 300k-paper corpus (267 files, ~727 MB) the redesigned pipeline
+targets a **10× or better** reduction in wall-clock time versus the original
+serial `csv.reader` implementation, with **sub-second** loading of the
+preprocessed corpus before each analysis. Each stage prints its own elapsed
+time so you can see where a slow run is spending itself.
+
+The parallelism is worth understanding if you tune it: file reading uses a
+thread pool (Polars' Rust parser releases the GIL, and threads stay fork-safe
+inside the Qt GUI), and `POLARS_MAX_THREADS` is pinned to `1` inside each
+worker so N workers don't oversubscribe the machine. Dedup-key computation
+falls back to a serial loop below 5,000 papers, where pool startup would cost
+more than it saves.
+
+## Next
+
+[Running an analysis](./analysis.mdx).

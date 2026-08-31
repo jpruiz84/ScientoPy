@@ -1,0 +1,291 @@
+---
+title: Running an analysis
+description: Criteria, top topics, custom topics, grouping, wildcards, filters, trends, and chaining runs together.
+---
+
+import { Callout, Badge, Terminal, CriterionExplorer } from './_components.jsx'
+
+# Running an analysis
+
+One analysis run answers one question. It reads
+`dataPre/papersPreprocessed.parquet`, picks a set of topics inside one field,
+counts documents per year, computes the [indicators](./metrics.mdx), prints a
+table, saves a CSV, and draws a [graph](./graphs.mdx).
+
+<Terminal title="bash">
+{`python3 scientoPy.py -c authorKeywords`}
+</Terminal>
+
+Runs are cheap — the corpus loads in well under a second — so the intended
+workflow is to iterate, not to plan the perfect invocation.
+
+## Choose the field: `-c / --criterion`
+
+Twelve fields can be analyzed. Click through them:
+
+<CriterionExplorer />
+
+## Two ways to pick topics
+
+### Automatic — the top N
+
+With no `-t`, ScientoPy counts every distinct value of the criterion across
+papers in range and keeps the most frequent ones. Values are split on `;`,
+trimmed, and compared case-insensitively.
+
+```bash
+python3 scientoPy.py -c authorKeywords -l 20        # top 20 instead of top 10
+python3 scientoPy.py -c authorKeywords -l 10 -s 3   # ranks 4-13; skip the first 3
+```
+
+`-s / --skipFirst` exists because one or two dominant terms — usually the search
+query itself — flatten every other line on a plot. Skipping them is how you see
+the rest of the field.
+
+### Explicit — the topics you name
+
+`-t / --topics` takes a **semicolon-separated list of topics**. Each topic may
+itself be a **comma-separated list of spellings that should be counted as one
+thing**.
+
+```bash
+# Two separate topics
+python3 scientoPy.py -c country -t "United States; Brazil"
+
+# Two topics, each merging several spellings
+python3 scientoPy.py -c authorKeywords \
+  -t "WSN, Wireless sensor network, Wireless sensor networks; RFID, RADIO FREQUENCY IDENTIFICATION"
+```
+
+The mental model: **`;` separates lines on your chart, `,` merges spellings into
+one line.** Merging is how you deal with plurals, abbreviations,
+"Internet of Things" versus "IoT" versus "Internet of Things (IoT)", and
+inconsistent capitalization. A topic's display name is the **first** spelling
+you listed.
+
+<Callout type="note" title="Long commands">
+Backslash line continuation works in bash and zsh. On Windows `cmd`, put the
+whole command on one line and drop the backslashes.
+</Callout>
+
+## Wildcards
+
+An asterisk in a `-t` topic becomes a regular-expression match anchored at the
+start of the value.
+
+```bash
+python3 scientoPy.py -c authorKeywords -t "device*"
+```
+
+ScientoPy prints everything it matched, ready to paste back:
+
+<Terminal title="output">
+{`Topics found for device*:
+"device stress-management;device identification;Device Discovery;device-free;
+Device Heterogeneity;device detection;Device discovery latency;devices;
+Device-to-device communication;device fingerprinting;Device authentication;…"`}
+</Terminal>
+
+That is the intended two-step loop: **discover with a wildcard, then analyze the
+specific values you actually want.** In the first run all matches collapse into
+one aggregate line; paste the list back with `;` separators to break them out.
+
+| Pattern | Matches |
+| --- | --- |
+| `device*` | values *starting with* "device" |
+| `*sensing` | values *ending with* "sensing" |
+| `*digital twin*` | values *containing* "digital twin" — the form to use on `-c abstract` |
+
+<Callout type="warning" title="Wildcards need -t">
+Wildcard expansion only runs on topics you supplied. It has no effect on
+automatic top-N discovery, where every value is matched exactly.
+</Callout>
+
+## Narrow the years
+
+```bash
+python3 scientoPy.py -c authorKeywords --startYear 2010 --endYear 2025
+```
+
+Defaults are `1990` through **last calendar year** (computed at runtime, so it
+moves on 1 January). Papers outside the range are excluded from every count,
+and the range also defines the columns of the output CSV. `startYear` greater
+than `endYear` is an error.
+
+<Callout type="tip" title="Exclude the current year">
+The default end year is deliberately last year, because the current year is
+always incomplete in both databases. Extending `--endYear` to the present makes
+every trend look like it is collapsing. If you must include it, say so in your
+methods.
+</Callout>
+
+## Trending topics: `--trend`
+
+The default ranking is by total document count, which rewards whatever has been
+around longest. `--trend` ranks by growth instead.
+
+```bash
+python3 scientoPy.py -c authorKeywords --trend \
+  --startYear 2010 --endYear 2025 --windowWidth 2 --agrForGraph -g evolution
+```
+
+What it does, in order: take the top **200** topics by volume (not `-l`), compute
+each one's AGR over the trailing window, sort by AGR descending, then apply
+`-s / --skipFirst` and `-l / --length` to that sorted list.
+
+<Terminal title="python3 scientoPy.py -c authorKeywords --trend --startYear 2010 --endYear 2025">
+{`Pos authorKeywords                     Total       AGR       ADY      PDLY     h-index
+---------------------------------------------------------------------------------------
+1   Bluetooth Low Energy (BLE)           454      22.5      75.0      33.0        42
+2   accuracy                              48      11.5      19.5      81.2        10
+3   Real-time systems                     39       8.0      12.0      61.5        12
+4   Location awareness                    44       7.0      10.5      47.7        15
+5   reliability                           40       7.0       9.5      47.5        11
+6   Machine Learning                     164       6.5      25.0      30.5        23`}
+</Terminal>
+
+Read that table as a claim about *direction*: "accuracy" has a tenth of the
+volume of the leader but 81% of its papers are in the last two years. Combine
+`--trend` with `-s` to skip the query term itself, which usually dominates the
+top of the growth ranking too.
+
+<Callout type="danger" title="Trend sorting truncates AGR to an integer">
+The sort key is `int(agr)`, not `agr`. A topic at AGR 5.9 and one at 5.0 are
+tied, and the tie is broken by the previous ordering (document count). In the
+table above *Monitoring* (5.5) ranks **below** *Wireless communication* (5.0)
+for exactly this reason. The AGR column is exact; the ordering is coarse.
+</Callout>
+
+## Sub-topic filter: `-f / --filter`
+
+Designed for `institutionWithCountry`, whose values look like
+`"Univ Cauca, Colombia"`. The filter keeps only values whose part *after* the
+first comma matches.
+
+```bash
+python3 scientoPy.py -c institutionWithCountry -f "Colombia" -g bar
+```
+
+<Terminal title="output">
+{`Pos institutionWithCountry             Total       AGR       ADY      PDLY     h-index
+---------------------------------------------------------------------------------------
+1   Univ Cauca, Colombia                   6       0.0       0.5      16.7         3
+2   Univ Nacl Colombia, Colombia           5       0.5       1.0      40.0         1
+3   Univ Dist Francisco Jose de Caldas, Colombia    3   0.5   0.5      33.3         1`}
+</Terminal>
+
+<Callout type="note" title="The terminal and the CSV disagree here, on purpose">
+The printed table shows the full `"Institution, Country"` value; the saved CSV
+and the plot labels show only `Univ Cauca`, because the country is redundant
+once you have filtered by it. Same run, two renderings.
+</Callout>
+
+## First element only: `--onlyFirst`
+
+Multi-valued fields normally count every value in a paper. `--onlyFirst` stops
+after the first.
+
+```bash
+python3 scientoPy.py -c author   --onlyFirst   # first-author analysis
+python3 scientoPy.py -c country  --onlyFirst   # country of the lead affiliation
+```
+
+Use it when you want *leadership* rather than *participation*. Without it, a
+paper with ten international co-authors contributes to ten countries.
+
+## Chaining runs: `-r / --previousResults`
+
+Every analysis that does **not** use `-r` writes `results/lastAnalysis.parquet`
+containing the documents it matched. Passing `-r` on the next run analyzes that
+subset instead of the whole corpus.
+
+```bash
+# 1. Isolate the papers with a Canadian affiliation
+python3 scientoPy.py -c country -t "Canada" --noPlot
+
+# 2. What do those papers work on?
+python3 scientoPy.py -c authorKeywords -r -g bar
+
+# 3. Who do Canadians co-publish with?
+python3 scientoPy.py -c country -r -g bar
+```
+
+Step 3 is the neat one: because the subset is "papers with a Canadian
+affiliation", re-running the *country* criterion over it lists Canada's
+collaboration partners.
+
+<Terminal title="step 2 output (top author keywords in Canada-affiliated papers)">
+{`Pos authorKeywords                     Total       AGR       ADY      PDLY     h-index
+---------------------------------------------------------------------------------------
+1   Bluetooth Low Energy                  47      -1.0       2.0       8.5        17
+2   Internet of Things                    30      -1.0       1.5      10.0        16
+3   Indoor localization                   24      -1.5       1.0       8.3        13
+4   Bluetooth low energy (BLE)            21      -0.5       3.0      28.6        12`}
+</Terminal>
+
+Three rules govern chaining:
+
+1. A run **with** `-r` does not overwrite `lastAnalysis.parquet`, so you can
+   ask several follow-up questions about the same subset.
+2. A run **without** `-r` replaces it. Nothing warns you.
+3. Because a paper matching several topics is recorded once per match, `-r`
+   de-duplicates the subset on load before analyzing it.
+
+<Callout type="tip" title="Cut plotting out of intermediate steps">
+Use `--noPlot` on the step that only exists to build the subset. It also saves a
+matplotlib window on a headless machine.
+</Callout>
+
+## Analysis output
+
+| Path | Contents |
+| --- | --- |
+| `results/<Criterion>.csv` | The ranking: position, name, Total, AGR, ADY, PDLY, hIndex, then one column per year. |
+| `results/<Criterion>_extended.csv` | One row per paper per topic. **Opt-in** — pass `--saveExtended`. |
+| `results/lastAnalysis.parquet` | Internal, feeds the next `-r` run. |
+| `graphs/<name>` | Only with `--savePlot`. |
+
+The filename is derived from the criterion, and from `--savePlot` when given, so
+`--savePlot "top_kw.eps"` produces `results/AuthorKeywords_top_kw.csv`. Without
+that suffix, successive runs on one criterion **overwrite each other** — name
+your plots if you want the tables kept.
+
+<Callout type="warning" title="Extended results are not written by default">
+On a large corpus the per-document file reaches hundreds of thousands of rows.
+Pass `--saveExtended`, or use the GUI **5. Export** tab, when you actually want
+it. See [Exporting](./exporting.mdx).
+</Callout>
+
+## Recipes
+
+```bash
+# Top journals in the field
+python3 scientoPy.py -c sourceTitle -g bar -l 15
+
+# Scopus vs WoS coverage over time
+python3 scientoPy.py -c dataBase -g time_line
+
+# A big keyword cloud
+python3 scientoPy.py -c bothKeywords -l 500 -g word_cloud --savePlot cloud.png
+
+# Share of documents per year instead of absolute counts
+python3 scientoPy.py -c country --pYear -g time_line
+
+# Log scale, for topics that differ by orders of magnitude
+python3 scientoPy.py -c authorKeywords -g time_line --yLog
+
+# Publication-ready sizing
+python3 scientoPy.py -c country -g bar --plotWidth 8 --plotHeight 5 \
+        --graphTitle "Top countries" --savePlot countries.eps
+
+# Search the abstract text, not the keywords
+python3 scientoPy.py -c abstract -t "*machine learning*; *deep learning*" -g time_line
+```
+
+`exampleGenerateGraphs.sh` in the repository root runs fourteen worked examples
+against the bundled corpus — the fastest way to see every option in action.
+
+## Next
+
+[The indicators](./metrics.mdx) — what AGR, ADY, PDLY and the h-index actually
+measure.

@@ -1,0 +1,162 @@
+---
+title: ScientoPy
+description: How ScientoPy works, and how to use it.
+version: 3.1.2
+---
+
+import { Callout, Badge, Terminal, Steps, Step, PipelineDiagram, FileTree } from './_components.jsx'
+
+# ScientoPy <Badge>v3.1.2</Badge>
+
+ScientoPy is an open-source scientometrics tool. You hand it raw bibliographic
+exports from **Clarivate Web of Science** and **Scopus**; it merges them,
+removes the documents that appear in both, and then answers questions about
+what a research field is doing over time — which keywords are growing, which
+countries and institutions publish, which authors matter, and what is trending
+right now.
+
+It is a **local, file-based tool**. There is no server, no account, and no
+network access: every input is a file you downloaded yourself and every output
+is a file in your working directory.
+
+<Callout type="note" title="Citing the tool">
+Ruiz-Rosero, J., Ramirez-Gonzalez, G., & Viveros-Delgado, J. (2019). *Software
+survey: ScientoPy, a scientometric tool for topics trend analysis in scientific
+publications.* Scientometrics 121(2), 1165–1188.
+[doi:10.1007/s11192-019-03213-w](https://doi.org/10.1007/s11192-019-03213-w)
+</Callout>
+
+## What problem it actually solves
+
+Anyone who has tried to characterize a field from bibliographic exports runs
+into the same four chores. ScientoPy exists to do them for you:
+
+| Chore | What ScientoPy does |
+| --- | --- |
+| **Two databases, two schemas** | Maps ~60 Scopus column names and ~40 WoS two-letter tags onto one canonical record, so a WoS paper and a Scopus paper become the same kind of object. |
+| **The same paper twice** | Detects duplicates by normalized title + first author surname, and independently by DOI. Keeps the WoS copy, records the discarded EID, and averages the two citation counts. |
+| **Fields the exports don't have** | Derives country, institution, `institutionWithCountry`, the union of author and index keywords, and the correspondence e-mail host from the affiliation strings. |
+| **"Is this topic growing?"** | Computes AGR, ADY, PDLY and the h-index per topic over a configurable trailing window, and ranks topics by growth rather than by volume. |
+
+## The shape of the system
+
+<PipelineDiagram />
+
+Two commands do the real work, and they are meant to be run in this order:
+
+<Steps>
+  <Step title="Preprocess once per dataset">
+    `preProcess.py FOLDER` reads every `.csv` and `.txt` under the folder
+    (recursively, in parallel), normalizes each row, drops duplicates, and
+    writes one canonical **Parquet** file plus a statistics brief.
+  </Step>
+  <Step title="Analyze as many times as you like">
+    `scientoPy.py -c CRITERION …` loads that Parquet in well under a second
+    and answers one question per run. Cheap enough to iterate on.
+  </Step>
+  <Step title="Export only when you need a CSV">
+    `exportPapers.py` re-materializes a Scopus- or WoS-style CSV on demand.
+    Analysis never writes a CSV export as a side effect.
+  </Step>
+</Steps>
+
+## Sixty-second quick start
+
+The repository ships a real example corpus — 9,664 documents on
+*"Bluetooth low energy"*, exported 2 April 2026 — so you can run the whole
+pipeline before downloading anything of your own.
+
+<Terminal title="bash">
+{`git clone https://github.com/jpruiz84/ScientoPy
+cd ScientoPy`}
+{"\n\n"}
+{`python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt`}
+{"\n\n"}
+{`# 1. Preprocess the bundled example dataset
+python3 preProcess.py dataInExample`}
+{"\n\n"}
+{`# 2. Ask what the top author keywords are
+python3 scientoPy.py -c authorKeywords`}
+{"\n\n"}
+{`# 3. Ask what is trending, by growth rate rather than volume
+python3 scientoPy.py -c authorKeywords --trend --startYear 2010 --endYear 2025 \\
+        --windowWidth 2 --agrForGraph -g evolution`}
+</Terminal>
+
+Preprocessing that corpus takes about a second on a modern laptop and prints
+four numbered stages:
+
+<Terminal title="python3 preProcess.py dataInExample">
+{`[1/4] Loading papers
+[2/4] Disambiguating Scopus author names
+[3/4] Removing duplicates
+[4/4] Saving preprocessed corpus`}
+{"\n\n"}
+{`Duplicated papers found: 3855
+Original papers count: 9379
+Actual papers count: 5524
+Removed papers WoS: 42, 1.0 %
+Removed papers Scopus: 3813, 71.5 %`}
+{"\n\n"}
+{`==================================================
+Preprocess finished in 0.9s - 5524 papers ready
+==================================================`}
+</Terminal>
+
+Step 2 prints a ranking straight to the terminal and saves it as
+`results/AuthorKeywords.csv`:
+
+<Terminal title="python3 scientoPy.py -c authorKeywords">
+{`Top topics:
+Average Growth Rate (AGR) and Average Documents per Year (ADY) period: 2024 - 2025`}
+{"\n\n"}
+{`---------------------------------------------------------------------------------------
+Pos authorKeywords                     Total       AGR       ADY      PDLY     h-index
+---------------------------------------------------------------------------------------
+1   Bluetooth Low Energy                1401      -8.5     101.0      14.4        58
+2   BLE                                  669       2.5      67.5      20.2        37
+3   Internet of Things                   513       1.5      40.0      15.6        47
+4   Bluetooth Low Energy (BLE)           454      22.5      75.0      33.0        42
+5   Bluetooth                            374      -6.5      28.0      15.0        34
+---------------------------------------------------------------------------------------`}
+</Terminal>
+
+<Callout type="tip" title="Prefer clicking to typing?">
+Everything above is also available in a five-tab desktop GUI — `python3
+ScientoPyGui.py`, or a signed pre-built binary from the
+[releases page](https://github.com/jpruiz84/ScientoPy/releases). See
+[The graphical interface](./gui.mdx).
+</Callout>
+
+## Where files end up
+
+<FileTree>
+{`ScientoPy/
+├── dataInExample/                    input: the bundled BLE corpus
+├── dataPre/                          created by preProcess.py
+│   ├── papersPreprocessed.parquet    ← canonical corpus, input to everything else
+│   └── PreprocessedBrief.csv         merge + dedup statistics table
+├── results/                          created by scientoPy.py
+│   ├── AuthorKeywords.csv            the ranking table you just saw
+│   ├── AuthorKeywords_extended.csv   per-document detail (opt-in, --saveExtended)
+│   └── lastAnalysis.parquet          internal: feeds the next run's -r flag
+├── graphs/                           plots saved with --savePlot
+└── export/                           created by exportPapers.py, on demand`}
+</FileTree>
+
+## Read next
+
+| Page | What's in it |
+| --- | --- |
+| [Installation](./installation.mdx) | Pre-built binaries, running from source, Python requirements. |
+| [Preparing your dataset](./data-preparation.mdx) | Exporting from Scopus and WoS, folder layout, the field mapping. |
+| [Preprocessing](./preprocessing.mdx) | The four stages, the deduplication algorithm, the statistics brief. |
+| [Running an analysis](./analysis.mdx) | Criteria, custom topics, grouping, wildcards, filters, chaining runs. |
+| [The indicators](./metrics.mdx) | AGR, ADY, PDLY, h-index — defined exactly, with an interactive window. |
+| [Graph types](./graphs.mdx) | The five visualizations and when each one is the right choice. |
+| [The graphical interface](./gui.mdx) | The five tabs, appearance settings, saved preferences. |
+| [Exporting and BibTeX](./exporting.mdx) | CSV exports, extended results, generating a `.bib` from LaTeX. |
+| [CLI reference](./cli-reference.mdx) | Every flag of every command, in one table. |
+| [How it works inside](./internals.mdx) | Module map, the canonical record, parallelism, why Parquet. |
+| [Gotchas](./gotchas.mdx) | Behavior that surprises people, verified against the source. |

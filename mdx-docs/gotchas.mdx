@@ -1,0 +1,221 @@
+---
+title: Gotchas
+description: Behavior that surprises people, and what to do about it. Each item verified against the source.
+---
+
+import { Callout, Badge, Terminal } from './_components.jsx'
+
+# Gotchas
+
+Collected from reading the code and running the pipeline. Nothing here is a
+complaint about the tool — these are the places where the correct behavior is
+not the expected one.
+
+## Data loading
+
+### Everything ending in `.txt` or `.csv` is opened
+
+There is no filename convention. A README, a notes file, or the bundled
+`searchCriteria.txt` will be parsed, fail, and print
+`Reading file: … (empty or failed)`. Harmless, but it clutters the log and the
+file count.
+
+### A missing EID column silently empties your corpus
+
+Database identity comes *only* from the EID prefix — `WOS` → WoS, `2-` → Scopus.
+Anything else, including an empty EID, drops the row before it is counted. An
+export without `EID` (Scopus) or `UT` (WoS) yields
+`ERROR: 0 documents found under <folder>`.
+
+**Check:** open one export file and confirm the `EID` / `UT` column is present
+and populated.
+
+### The load line says "files" but reports papers
+
+<Terminal title="observed">
+{`  OK Loaded 9379 papers from 9664 files in 0.7s`}
+</Terminal>
+
+The corpus really is 9,379 papers, and `9664` is the *loaded-rows* counter
+(papers plus the 285 omitted by document type) — not a file count. The example
+dataset has seven files. Cosmetic mislabeling in `PreProcessClass.py:123`; the
+underlying numbers are correct and `PreprocessedBrief.csv` reports them
+correctly.
+
+### Institutions are WoS-only
+
+`institution` and `institutionWithCountry` are extracted from the second
+comma-section of a WoS affiliation string. Scopus affiliations are parsed for
+country but **not** for institution. On a Scopus-only corpus both criteria return
+nothing.
+
+### `subject` is WoS-only
+
+It maps from the WoS `SC` tag. Scopus exports carry no equivalent.
+
+### Country normalization is a fixed list
+
+About a dozen rules — `ENGLAND`/`SCOTLAND`/`WALES`/`UK` → *United Kingdom*, `USA`
+→ *United States*, any `CHINA` → *China*, any `RUSSIA` → *Russian Federation*,
+`VIET NAM` → *Vietnam*, and a few more. Everything else passes through as
+written, so `"Korea, Republic of"` and `"South Korea"` remain separate topics.
+
+**Workaround:** merge them at analysis time with comma-grouping —
+`-t "South Korea, Korea Republic of, Republic of Korea"`.
+
+### WoS citations come from `Z9`, not `TC`
+
+`Z9` is total times cited across all indexes; `TC` is Core Collection only. The
+`TC` mapping exists in the source but is commented out. Every h-index therefore
+runs slightly higher than a Core Collection-only reading would give. Worth a
+sentence in a methods section.
+
+## Deduplication
+
+### WoS always wins
+
+Sorting by `dataBase` descending puts `WoS` before `Scopus`, and the sweep keeps
+the earlier record. The surviving copy is the WoS one, carrying WoS field
+semantics — including WoS's document-type vocabulary. That is why the bundled
+example ends up 72.5% WoS after deduplication despite starting 56.9% Scopus.
+
+### Citation averaging is pairwise and sequential
+
+Three copies with 10, 20 and 30 citations end at
+`((10+20)/2 + 30)/2 = 22`, not `20`. The `duplicatedIn` list is the audit trail.
+
+### Two papers with the same title and first author merge, even if they are different papers
+
+A conference paper and its extended journal version, published by the same lead
+author under the same title, are treated as one document. That is usually what
+you want; occasionally it is not. Nothing flags it — inspect `duplicatedIn` in
+the extended results when a count looks off.
+
+## Analysis
+
+### `--trend` sorts on a truncated AGR
+
+The sort key is `int(agr)`. A topic at 5.9 ties with one at 5.0, and the tie
+breaks on the previous ordering (document count). Real output from the bundled
+corpus:
+
+<Terminal title="observed">
+{`8   Wireless communication                83       5.0      14.5      34.9        19
+9   Monitoring                            70       5.5      13.5      38.6        14`}
+</Terminal>
+
+AGR 5.5 ranks *below* AGR 5.0. The AGR column is exact; the ordering is coarse.
+Re-sort `results/<Criterion>.csv` yourself if exact growth ordering matters.
+
+### `--pYear` leaves the indicator columns in absolute units
+
+AGR, ADY, PDLY and Total are computed from raw counts *before* the per-year
+rescaling. In a `--pYear` run the year columns are percentages while AGR and ADY
+are still documents per year. Do not mix them in one sentence.
+
+### The default end year moves on 1 January
+
+`DEFAULT_END_YEAR = datetime.now().year - 1`. A script that omits `--endYear`
+silently analyzes a different range after New Year. **Always pass `--endYear`
+explicitly in anything reproducible.**
+
+### Successive runs overwrite each other's tables
+
+`results/<Criterion>.csv` is keyed on the criterion alone. Ten `authorKeywords`
+analyses leave one file. Vary `--savePlot` — the plot name is suffixed into the
+CSV name too — or copy the file between runs.
+
+### Any run without `-r` destroys the chained subset
+
+`results/lastAnalysis.parquet` is rewritten by every analysis that does not use
+`-r`. Insert one unrelated run between "isolate Canada" and "analyze the subset"
+and you have silently analyzed the whole corpus instead. No warning.
+
+### `-f / --filter` shows different names in the terminal and the CSV
+
+The printed table shows `Univ Cauca, Colombia`; the CSV and plot labels show
+`Univ Cauca`. Same run — the truncation happens after printing, on the theory
+that the country is redundant once filtered.
+
+### Wildcards only work with `-t`
+
+Wildcard patterns are compiled only from topics you supplied. Automatic top-N
+discovery matches exactly, always.
+
+### `-c abstract` needs surrounding asterisks
+
+Abstract values are split on `;`, which usually yields the whole abstract as one
+value, and wildcard matching is anchored at the start. `-t "IoT*"` matches only
+abstracts *beginning* with "IoT". Use `-t "*IoT*"`.
+
+Top-N discovery on `abstract` is meaningless — every abstract is unique, so you
+get ten whole abstracts, each with count 1.
+
+### Topic counts do not sum to the corpus size
+
+A paper listing four keywords contributes to four topics. This is correct for
+"how many documents mention X" and wrong for any percentage-of-corpus claim.
+
+### More than 100 topics refuses to plot
+
+`ERROR: Not allowed to graph more than 100 results`, for every type except
+`word_cloud`. The analysis completes and the CSV is written regardless. Pair a
+large `-l` with `--noPlot`.
+
+## Output and export
+
+### Extended results are not written unless you ask
+
+Pass `--saveExtended`, or use the GUI Export tab. The file can reach hundreds of
+thousands of rows with full abstracts, which is why it became opt-in.
+
+### `--format wos` is lossy
+
+Of 69 WoS tag columns only ~15 are populated, and the derived fields other than
+`country` are dropped — no `institution`, no `bothKeywords`, no `emailHost`, no
+`authorFull`. Use `--format scopus` for anything you intend to re-import or
+archive.
+
+### BibTeX skips unmatched cite keys silently
+
+Compare `N cites found` with `total references generated`. A difference means a
+key does not match any EID — a typo, or a paper filtered out by document type or
+year during preprocessing.
+
+## Environment
+
+### Everything is relative to the working directory
+
+`dataPre/`, `results/`, `graphs/`, `export/` and `scientopy_config.json` are all
+created wherever you launched from. Running from two directories gives you two
+independent workspaces — convenient once you know, confusing before.
+
+### Plots need a display
+
+matplotlib opens an interactive window by default. On a headless machine use
+`--noPlot`, or `--savePlot`, or `MPLBACKEND=Agg`.
+
+### One pipeline per process
+
+`globalVar` holds mutable run state (progress, counters, the cancel flag).
+Concurrent analyses in one interpreter would corrupt each other's counters. The
+GUI runs exactly one worker thread at a time, deliberately.
+
+### Three `SyntaxWarning`s on import
+
+Regex escape sequences in `paperUtils.py` (the affiliation-splitting patterns).
+Pre-existing, harmless, unrelated to your run.
+
+## Quick checklist for a reproducible analysis
+
+<Callout type="tip" title="Before you publish a number">
+1. Pass `--startYear` **and** `--endYear` explicitly.
+2. Quote the `--windowWidth` and the resolved window alongside any AGR or ADY.
+3. Quote the post-deduplication document count from `PreprocessedBrief.csv`, not
+   the loaded count.
+4. Say which database won on duplicates (WoS) and what fraction was removed.
+5. Merge spelling variants with comma-grouping before ranking anything — the
+   bundled corpus splits one concept across *Bluetooth Low Energy*, *BLE* and
+   *Bluetooth Low Energy (BLE)*, with opposite AGR signs.
+6. Keep the `searchCriteria.txt` note next to the raw exports.
+</Callout>

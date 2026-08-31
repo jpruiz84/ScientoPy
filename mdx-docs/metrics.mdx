@@ -1,0 +1,174 @@
+---
+title: The indicators
+description: AGR, ADY, PDLY and the h-index — defined exactly as the code computes them, with an interactive window.
+---
+
+import { Callout, Badge, Terminal, MetricsPlayground } from './_components.jsx'
+
+# The indicators
+
+Every ranking ScientoPy prints carries five numbers per topic. Four of them
+depend on a **trailing window** whose width you control with `--windowWidth`.
+Getting these right is the difference between "this keyword is popular" and
+"this keyword is taking off".
+
+## The window
+
+The window is always the **last `windowWidth` years of the analysis range**:
+
+```python
+endYearIndex   = len(years) - 1                    # the last year in range
+startYearIndex = endYearIndex - (windowWidth - 1)  # windowWidth years back
+```
+
+So `--startYear 2010 --endYear 2025 --windowWidth 2` gives a window of
+**2024–2025**. The default width is `2`. ScientoPy prints the resolved window
+above every table, and you should quote it whenever you quote an AGR:
+
+<Terminal title="output header">
+{`Average Growth Rate (AGR) and Average Documents per Year (ADY) period: 2024 - 2025`}
+</Terminal>
+
+## Try it
+
+Move the slider. These are the real per-year counts of the top ten author
+keywords in the bundled example corpus, and the arithmetic below is
+ScientoPy's own — so the table changes exactly as the tool's would.
+
+<MetricsPlayground />
+
+Things worth noticing as you drag:
+
+- At width **2**, *Bluetooth Low Energy* has AGR **−8.5** — the field's founding
+  term is past its peak — while *Bluetooth Low Energy (BLE)* sits at **+22.5**.
+  Same concept, different spelling, opposite verdicts. This is precisely the
+  case that [comma-grouping](./analysis.mdx#two-ways-to-pick-topics) exists to fix.
+- At width **8** almost everything turns positive, because a wide window
+  averages away the recent decline. **AGR is a statement about a window, not
+  about a topic.**
+- Switch *sort by* to **AGR** to see the `--trend` ordering, integer truncation
+  and all.
+
+## Definitions
+
+### Total
+
+Documents matching the topic within the year range. A paper listing both
+"BLE" and "Internet of Things" counts once for each — these columns do not sum
+to the corpus size.
+
+### AGR — Average Growth Rate <Badge>docs / year</Badge>
+
+The mean **year-over-year change** in document count across the window.
+
+```python
+rate[i] = count[i] - count[i-1]          # rate[0] = count[0]
+AGR     = mean(rate[startIdx … endIdx])
+```
+
+For *Bluetooth Low Energy* with a 2024–2025 window: 2024 had 110 papers against
+109 in 2023 (`+1`), 2025 had 92 against 110 (`−18`), so
+`AGR = (1 + (−18)) / 2 = −8.5`.
+
+Positive means accelerating, negative means contracting, and the magnitude is in
+documents per year. Because it is a first difference, AGR is **volume-sensitive**:
+a huge topic losing 5% outranks a small topic doubling. That is the trade-off
+`--trend` accepts in exchange for a growth signal that is not dominated by noise
+on 3-paper topics.
+
+### ADY — Average Documents per Year <Badge>docs / year</Badge>
+
+```python
+ADY = mean(count[startIdx … endIdx])
+```
+
+Current publication rate. Unlike AGR this is a *level*, not a *change*: it
+answers "how active is this topic right now?" It is the default Y axis of the
+[evolution plot](./graphs.mdx#evolution); `--agrForGraph` swaps in AGR instead.
+
+### PDLY — Percentage of Documents in the Last Years <Badge>%</Badge>
+
+```python
+PDLY = 100 * sum(count[startIdx … endIdx]) / Total
+```
+
+What fraction of a topic's entire history happened inside the window. This is
+the most intuitive of the four and the one that best survives being quoted
+without its window.
+
+A worked reading, at width 2 on the corpus above:
+
+| Topic | Total | PDLY | Reading |
+| --- | --- | --- | --- |
+| *Bluetooth Low Energy* | 1,401 | 14.4% | Mature. Two of sixteen years hold a seventh of its output — roughly what an even spread would give. |
+| *Bluetooth Low Energy (BLE)* | 454 | 33.0% | Concentrating. A third of all its papers are from the last two years. |
+| *accuracy* | 48 | 81.2% | Brand new. Essentially did not exist before the window. |
+
+PDLY is also what the [`bar_trends`](./graphs.mdx#bar_trends) plot annotates on
+each bar, which makes it the natural indicator for a single summary figure.
+
+### h-index
+
+Standard definition, computed per topic over the papers matched **within the
+year range**: the largest *h* such that *h* of them have at least *h* citations
+each.
+
+<Callout type="warning" title="Three things about the h-index here">
+It is **not** windowed — the slider above leaves it alone. It uses the
+**post-deduplication averaged** citation count, so a paper found in both
+databases contributes the mean of its two counts. And for WoS records the count
+comes from `Z9` (total times cited across all indexes), not `TC` (Core
+Collection only), which makes it run slightly higher than a WoS-only reading.
+</Callout>
+
+## Percentage mode: `--pYear`
+
+`--pYear` rescales the per-year counts into *percentage of all documents
+published that year*, which removes the growth of the field itself from the
+picture — useful when total output is rising so fast that every topic looks like
+it is growing.
+
+<Callout type="danger" title="--pYear rescales after the indicators are computed">
+AGR, ADY, PDLY and Total are calculated from **raw counts**, and only then are
+the per-year columns divided by that year's document total. So in a `--pYear`
+run the table's indicator columns and its year columns are in different units.
+The plot and the year columns show shares; AGR and ADY are still documents per
+year. Don't mix them in one sentence.
+</Callout>
+
+## Choosing a window width
+
+| Width | Good for | Cost |
+| --- | --- | --- |
+| `1` | "What happened last year." AGR becomes a single year-over-year delta. | Maximally noisy; one quiet year flips the sign. |
+| `2` *(default)* | Trend detection on a normal-sized corpus. Matches the published methodology. | Still sensitive to a single incomplete year. |
+| `3`–`5` | Small corpora, or fields with lumpy conference cycles. | Blurs recent inflections. |
+| `> 5` | Long-run structure. | AGR stops meaning "recent growth" in any useful sense. |
+
+Minimum is `1`; anything lower is rejected. There is no upper guard — a width
+larger than your year range simply clamps to the whole range, and the reported
+window in the header will tell you that happened.
+
+<Callout type="tip" title="Always publish the window">
+"IoT grew at AGR 6.5" is not a reproducible claim. "IoT: AGR 6.5 documents/year
+over 2024–2025, from a 2010–2025 corpus of 5,524 deduplicated documents" is. The
+window appears in the printed header for exactly this reason.
+</Callout>
+
+## Where the numbers land
+
+`results/<Criterion>.csv` holds them all, one row per topic:
+
+<Terminal title="results/AuthorKeywords.csv">
+{`Pos.,AuthorKeywords,Total,AGR,ADY,PDLY,hIndex,2010,2011,2012,…,2024,2025
+1,Bluetooth Low Energy,1401,-8.5,101.0,14.42,58,0,3,7,…,110,92
+2,BLE,669,2.5,67.5,20.18,37,0,0,1,…,67,68`}
+</Terminal>
+
+That layout — indicators then a year vector — is designed to drop straight into
+a spreadsheet or a LaTeX table.
+
+## Next
+
+[Graph types](./graphs.mdx) — which of the five visualizations shows which of
+these indicators.
