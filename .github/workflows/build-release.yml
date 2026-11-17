@@ -18,7 +18,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-15]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -53,7 +53,7 @@ jobs:
             platform: windows-x64
           - os: ubuntu-22.04
             platform: linux-x64
-          - os: macos-14
+          - os: macos-15
             platform: macos-arm64
 
     runs-on: ${{ matrix.os }}
