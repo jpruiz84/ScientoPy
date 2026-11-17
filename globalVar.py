@@ -105,4 +105,4 @@ validNetworkCriterion = ["authorKeywords", "indexKeywords", "bothKeywords", "aut
                          "country", "institution", "institutionWithCountry", "subject"]
 
 
-SCIENTOPY_VERSION = "3.1.2"
+SCIENTOPY_VERSION = "3.2.0"
