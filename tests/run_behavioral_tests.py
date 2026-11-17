@@ -78,10 +78,10 @@ def read_brief(path):
     return {row["Info"].strip(): row.get("Number", "").strip() for row in rows}
 
 
-def run_cmd(cmd, cwd):
+def run_cmd(cmd, cwd, env=None):
     """Run a command in cwd and return (returncode, stdout, stderr)."""
     result = subprocess.run(
-        cmd, cwd=cwd, capture_output=True, text=True, timeout=120
+        cmd, cwd=cwd, capture_output=True, text=True, timeout=120, env=env
     )
     if result.returncode != 0:
         print(f"    CMD FAILED: {' '.join(cmd)}")
@@ -605,6 +605,231 @@ def main():
         check("T-E02", "exportPapers --source results copied CSVs",
               exported_any,
               f"no CSVs in {export_results_dir}")
+
+        # ── T-G01..T-G10: scientoPyNetwork co-occurrence maps ──
+        print("\n=== Stage 4: scientoPyNetwork ===")
+        net_script = os.path.join(PROJECT_ROOT, "scientoPyNetwork.py")
+        results_dir = os.path.join(work_dir, "results")
+
+        def network_rows(criterion):
+            base = criterion[0].upper() + criterion[1:]
+            nodes_path = os.path.join(results_dir, base + "_network_nodes.csv")
+            links_path = os.path.join(results_dir, base + "_network_links.csv")
+            if not (os.path.isfile(nodes_path) and os.path.isfile(links_path)):
+                return {}, {}
+            nodes = {row["Label"].upper(): row for row in read_csv(nodes_path)}
+            links = {frozenset((row["Source label"].upper(), row["Target label"].upper())): float(row["Weight"])
+                     for row in read_csv(links_path)}
+            return nodes, links
+
+        result = run_cmd([python, net_script, "-c", "bothKeywords", "--noOpen"], cwd=work_dir)
+        html_path = os.path.join(work_dir, "graphs", "BothKeywords_network.html")
+        html = ""
+        if os.path.isfile(html_path):
+            with open(html_path, "r", encoding="utf-8") as f:
+                html = f.read()
+        check("T-G01a", "Network map HTML written", result.returncode == 0 and bool(html),
+              f"expected {html_path}")
+        check("T-G01b", "Network map is self-contained (no external scripts/styles, data embedded)",
+              bool(html) and "<script src" not in html and "<link" not in html
+              and "__SP_DATA__" not in html and '"criterion":"bothKeywords"' in html)
+
+        nodes, links = network_rows("bothKeywords")
+        for label, occ in [("ALPHA", 10), ("ALPHA INDEX", 10), ("BETA", 8), ("BETA INDEX", 8),
+                           ("GAMMA", 6), ("DELTA", 2)]:
+            row = nodes.get(label)
+            check(f"T-G02-{label.replace(' ', '_')}", f"{label} occurrences == {occ}",
+                  row is not None and int(row["Occurrences"]) == occ,
+                  f"got {row['Occurrences']}" if row else "not found")
+        check("T-G02b", "EXTRA KEYWORD (1 occurrence) left out by --minOccurrences 2",
+              bool(nodes) and "EXTRA KEYWORD" not in nodes)
+        check("T-G03a", "ALPHA - ALPHA INDEX link weight == 10",
+              links.get(frozenset(("ALPHA", "ALPHA INDEX"))) == 10, f"links: {links}")
+        check("T-G03b", "BETA - BETA INDEX link weight == 8",
+              links.get(frozenset(("BETA", "BETA INDEX"))) == 8, f"links: {links}")
+        check("T-G03c", "Exactly 2 links", len(links) == 2, f"got {len(links)}")
+        check("T-G04a", "ALPHA and ALPHA INDEX share a cluster",
+              "ALPHA" in nodes and "ALPHA INDEX" in nodes
+              and nodes["ALPHA"]["Cluster"] == nodes["ALPHA INDEX"]["Cluster"])
+        check("T-G04b", "BETA is in a different cluster than ALPHA",
+              "ALPHA" in nodes and "BETA" in nodes and nodes["ALPHA"]["Cluster"] != nodes["BETA"]["Cluster"])
+
+        vos_map = os.path.join(results_dir, "BothKeywords_vosviewer_map.txt")
+        vos_net = os.path.join(results_dir, "BothKeywords_vosviewer_network.txt")
+        map_lines = open(vos_map, encoding="utf-8").read().splitlines() if os.path.isfile(vos_map) else []
+        net_lines = open(vos_net, encoding="utf-8").read().splitlines() if os.path.isfile(vos_net) else []
+        check("T-G05a", "VOSviewer map file: header + 6 items",
+              len(map_lines) == 7 and map_lines[0].startswith("id\tlabel\tx\ty\tcluster"),
+              f"got {len(map_lines)} lines")
+        check("T-G05b", "VOSviewer network file: 2 links", len(net_lines) == 2, f"got {len(net_lines)} lines")
+
+        gexf_nodes = -1
+        try:
+            import xml.etree.ElementTree as ET
+            root = ET.parse(os.path.join(results_dir, "BothKeywords_network.gexf")).getroot()
+            gexf_nodes = len(root.findall(".//{http://gexf.net/1.3}node"))
+        except Exception as e:
+            print(f"    GEXF parse error: {e}")
+        check("T-G06", "GEXF file parses with 6 nodes", gexf_nodes == 6, f"got {gexf_nodes}")
+
+        run_cmd([python, net_script, "-c", "country", "--noOpen"], cwd=work_dir)
+        _, country_links = network_rows("country")
+        check("T-G07", "Country collaboration UNITED STATES - BRAZIL == 1 (multi-country paper)",
+              country_links.get(frozenset(("UNITED STATES", "BRAZIL"))) == 1, f"links: {country_links}")
+
+        run_cmd([python, net_script, "-c", "bothKeywords", "--synonyms", "Alpha, Alpha index",
+                 "--noOpen"], cwd=work_dir)
+        nodes, links = network_rows("bothKeywords")
+        check("T-G08a", "--synonyms merges ALPHA INDEX into ALPHA (occurrences stay 10)",
+              "ALPHA" in nodes and int(nodes["ALPHA"]["Occurrences"]) == 10 and "ALPHA INDEX" not in nodes,
+              f"nodes: {sorted(nodes)}")
+        check("T-G08b", "--synonyms leaves only the BETA link", set(links) == {frozenset(("BETA", "BETA INDEX"))},
+              f"links: {links}")
+
+        run_cmd([python, net_script, "-c", "authorKeywords", "--startYear", "2021", "--endYear", "2023",
+                 "--minOccurrences", "1", "--noOpen"], cwd=work_dir)
+        nodes, _ = network_rows("authorKeywords")
+        check("T-G09a", "Year range 2021-2023: ALPHA occurrences == 4",
+              "ALPHA" in nodes and int(nodes["ALPHA"]["Occurrences"]) == 4,
+              f"got {nodes['ALPHA']['Occurrences']}" if "ALPHA" in nodes else "not found")
+        check("T-G09b", "Year range 2021-2023: BETA occurrences == 6",
+              "BETA" in nodes and int(nodes["BETA"]["Occurrences"]) == 6,
+              f"got {nodes['BETA']['Occurrences']}" if "BETA" in nodes else "not found")
+
+        bad = subprocess.run([python, net_script, "-c", "authorKeywords", "--minOccurrences", "999",
+                              "--noOpen"], cwd=work_dir, capture_output=True, text=True, timeout=120)
+        check("T-G10", "No items above --minOccurrences exits with an error",
+              bad.returncode != 0 and "ERROR" in bad.stdout, f"returncode {bad.returncode}")
+
+        # T-G11: clusters table of the network map (run again: T-G08 merged ALPHA INDEX)
+        run_cmd([python, net_script, "-c", "bothKeywords", "--noOpen"], cwd=work_dir)
+        clusters_path = os.path.join(results_dir, "BothKeywords_network_clusters.csv")
+        clusters = read_csv(clusters_path) if os.path.isfile(clusters_path) else []
+        items_by_label = {row["Label"].upper(): row["Item labels"].upper() for row in clusters}
+        check("T-G11a", "Network clusters table has one row per cluster (4)",
+              len(clusters) == 4, f"got {len(clusters)}")
+        check("T-G11b", "ALPHA cluster lists its items: ALPHA; ALPHA INDEX",
+              items_by_label.get("ALPHA") == "ALPHA; ALPHA INDEX", f"got {items_by_label}")
+
+        # ── T-W01..T-W04: world map graph ──
+        print("\n=== Stage 5: world map ===")
+        script = os.path.join(PROJECT_ROOT, "scientoPy.py")
+        graphs_dir = os.path.join(work_dir, "graphs")
+        # The graphs are saved to files: no window system needed
+        plot_env = dict(os.environ, MPLBACKEND="Agg")
+
+        result = run_cmd([python, script, "-c", "country", "-g", "world_map",
+                          "--savePlot", "world_map.png"], cwd=work_dir, env=plot_env)
+        map_path = os.path.join(graphs_dir, "world_map.png")
+        check("T-W01", "World map saved to graphs/world_map.png",
+              result.returncode == 0 and os.path.isfile(map_path) and os.path.getsize(map_path) > 5000,
+              f"expected {map_path}")
+        check("T-W02", "Every country of the test data is on the world map",
+              "WARNING" not in result.stdout, result.stdout[-300:])
+        map_results = os.path.join(results_dir, "Country_world_map.csv")
+        rows = read_csv(map_results) if os.path.isfile(map_results) else []
+        us = get_topic_row(rows, "Country", "United States")
+        check("T-W03", "World map results table: United States total == 11",
+              us is not None and int(us["Total"]) == 11,
+              f"got {us['Total']}" if us else "not found")
+
+        bad = subprocess.run([python, script, "-c", "authorKeywords", "-g", "world_map", "--noPlot"],
+                             cwd=work_dir, capture_output=True, text=True, timeout=120)
+        check("T-W04", "World map with a criterion other than country exits with an error",
+              bad.returncode != 0 and "ERROR" in bad.stdout, f"returncode {bad.returncode}")
+
+        # ── T-S01..T-S03: synonyms and documents counted once per topic ──
+        print("\n=== Stage 5: synonyms ===")
+        both_results = os.path.join(results_dir, "BothKeywords.csv")
+
+        run_cmd([python, script, "-c", "bothKeywords", "--synonyms", "Alpha, Alpha index",
+                 "--noPlot"], cwd=work_dir)
+        rows = read_csv(both_results) if os.path.isfile(both_results) else []
+        alpha = get_topic_row(rows, "BothKeywords", "Alpha")
+        check("T-S01a", "--synonyms: ALPHA total == 10 (each document once)",
+              alpha is not None and int(alpha["Total"]) == 10,
+              f"got {alpha['Total']}" if alpha else "not found")
+        check("T-S01b", "--synonyms: ALPHA INDEX merged into ALPHA",
+              bool(rows) and get_topic_row(rows, "BothKeywords", "Alpha index") is None)
+        beta = get_topic_row(rows, "BothKeywords", "Beta")
+        check("T-S01c", "--synonyms: BETA is not changed (total == 8)",
+              beta is not None and int(beta["Total"]) == 8,
+              f"got {beta['Total']}" if beta else "not found")
+
+        thesaurus_path = os.path.join(work_dir, "thesaurus.txt")
+        with open(thesaurus_path, "w", encoding="utf-8") as f:
+            f.write("label\treplace by\nAlpha index\tAlpha\nGamma\t\n")
+        run_cmd([python, script, "-c", "bothKeywords", "--synonyms", thesaurus_path,
+                 "--noPlot"], cwd=work_dir)
+        rows = read_csv(both_results) if os.path.isfile(both_results) else []
+        alpha = get_topic_row(rows, "BothKeywords", "Alpha")
+        check("T-S02a", "Thesaurus file: ALPHA total == 10, ALPHA INDEX merged",
+              alpha is not None and int(alpha["Total"]) == 10
+              and get_topic_row(rows, "BothKeywords", "Alpha index") is None,
+              f"got {alpha['Total']}" if alpha else "not found")
+        check("T-S02b", "Thesaurus file: empty 'replace by' leaves GAMMA out",
+              bool(rows) and get_topic_row(rows, "BothKeywords", "Gamma") is None)
+
+        run_cmd([python, script, "-c", "bothKeywords", "-t", "Alpha, Alpha index",
+                 "--noPlot"], cwd=work_dir)
+        rows = read_csv(both_results) if os.path.isfile(both_results) else []
+        alpha = get_topic_row(rows, "BothKeywords", "Alpha")
+        check("T-S03", "Grouped custom topic counts each document once (ALPHA total == 10, hIndex == 10)",
+              alpha is not None and int(alpha["Total"]) == 10 and int(alpha["hIndex"]) == 10,
+              f"got total {alpha['Total']}, hIndex {alpha['hIndex']}" if alpha else "not found")
+
+        # ── T-H01..T-H04: thematic map ──
+        print("\n=== Stage 6: scientoPyThematicMap ===")
+        thematic_script = os.path.join(PROJECT_ROOT, "scientoPyThematicMap.py")
+
+        result = run_cmd([python, thematic_script, "-c", "bothKeywords",
+                          "--savePlot", "thematic_map.png"], cwd=work_dir, env=plot_env)
+        thematic_plot = os.path.join(graphs_dir, "thematic_map.png")
+        check("T-H01", "Thematic map saved to graphs/thematic_map.png",
+              result.returncode == 0 and os.path.isfile(thematic_plot)
+              and os.path.getsize(thematic_plot) > 5000, f"expected {thematic_plot}")
+        themes_path = os.path.join(results_dir, "BothKeywords_thematic_map.csv")
+        themes = {row["Label"].upper(): row for row in read_csv(themes_path)} \
+            if os.path.isfile(themes_path) else {}
+        check("T-H02", "Themes are ALPHA and BETA (GAMMA and DELTA have no links)",
+              set(themes) == {"ALPHA", "BETA"}, f"got {sorted(themes)}")
+        for label in ["ALPHA", "BETA"]:
+            row = themes.get(label)
+            check(f"T-H03-{label}", f"{label} theme: Callon density == 50, centrality == 0, 2 items",
+                  row is not None and float(row["Callon density"]) == 50.0
+                  and float(row["Callon centrality"]) == 0.0 and int(row["Items"]) == 2,
+                  f"got {row}" if row else "not found")
+
+        bad = subprocess.run([python, thematic_script, "-c", "authorKeywords", "--noPlot"],
+                             cwd=work_dir, capture_output=True, text=True, timeout=120)
+        check("T-H04", "No themes (items never appear together) exits with an error",
+              bad.returncode != 0 and "ERROR" in bad.stdout, f"returncode {bad.returncode}")
+
+        # ── T-C01..T-C04: most cited documents ──
+        print("\n=== Stage 7: topCitedPapers ===")
+        cited_script = os.path.join(PROJECT_ROOT, "topCitedPapers.py")
+        cited_path = os.path.join(results_dir, "TopCitedPapers.csv")
+
+        result = run_cmd([python, cited_script, "-l", "4"], cwd=work_dir)
+        rows = read_csv(cited_path) if os.path.isfile(cited_path) else []
+        check("T-C01", "Top cited table has -l 4 rows", result.returncode == 0 and len(rows) == 4,
+              f"got {len(rows)}")
+        check("T-C02", "The two most cited are the Delta papers (oldest first on a tie)",
+              len(rows) == 4 and rows[0]["Title"] == "Delta Duplicate Paper 2022"
+              and rows[1]["Title"] == "Delta Duplicate Paper 2023"
+              and int(rows[0]["Cited by"]) == int(rows[1]["Cited by"]) > int(rows[2]["Cited by"]),
+              f"got {[(r['Title'], r['Cited by']) for r in rows]}")
+        check("T-C03", "Third most cited is an Alpha paper with 10 citations",
+              len(rows) == 4 and rows[2]["Title"].startswith("Alpha Paper 2018")
+              and int(rows[2]["Cited by"]) == 10,
+              f"got {rows[2]['Title']}, {rows[2]['Cited by']}" if len(rows) == 4 else "")
+
+        run_cmd([python, cited_script, "-l", "100", "--startYear", "2023", "--endYear", "2023"],
+                cwd=work_dir)
+        rows = read_csv(cited_path) if os.path.isfile(cited_path) else []
+        check("T-C04", "Year range 2023: 5 documents, all from 2023",
+              len(rows) == 5 and all(r["Year"] == "2023" for r in rows),
+              f"got {[(r['Title'], r['Year']) for r in rows]}")
 
     finally:
         print(f"\nTest data preserved in: {work_dir}")

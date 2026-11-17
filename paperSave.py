@@ -322,32 +322,65 @@ def saveExtendedResults(topicResults, criterionIn, plotName, outPath=None):
   print("Saved extended top results on: %s" % outPath)
   return outPath
 
-def saveTopCited(papersDic):
+TOP_CITED_HEADERS = [
+  "Pos.", "Cited by", "Cited by per year", "Year", "Title", "Authors",
+  "Source title", "Document type", "DOI", "EID",
+]
 
-  fileName = os.path.join(globalVar.RESULTS_FOLDER, "topCitedPapers.csv")
-  ofile = open(fileName, 'w', encoding='utf-8')
 
-  fieldnames = ["Pos.", "Year", "Cited by", "Cited by scaled", "Title", "Authors", "Author keywords"]
+def _citedBy(paper):
+  value = str(paper.get("citedBy", "")).strip()
+  return int(value) if value.isdigit() else 0
 
-  writer = csv.DictWriter(ofile, fieldnames=fieldnames, dialect=csv.excel, lineterminator='\n')
-  writer.writeheader()
 
-  count = 1
-  for paper in papersDic:
-    dictWriter = {}
-    dictWriter["Pos."] = str(count)
-    dictWriter["Year"] = paper["year"]
-    dictWriter["Cited by"] = paper["citedBy"]
-    dictWriter["Cited by scaled"] = int(paper["scaledCitedBy"])
-    dictWriter["Title"] = paper["title"]
-    dictWriter["Authors"] = paper["author"]
-    dictWriter["Author keywords"] = paper["authorKeywords"].upper()
-    writer.writerow(dictWriter)
+def topCitedRows(papers, length=10, startYear=None, endYear=None, currentYear=None):
+  """Return (headers, rows) with the most cited documents.
 
-    count += 1
+  Documents are ranked by their citations ("Cited by"); ties go to the
+  oldest document and then to the title. "Cited by per year" divides the
+  citations by the years since publication (the publication year counts as
+  the first one), which lets recent documents be compared with old ones.
+  startYear / endYear limit the publication years.
+  """
+  if currentYear is None:
+    import datetime
+    currentYear = datetime.datetime.now().year
 
-  ofile.close()
+  inside = []
+  for paper in papers:
+    year = str(paper.get("year", ""))
+    if not year.isdigit():
+      continue
+    if startYear is not None and int(year) < startYear:
+      continue
+    if endYear is not None and int(year) > endYear:
+      continue
+    inside.append(paper)
 
-  print("Saved top cited results on: %s" % fileName)
+  inside.sort(key=lambda x: (-_citedBy(x), int(x["year"]), x.get("title", "")))
 
-  return fileName
+  rows = []
+  for count, paper in enumerate(inside[:max(0, length)], 1):
+    cited = _citedBy(paper)
+    years = max(1, currentYear - int(paper["year"]) + 1)
+    rows.append([
+      str(count), str(cited), "%.2f" % (cited / years), paper["year"],
+      paper.get("title", ""), paper.get("author", ""), paper.get("sourceTitle", ""),
+      paper.get("documentType", ""), paper.get("doi", ""), paper.get("eid", ""),
+    ])
+  return list(TOP_CITED_HEADERS), rows
+
+
+def saveTopCited(headers, rows, outPath=None):
+  """Write the most cited documents table (see topCitedRows)."""
+  if outPath is None:
+    outPath = os.path.join(globalVar.RESULTS_FOLDER, globalVar.TOP_CITED_FILE)
+  os.makedirs(os.path.dirname(os.path.abspath(outPath)) or ".", exist_ok=True)
+
+  with open(outPath, 'w', encoding='utf-8') as ofile:
+    writer = csv.writer(ofile, dialect=csv.excel, lineterminator='\n')
+    writer.writerow(headers)
+    writer.writerows(rows)
+
+  print("Saved top cited documents on: %s" % outPath)
+  return outPath

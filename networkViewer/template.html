@@ -1,0 +1,210 @@
+<!doctype html>
+<!-- ScientoPy network map. Self-contained: works offline and makes no network requests. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="generator" content="ScientoPy">
+<title>__SP_TITLE__ · ScientoPy</title>
+<style>
+/*__SP_STYLE__*/
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+  <canvas id="ov"></canvas>
+  <div id="vignette"></div>
+
+  <header id="topbar">
+    <div class="tb-stats">
+      <span class="brand">SCIENTOPY <b>network-crawler</b></span>
+      <span>CLUSTERS <b id="st-clusters">0</b></span>
+      <span>NODES <b id="st-nodes">0</b></span>
+      <span>READ <b id="st-read">0/0</b></span>
+      <span>LINKS <b id="st-links" class="c-yellow">0</b></span>
+      <span>FLAGS <b id="st-flags" class="c-red">0</b></span>
+      <span class="hide-sm">LEGS <b>8</b></span>
+      <span class="hide-sm">TENTACLES <b id="st-tent" class="c-cyan">0</b></span>
+      <span class="hide-sm">T <b id="st-time">00.00</b></span>
+      <span class="hide-sm">FRAME <b id="st-frame">0000</b></span>
+    </div>
+    <div id="st-source" class="c-pink"></div>
+  </header>
+
+  <nav id="tabs"></nav>
+
+  <section id="titleblock">
+    <h1><span id="tb-num">00</span> <span id="tb-name">BOOTING</span></h1>
+    <div id="tb-sub"></div>
+  </section>
+
+  <aside id="controls">
+    <div class="ctl-head">
+      <span>CONTROLS</span>
+      <button id="ctl-toggle" title="Collapse controls (C)">&minus;</button>
+    </div>
+    <div class="ctl-body">
+      <div class="ctl-group">
+        <input id="search" list="sp-labels" placeholder="search a node  [/]" autocomplete="off" spellcheck="false">
+        <datalist id="sp-labels"></datalist>
+      </div>
+      <div class="ctl-group">
+        <label>view</label>
+        <div class="seg" data-ctl="view">
+          <button data-v="network" class="on" title="Clusters (N)">network</button>
+          <button data-v="year" title="Color by average publication year (Y)">year</button>
+          <button data-v="cites" title="Color by average citations">cites</button>
+          <button data-v="density" title="Density visualization (D)">density</button>
+        </div>
+      </div>
+      <div class="ctl-group">
+        <label>space</label>
+        <div class="seg" data-ctl="space">
+          <button data-v="3d" class="on" title="3D orbit view (3)">3D</button>
+          <button data-v="2d" title="Flat 2D map (2)">2D</button>
+        </div>
+      </div>
+      <div class="ctl-group">
+        <label>size by</label>
+        <div class="seg" data-ctl="size">
+          <button data-v="occ" class="on">occur.</button>
+          <button data-v="links">links</button>
+          <button data-v="tls">strength</button>
+          <button data-v="cites">cites</button>
+        </div>
+      </div>
+      <div class="ctl-group">
+        <label>links <b id="v-links"></b></label>
+        <input type="range" id="r-links" min="0" max="1000" step="1">
+      </div>
+      <div class="ctl-group">
+        <label>labels <b id="v-labels"></b></label>
+        <input type="range" id="r-labels" min="0" max="200" step="1">
+      </div>
+      <div class="ctl-group">
+        <label>dust <b id="v-dust"></b></label>
+        <input type="range" id="r-dust" min="0" max="200" step="1">
+      </div>
+      <div class="ctl-group">
+        <label>timeline <b id="v-year"></b></label>
+        <div class="row">
+          <button id="b-timeline" class="icon" title="Play the growth of the map (T)">&#9654;</button>
+          <input type="range" id="r-year" step="1">
+        </div>
+      </div>
+      <div class="ctl-group">
+        <label>crawler</label>
+        <div class="row">
+          <button id="b-play" title="Pause / resume the crawler (Space)">pause</button>
+          <button id="b-restart" class="icon" title="Restart the crawl (R)">&#8634;</button>
+          <button id="b-follow" class="on" title="Camera follows the spider (F)">follow</button>
+        </div>
+        <div class="seg" data-ctl="speed">
+          <button data-v="0.5">.5&times;</button>
+          <button data-v="1" class="on">1&times;</button>
+          <button data-v="2">2&times;</button>
+          <button data-v="4">4&times;</button>
+        </div>
+      </div>
+      <div class="ctl-group row">
+        <button id="b-export" title="Export images, video and data (E)">export</button>
+        <button id="b-hud" title="Show / hide the dashboard (H)">hud</button>
+        <button id="b-help" class="icon" title="Help (?)">?</button>
+      </div>
+    </div>
+    <div id="exportmenu" hidden>
+      <div class="em-sec">image · current view</div>
+      <button data-x="png2">PNG · neon 2&times;</button>
+      <button data-x="png4">PNG · neon 4&times;</button>
+      <button data-x="png-light">PNG · publication (light)</button>
+      <button data-x="svg-light">SVG · publication (light)</button>
+      <button data-x="svg-dark">SVG · dark</button>
+      <div class="em-sec">video · full crawl tour</div>
+      <button data-x="video-16x9">16:9 · 1920&times;1080</button>
+      <button data-x="video-9x16">9:16 · 1080&times;1920 · reels</button>
+      <button data-x="video-1x1">1:1 · 1080&times;1080</button>
+      <div class="em-sec">data</div>
+      <button data-x="vos">VOSviewer map + network</button>
+      <button data-x="gexf">GEXF · Gephi</button>
+      <button data-x="csv">CSV · nodes + links</button>
+      <button data-x="json">JSON</button>
+    </div>
+  </aside>
+
+  <aside id="nodepanel" hidden></aside>
+  <div id="tooltip" hidden></div>
+  <div id="legend" hidden></div>
+
+  <footer id="dash">
+    <section class="panel" id="p-log">
+      <header><span>CRAWL LOG</span><span id="log-rate" class="c-cyan">0 n/s</span></header>
+      <ol id="log"></ol>
+    </section>
+    <section class="panel" id="p-clusters">
+      <header><span>CLUSTERS</span><span id="cl-count"></span></header>
+      <div id="cl-list"></div>
+    </section>
+    <section class="panel" id="p-radar">
+      <header><span>COVERAGE RADAR</span><span class="c-green">live</span></header>
+      <svg id="radar" viewBox="0 0 220 150" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="panel-foot" id="radar-foot"></div>
+    </section>
+    <section class="panel" id="p-heat">
+      <header><span>YEAR HEAT</span><span id="heat-total"></span></header>
+      <div id="heat"></div>
+      <div id="heat-stats"></div>
+    </section>
+    <section class="panel" id="p-trend">
+      <header><span>MOMENTUM</span><span class="c-green">live</span></header>
+      <svg id="spark" viewBox="0 0 200 50" preserveAspectRatio="none"></svg>
+      <svg id="gauge" viewBox="0 0 140 84"></svg>
+      <div class="panel-foot" id="trend-foot"></div>
+    </section>
+    <section class="panel" id="p-code">
+      <header><span>CRAWLER.PY</span><span id="code-rate" class="c-pink">0 l/s</span></header>
+      <pre id="code"></pre>
+    </section>
+  </footer>
+
+  <div id="rec" hidden><span class="dot"></span>REC <span id="rec-time">00:00</span><button id="rec-stop">stop</button></div>
+  <div id="toast"></div>
+  <div id="summary" hidden></div>
+  <div id="help" hidden>
+    <div class="help-card">
+      <h2>ScientoPy network map</h2>
+      <p>Items (keywords, authors, countries...) are linked when they appear in the same document.
+        Colors are clusters of items that often appear together, as in VOSviewer.
+        The spider crawls one cluster at a time: it <span class="c-pink">reads</span> items,
+        <span class="c-yellow">links</span> strong co-occurrences and <span class="c-red">flags</span>
+        emerging or highly cited items.</p>
+      <table>
+        <tr><td>drag</td><td>rotate (3D) / pan (2D)</td></tr>
+        <tr><td>right drag, shift drag</td><td>pan</td></tr>
+        <tr><td>wheel, pinch</td><td>zoom</td></tr>
+        <tr><td>click / double click</td><td>select / focus an item</td></tr>
+        <tr><td>Space</td><td>pause / resume the crawler</td></tr>
+        <tr><td>&larr; &rarr;</td><td>previous / next cluster</td></tr>
+        <tr><td>2 / 3</td><td>2D / 3D</td></tr>
+        <tr><td>N Y D</td><td>network / overlay year / density</td></tr>
+        <tr><td>T</td><td>play the timeline</td></tr>
+        <tr><td>F R</td><td>follow spider / restart crawl</td></tr>
+        <tr><td>L H C</td><td>labels / dashboard / controls</td></tr>
+        <tr><td>E /</td><td>export / search</td></tr>
+        <tr><td>Esc</td><td>close panels</td></tr>
+      </table>
+      <p class="dim" id="help-meta"></p>
+      <button id="help-close">close</button>
+    </div>
+  </div>
+  <div id="fatal" hidden></div>
+</div>
+<script id="sp-data" type="application/json">__SP_DATA__</script>
+<script>
+(function () {
+"use strict";
+/*__SP_SCRIPT__*/
+})();
+</script>
+</body>
+</html>

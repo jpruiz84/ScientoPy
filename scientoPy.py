@@ -30,7 +30,9 @@ parser = argparse.ArgumentParser(
     description="Analyze the topics inside a criterion",
     epilog="To export analysis results (the CSVs produced under results/) or "
            "the full preprocessed corpus, run: "
-           "./exportPapers.py --source {results,preprocessed} --format {scopus,wos}",
+           "./exportPapers.py --source {results,preprocessed} --format {scopus,wos}. "
+           "Other analyses: scientoPyNetwork.py (network map), scientoPyThematicMap.py "
+           "(thematic map) and topCitedPapers.py (most cited documents).",
 )
 
 parser.add_argument("-c","--criterion", choices=globalVar.validCriterion, default= "authorKeywords",
@@ -60,7 +62,7 @@ parser.add_argument("--pYear",
 help="To present the results in percentage per year instead of documents per year", action="store_true")
 
 parser.add_argument("--yLog", 
-help="Plot Y axes in log scale", action="store_true")
+help="Plot Y axes in log scale. In the world map, use a logarithmic color scale", action="store_true")
 
 parser.add_argument("--noPlot",
 help="Do not plot the results, use for large amount of topics", action="store_true")
@@ -96,6 +98,12 @@ help="Get and graph the top trending topics, with the highest average growth rat
 
 parser.add_argument("-f", "--filter", help='Filter to be applied on a sub topic.'
   'Example to extract instituions from United States: scientoPy.py institutionWithCountry -f "United States"')
+
+parser.add_argument("--synonyms", default="",
+help='Merge the names of the same topic before counting, in any criterion (keyword variants, '
+     'author or institution names). Groups separated by ";", synonyms by ",", the first one names '
+     'the group. Ex: --synonyms "internet of things, iot; bluetooth low energy, ble". Also accepts '
+     'a VOSviewer thesaurus file (tab separated: label, replace by)')
 
 parser.add_argument("--saveExtended",
 help="Also save the extended per-document results CSV "

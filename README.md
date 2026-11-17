@@ -18,9 +18,10 @@ It has the following main characteristics:
 - Wildcard topics search
 - Trending topics using the top average growth rate (AGR)
 - Five different visualization graphs: bar, bar trends, timeline, evolution, and word cloud
+- Interactive co-occurrence network maps (VOSviewer style) for keywords, co-authorship, and country or institution collaboration: 3D/2D views, clustering, overlay and density visualizations, an animated crawler tour, and PNG/SVG/video/VOSviewer/Gephi exports
 - Automatic BibTeX bibliography generation from LaTeX documents using paper EIDs as cite keys
 - On-demand CSV export (Scopus or WoS field style) via `exportPapers.py` or the GUI Export tab
-- Graphical user interface with five tabs (Pre-processing, Analysis, Results, Extended Results, Export)
+- Graphical user interface with six tabs (Pre-processing, Analysis, Results, Extended Results, Export, Network Map)
 
 
 Download Pre-built Releases
@@ -210,6 +211,31 @@ this:
     python3 scientoPy.py -c authorKeywords -t \
     "devices;device management;Device Interactions;Device objectification;Device;Device integration"
 
+### Merging synonyms
+
+The same topic is often written in several ways: abbreviations
+("IoT", "Internet of Things"), singular and plural, an author with and
+without the middle initial, or an institution with two names. The
+`--synonyms` option counts those names as one topic when ScientoPy finds
+the top topics, in any criterion:
+
+    python3 scientoPy.py -c authorKeywords \
+    --synonyms "Internet of Things, IoT, Internet of Things (IoT); Bluetooth Low Energy, BLE"
+
+Divide the groups with `;` and the names inside a group with `,`. The
+first name of each group is the one shown in the results. A document
+with several names of the same group counts once.
+
+For long lists, `--synonyms` also takes a VOSviewer thesaurus file: a
+tab separated text file with the header `label` and `replace by`. A name
+with an empty `replace by` is left out of the results:
+
+    python3 scientoPy.py -c institution --synonyms thesaurus_institutions.txt
+
+The same option and file work in `scientoPyNetwork.py` and
+`scientoPyThematicMap.py`, so the tables, the network map and the
+thematic map use the same names.
+
 ### Evolution plot
 
 Also, you can see the results with a evolution graphic (add
@@ -224,6 +250,34 @@ This script have more options like, save the plot on a file, or others.
 For more information you can run:
 
     python3 scientoPy.py -h
+
+World map
+---------
+
+The `world_map` graph shades every country by its number of documents.
+It needs the `country` criterion:
+
+    python3 scientoPy.py -c country -g world_map
+
+The map shows every country found in the dataset, while the results
+table (`results/Country.csv`) keeps the top ones set by `-l`. Some
+useful options:
+
+    # Logarithmic color scale, to see the countries with few documents
+    python3 scientoPy.py -c country -g world_map --yLog
+
+    # Leave out the first two countries, to compare the others
+    python3 scientoPy.py -c country -g world_map -s 2
+
+    # Only the countries that publish with Canada, saved for a paper
+    python3 scientoPy.py -c country -t "Canada" --noPlot
+    python3 scientoPy.py -c country -r -g world_map --savePlot "canada_collaboration.eps"
+
+Countries with no documents are gray. Countries too small to see at
+this scale, like Singapore, get a dot. Names in the country field that
+are not a country (errors in the affiliations of the dataset) are
+listed in the console. The map works offline: the country outlines
+(from Natural Earth, public domain) come with ScientoPy.
 
 Finding trending topics
 -----------------------
@@ -322,6 +376,171 @@ or pick **Extended results (last analysis, per-document)** in the GUI
 All export options are also available from the GUI in the **5. Export**
 tab.
 
+Network maps (VOSviewer style)
+------------------------------
+
+`scientoPyNetwork.py` builds a co-occurrence network of the top items of
+a criterion and saves it as an interactive map that opens in the web
+browser. Two items are linked when they appear in the same document, so
+the same command maps keyword co-occurrence (`authorKeywords`,
+`indexKeywords`, `bothKeywords`), co-authorship (`author`), country or
+institution collaboration (`country`, `institution`,
+`institutionWithCountry`) and WoS subject areas (`subject`).
+
+    # Top 300 author keywords, opens graphs/AuthorKeywords_network.html
+    python3 scientoPyNetwork.py -c authorKeywords
+
+    # Merge synonyms and leave out the search terms
+    python3 scientoPyNetwork.py -c authorKeywords \
+        --synonyms "internet of things, iot; bluetooth low energy, ble" \
+        --exclude "bluetooth low energy"
+
+    # Country collaboration with fractional counting
+    python3 scientoPyNetwork.py -c country --counting fractional
+
+    # Co-authorship inside the documents found by the previous analysis
+    python3 scientoPy.py -c country -t "Colombia" --noPlot
+    python3 scientoPyNetwork.py -c author -r
+
+The analysis follows VOSviewer: links are normalized with the association
+strength, items are clustered by optimizing the VOSviewer quality function
+(with a resolution parameter), and the map layout uses the VOS mapping
+technique, in both 3D and 2D.
+
+| Option | Description |
+|---|---|
+| `-c`, `--criterion` | Criterion to map, default `authorKeywords` |
+| `-l`, `--length` | Maximum number of items, the top ones by occurrences, default 300 |
+| `--minOccurrences` | Minimum number of documents per item, default 2 |
+| `-s`, `--skipFirst` | Leave out the first N top items |
+| `--exclude` | Items to leave out, separated by `;` |
+| `--synonyms` | Synonym groups, `"a, a2; b, b2"` (the first one names the group), or a VOSviewer thesaurus file |
+| `--startYear`, `--endYear` | Year range |
+| `--counting` | `full` or `fractional` counting of co-occurrences |
+| `--minLinkStrength` | Minimum link weight to keep a link |
+| `--resolution` | Clustering resolution, higher gives more and smaller clusters, default 1 |
+| `--minClusterSize` | Smaller clusters are merged into their most connected cluster, default 3 |
+| `--cohesion` | Extra attraction inside clusters in the layout, `0` for the plain VOS mapping, default 0.5 |
+| `-r`, `--previousResults` | Map the documents found by the last `scientoPy.py` run |
+| `--graphTitle` | Title shown in the map |
+| `--noOpen` | Do not open the web browser |
+
+Besides the map, the script writes the items of every cluster to
+`results/<Criterion>_network_clusters.csv`, one row per cluster, ready
+for a table of keywords by cluster.
+
+The map is a single HTML file that works offline in any recent browser
+with WebGL2 (Chrome, Edge, Firefox, Safari). It includes:
+
+- **Views:** network (clusters), overlay by average publication year or
+  average citations, and density; 3D orbit or flat 2D, with animated
+  transitions.
+- **Crawler tour:** a spider walks the map one cluster at a time. It reads
+  the items, probes the strongest links, and flags emerging items (recent
+  and growing) and highly cited ones. A dashboard follows it with a
+  crawl log, cluster progress, coverage radar, year heat map, and a
+  momentum gauge (50 = same share of recent documents as the whole
+  corpus).
+- **Exploration:** search, click an item for its statistics, documents
+  per year, strongest links and most cited documents, timeline playback
+  of the map growth, and the `scientoPy.py` command to analyze it.
+- **Exports:** neon PNG (2x, 4x), publication PNG and SVG (light
+  background), 16:9, 9:16, and 1:1 videos of the full crawl tour (MP4 or
+  WebM, depending on the browser), VOSviewer map and network files,
+  GEXF for Gephi, CSV, and JSON.
+
+The map makes no network requests. DOI links in the item details open
+only when clicked.
+
+In the GUI, the same options are in the **6. Network Map** tab.
+
+Thematic map
+------------
+
+`scientoPyThematicMap.py` draws the thematic map (strategic diagram) of
+a criterion. It groups the items that appear together in clusters, the
+same clusters as `scientoPyNetwork.py` with the same options, and places
+every cluster (a theme) by two values from Callon's co-word analysis:
+
+- **Centrality (relevance degree):** strength of the links between the
+  items of the theme and the items of the other themes. A central theme
+  is tied to the rest of the field.
+- **Density (development degree):** strength of the links between the
+  items of the theme. A dense theme is well developed.
+
+The link strength between two items is the equivalence index,
+`e = c_ij² / (c_i · c_j)`, with `c_ij` the documents with both items and
+`c_i`, `c_j` the documents with each one. Centrality is 10 times the sum
+of `e` over the links to other themes, and density is 100 times the sum
+of `e` over the links inside the theme, divided by its number of items.
+
+    # Thematic map of the author keywords
+    python3 scientoPyThematicMap.py -c authorKeywords
+
+    # Merge synonyms, leave out the search terms and save the plot
+    python3 scientoPyThematicMap.py -c authorKeywords \
+        --synonyms "internet of things, iot; bluetooth low energy, ble" \
+        -s 2 --savePlot "thematic_map.eps"
+
+The dashed lines cross at the medians and split the map in four:
+
+| Quadrant | Centrality | Density | Meaning |
+|---|---|---|---|
+| Motor themes (top right) | high | high | Developed and important for the field |
+| Niche themes (top left) | low | high | Developed, but isolated from the rest |
+| Emerging or declining themes (bottom left) | low | low | Weakly developed and marginal |
+| Basic themes (bottom right) | high | low | Important for the field, but not developed |
+
+The bubble area is the number of occurrences of the items of the theme,
+and each bubble shows its top items. Items that never appear with
+another item are not part of any theme.
+
+`scientoPyThematicMap.py` takes the options of `scientoPyNetwork.py`
+that select the items and the clusters (`-c`, `-l`, `--minOccurrences`,
+`-s`, `--exclude`, `--synonyms`, `--startYear`, `--endYear`,
+`--counting`, `--minLinkStrength`, `--resolution`, `--minClusterSize`,
+`-r`), and these ones:
+
+| Option | Description |
+|---|---|
+| `--labels` | Number of items written on each theme, default 3 |
+| `--axes` | `rank` places the themes by their centrality and density ranks, which spreads them evenly (default). `value` places them by the values |
+| `--savePlot` | Save the plot to a file in `graphs/` (png, eps, pdf, svg) |
+| `--noPlot` | Only save the table |
+| `--plotWidth`, `--plotHeight` | Plot size in inches |
+| `--graphTitle` | Title of the plot |
+
+The themes, with their centrality, density, quadrant and every item, are
+saved to `results/<Criterion>_thematic_map.csv`.
+
+In the GUI, use the **Thematic map** button of the **6. Network Map**
+tab.
+
+Most cited documents
+--------------------
+
+`topCitedPapers.py` lists the most cited documents of the dataset:
+
+    # Top 10 most cited documents
+    python3 topCitedPapers.py
+
+    # Top 20, published from 2015 to 2024
+    python3 topCitedPapers.py -l 20 --startYear 2015 --endYear 2024
+
+    # Most cited documents about a topic
+    python3 scientoPy.py -c authorKeywords -t "indoor positioning" --noPlot
+    python3 topCitedPapers.py -r
+
+The table is saved to `results/TopCitedPapers.csv` with the citations,
+the citations per year (citations divided by the years since the
+document was published), year, title, authors, source, document type,
+DOI, and EID. The citations are the ones reported by Scopus or WoS when
+the dataset was downloaded.
+
+In the GUI, use the **Most cited documents** button of the
+**2. Analysis** tab. It uses the year range and the topics length of
+that tab, and shows the table in the **4. Extended Results** tab.
+
 Output files and directories
 ----------------------------
 
@@ -350,6 +569,9 @@ following folder and files structure described bellow:
 -   **graphs:** graphs output folder for preprocess and scientoPy
     scripts
 
+    -   **AuthorKeywords\_network.html:** interactive network map written
+        by `scientoPyNetwork.py` (self-contained, open it in a browser).
+
 -   **Manual:** folder with the pdf manual and example paper with
     scientoPy commands highlighted used for graph and tables generation.
 
@@ -364,6 +586,22 @@ following folder and files structure described bellow:
     -   **AuthorKeywords\_extended.csv:** scientoPy output file for the
         selected criterion (in this case authorKeywords) that show the top
         or custom topics with the documents related to each one.
+
+    -   **AuthorKeywords\_network.json**, **\_network\_nodes.csv**,
+        **\_network\_links.csv**, **\_network\_clusters.csv**,
+        **\_network.gexf**, **\_vosviewer\_map.txt**,
+        **\_vosviewer\_network.txt:** network map data written by
+        `scientoPyNetwork.py`: items with their cluster, occurrences,
+        links, average year and citations, the links with their weights,
+        and the items of every cluster. The VOSviewer files open in
+        VOSviewer and the GEXF file in Gephi.
+
+    -   **AuthorKeywords\_thematic\_map.csv:** themes of the thematic
+        map written by `scientoPyThematicMap.py`, with their centrality,
+        density, quadrant, and items.
+
+    -   **TopCitedPapers.csv:** most cited documents written by
+        `topCitedPapers.py`.
 
     -   **lastAnalysis.parquet:** internal file with the output papers
         from the last scientoPy script run. Used as input when the
@@ -411,7 +649,7 @@ button on the Analysis tab.
 ScientoPy graph types
 =====================
 
-ScientoPy has 5 different ways to graph the results described bellow:
+ScientoPy has 6 different ways to graph the results described bellow:
 
 
 | Graph type      | Argument        | Description                                                                                                                                       |
@@ -421,6 +659,10 @@ ScientoPy has 5 different ways to graph the results described bellow:
 | Horizontal bars trends | `-g bar_trends`         | Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years     |
 | Word cloud      | `-g word_cloud`   | Generate a word cloud based on the topic total number of publications                                                                             |
 | Evolution      | `-g evolution`  | Graphs two plots, one with the accumulative number of documents vs the publication year, and other with the average papers per year vs the percentage of documents in the last years |
+| World map      | `-g world_map`  | Shades every country by its number of documents, only for the `country` criterion                                                                 |
+
+The network map and the thematic map have their own scripts,
+`scientoPyNetwork.py` and `scientoPyThematicMap.py`, described above.
 
 
 

@@ -42,3 +42,14 @@ set -x
 # Example of the filter to get the top institution of a specific country
 ./scientoPy.py -c institutionWithCountry -f "Colombia" --startYear 2008 --endYear 2025 -g bar --graphTitle "Top Colombia's institutions" --savePlot "graph_institutions_from_colombia.eps"
 
+# Example world map of the documents per country
+./scientoPy.py -c country --startYear 2008 --endYear 2025 -g world_map --graphTitle "Documents per country" --savePlot "graph_world_map.eps"
+
+# Example top author keywords with synonyms merged
+./scientoPy.py -c authorKeywords --synonyms "Bluetooth Low Energy, BLE, Bluetooth Low Energy (BLE); Internet of Things, IoT, Internet of Things (IoT)" --startYear 2008 --endYear 2025 -g bar --graphTitle "Top author keywords, synonyms merged" --savePlot "graph_synonyms.eps"
+
+# Example thematic map of the author keywords
+./scientoPyThematicMap.py -c authorKeywords --startYear 2008 --endYear 2025 --graphTitle "Thematic map of author keywords" --savePlot "graph_thematic_map.eps"
+
+# Example most cited documents
+./topCitedPapers.py -l 20 --startYear 2008 --endYear 2025

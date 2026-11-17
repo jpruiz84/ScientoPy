@@ -40,6 +40,9 @@ dev = ["pytest>=7.0"]
 scientopy = "scientoPy:main"
 scientopy-preprocess = "preProcess:main"
 scientopy-export = "exportPapers:main"
+scientopy-network = "scientoPyNetwork:main"
+scientopy-thematic-map = "scientoPyThematicMap:main"
+scientopy-top-cited = "topCitedPapers:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -23,6 +23,7 @@ import paperUtils
 import paperIO
 import paperSave
 import globalVar
+import networkAnalysis
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,6 +64,7 @@ class ScientoPyClass:
         self.yLog = False
         self.filter = ""
         self.saveExtended = False
+        self.synonyms = ''
         self.fromGui = from_gui
 
         # Working variables
@@ -75,9 +77,34 @@ class ScientoPyClass:
         self.legacyDatasetFile = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
         self.lastAnalysisFile = os.path.join(globalVar.RESULTS_FOLDER, globalVar.LAST_ANALYSIS_FILE)
         self.topicResults = []
+        self.allTopicsCount = {}
         self.yearArray = []
         self.startYearIndex = 0
         self.endYearIndex = 0
+
+    @staticmethod
+    def _paperItems(paper, criterion, synonymMap):
+        """Items of a paper for the criterion, each one once.
+
+        Synonyms are replaced by the name of their group, and items with an
+        empty replacement (VOSviewer thesaurus) are left out.
+        """
+        items = []
+        seen = set()
+        for raw in paper[criterion].split(";"):
+            item = raw.strip()
+            if not item:
+                continue
+            key = item.upper()
+            if key in synonymMap:
+                item = synonymMap[key]
+                if not item:
+                    continue
+                key = item.upper()
+            if key not in seen:
+                seen.add(key)
+                items.append(item)
+        return items
 
     def closePlot(self):
         plt.close()
@@ -131,6 +158,19 @@ class ScientoPyClass:
         if args.startYear > args.endYear:
             raise ScientoPyError("startYear (%d) > endYear (%d)" % (args.startYear, args.endYear))
 
+        # Results of a previous run are not the results of this one
+        self.topicResults = []
+        self.allTopicsCount = {}
+
+        # The world map only places countries
+        if args.graphType == "world_map" and args.criterion != "country":
+            raise ScientoPyError("The world_map graph needs the country criterion (-c country)")
+
+        # Synonym groups: {UPPER_VARIANT: group name}
+        synonymMap = networkAnalysis.parse_synonyms(getattr(args, "synonyms", "") or "")
+        if synonymMap:
+            print("Synonyms: %d names merged" % len(synonymMap))
+
         # Create output folders if not exist
         if not os.path.exists(os.path.join(globalVar.GRAPHS_OUT_FOLDER)):
             os.makedirs(os.path.join(globalVar.GRAPHS_OUT_FOLDER))
@@ -151,6 +191,7 @@ class ScientoPyClass:
         # Start the output list empty
         papersDictOut = []
         topicList = []
+        self.allTopicsCount = {}
 
         loadDataSet = False
 
@@ -277,15 +318,9 @@ class ScientoPyClass:
                 if globalVar.cancelProcess:
                     return
 
-                # For each item in paper criteria
-                for item in paper[args.criterion].split(";"):
-                    # Strip paper item and upper case
-                    item = item.strip()
+                # For each item in paper criteria (each one once, synonyms merged)
+                for item in self._paperItems(paper, args.criterion, synonymMap):
                     item = item.upper()
-
-                    # If paper item empty continue
-                    if item == "":
-                        continue
 
                     # If filter sub topic, omit items outside that do not match with the subtopic
                     if filterSubTopic != "" and len(item.split(",")) >= 2:
@@ -302,6 +337,9 @@ class ScientoPyClass:
                     # If onlyFirst, only keep the firt processesing
                     if args.onlyFirst:
                         break
+
+            # Every topic with its documents, for the graphs that show them all
+            self.allTopicsCount = topicDic
 
             # If trending analysis, the top topic list to analyse is bigger
             if args.trend:
@@ -371,7 +409,11 @@ class ScientoPyClass:
                 if args.topics and "*" in subUp:
                     wildcardPatterns.append((re.compile(subUp.replace("*", ".*")), tIdx))
                 else:
-                    exactLookup.setdefault(subUp, []).append(tIdx)
+                    # A custom topic written with a synonym finds its group
+                    if synonymMap.get(subUp):
+                        subUp = synonymMap[subUp].upper()
+                    if tIdx not in exactLookup.setdefault(subUp, []):
+                        exactLookup[subUp].append(tIdx)
 
         papersLen = len(papersDictInside)
         papersCounter = 0
@@ -385,9 +427,18 @@ class ScientoPyClass:
             if globalVar.cancelProcess:
                 return
 
-            # For each item in paper criteria
-            for item in paper[args.criterion].split(";"):
-                item = item.strip()
+            # For each item in paper criteria (each one once, synonyms merged)
+            paperItems = self._paperItems(paper, args.criterion, synonymMap)
+
+            # Only process one (the first one) if args.onlyFirst
+            if args.onlyFirst:
+                paperItems = paperItems[:1]
+
+            # A document counts once per topic, even when several of its items
+            # belong to the topic ("IoT" and "Internet of things" in one group)
+            topicsOfPaper = set()
+
+            for item in paperItems:
                 itemUp = item.upper()
 
                 # Collect matching topic indices
@@ -403,8 +454,16 @@ class ScientoPyClass:
                         matchedIndices.add(tIdx)
 
                 # Apply matches
-                for tIdx in matchedIndices:
+                for tIdx in sorted(matchedIndices):
                     topicItem = self.topicResults[tIdx]
+
+                    if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
+                        topicItem["topicsFound"].append(item)
+
+                    if tIdx in topicsOfPaper:
+                        continue
+                    topicsOfPaper.add(tIdx)
+
                     yearIndex = topicItem["year"].index(int(paper["year"]))
                     topicItem["PapersCount"][yearIndex] += 1
                     topicItem["PapersTotal"] += 1
@@ -414,13 +473,6 @@ class ScientoPyClass:
                         topicItem["name"] = item
                     topicItem["papers"].append(paper)
                     papersDictOut.append(paper)
-
-                    if itemUp not in [x.upper() for x in topicItem["topicsFound"]]:
-                        topicItem["topicsFound"].append(item)
-
-                # Only process one (the first one) if args.onlyFirst
-                if args.onlyFirst:
-                    break
 
         # Print the topics found if the asterisk willcard was used
         for topicItem in self.topicResults:
@@ -575,6 +627,21 @@ class ScientoPyClass:
         globalVar.progressPer = 101
         print("\nAnalysis finished.")
     
+    def worldMapCounts(self, args=''):
+        """Documents per country for the world map: {country name: documents}.
+
+        Every country found by the analysis is on the map, not only the top
+        ones of the results table. With custom topics, only those countries.
+        """
+        if args == '':
+            args = self
+        if not self.allTopicsCount:
+            return {t["name"]: t["PapersTotal"] for t in self.topicResults}
+        ranked = sorted(self.allTopicsCount.items(), key=lambda x: (-x[1], x[0]))
+        if not args.trend:
+            ranked = ranked[args.skipFirst:]
+        return dict(ranked)
+
     def plotResults(self, args=''):
         if args == '':
             args = self
@@ -582,8 +649,12 @@ class ScientoPyClass:
         if args.noPlot:
             return
 
-        # If more than 100 results and not wordCloud, no plot.
-        if len(self.topicResults) > 100 and args.graphType != "word_cloud":
+        # Nothing to graph when the analysis found no results
+        if not self.topicResults:
+            return
+
+        # If more than 100 results and not wordCloud or world map, no plot.
+        if len(self.topicResults) > 100 and args.graphType not in ("word_cloud", "world_map"):
             print("\nERROR: Not allowed to graph more than 100 results")
             return
 
@@ -616,6 +687,13 @@ class ScientoPyClass:
             plt.axis("off")
             fig = plt.gcf()
             plt.gcf().canvas.manager.set_window_title(args.criterion + ' word cloud graph')
+
+        if args.graphType == "world_map":
+            notFound = graphUtils.plot_world_map(plt, self.worldMapCounts(args), args)
+            if notFound:
+                more = " (and %d more)" % (len(notFound) - 10) if len(notFound) > 10 else ""
+                print("\nWARNING: %d names of the country criterion are not on the world map: %s%s"
+                      % (len(notFound), "; ".join(notFound[:10]), more))
 
         if args.graphType == "bar":
             graphUtils.plot_bar_horizontal(plt, self.topicResults, args)

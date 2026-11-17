@@ -91,8 +91,8 @@ The project has two test suites — both run in CI on every PR and push (`.githu
 
 | Suite | File | Type | Coverage |
 |---|---|---|---|
-| **Unit tests** | `tests/test_unit.py` | pytest | Pure-function logic: `globalVar` constants, `paperUtils` dedup, source counting, open-access normalization, error classes |
-| **Behavioral tests** | `tests/run_behavioral_tests.py` | Custom runner | End-to-end pipeline: generates synthetic Scopus + WoS data via `tests/generate_test_data.py`, runs `preProcess.py` and `scientoPy.py`, asserts outputs against the spec in `doc/behavioral_test_spec.md` |
+| **Unit tests** | `tests/test_unit.py` | pytest | Pure-function logic: `globalVar` constants, `paperUtils` dedup, source counting, open-access normalization, error classes, `networkAnalysis` counting / clustering / layout / writers / thematic map, synonyms, `worldMap` name matching and projection, world map and thematic map plots, most cited table |
+| **Behavioral tests** | `tests/run_behavioral_tests.py` | Custom runner | End-to-end pipeline: generates synthetic Scopus + WoS data via `tests/generate_test_data.py`, runs `preProcess.py`, `scientoPy.py`, `scientoPyNetwork.py`, `scientoPyThematicMap.py` and `topCitedPapers.py`, asserts outputs against the spec in `doc/behavioral_test_spec.md` |
 
 ### Running the tests locally
 
@@ -104,7 +104,7 @@ python -m pytest tests/test_unit.py -v
 python tests/run_behavioral_tests.py
 ```
 
-Expected counts (as of v3.1.2): **19 unit tests** and **81 behavioral checks**. If counts differ unexpectedly, investigate before assuming tests are passing.
+Expected counts: **45 unit tests** and **125 behavioral checks**. If counts differ unexpectedly, investigate before assuming tests are passing.
 
 ### Which tests to run after a change
 
@@ -114,8 +114,11 @@ Match the change category to the suite — but **always run both before pushing 
 |---|---|
 | A pure helper in `paperUtils.py`, `globalVar.py`, error classes | Unit tests first; behavioral if the helper feeds into the pipeline |
 | Preprocessing logic (`preProcess.py`, `PreProcessClass.py`, `paperIO.py`, dedup, field mapping, OA normalization, country/institution extraction) | **Both suites** — preprocessing is covered end-to-end by behavioral tests |
-| Analysis logic (`scientoPy.py`, `ScientoPyClass.py`, criterion handling, year filtering, custom topics, `--saveExtended`, previous-results chaining) | Behavioral suite (Stage 2 covers all `-c` criteria, year ranges, custom topics, dataBase grouping) |
-| Export / CLI tools (`exportPapers.py`, `generateBibtex.py`) | Behavioral suite (Stage 3 covers `exportPapers` round-trip) |
+| Analysis logic (`scientoPy.py`, `ScientoPyClass.py`, criterion handling, year filtering, custom topics, `--synonyms`, `--saveExtended`, previous-results chaining) | Both suites (Stage 2 covers all `-c` criteria, year ranges, custom topics, dataBase grouping; Stage 5 covers synonyms) |
+| Export / CLI tools (`exportPapers.py`, `generateBibtex.py`, `topCitedPapers.py`) | Behavioral suite (Stage 3 covers `exportPapers` round-trip, Stage 7 the most cited table) |
+| Network maps and thematic map (`networkAnalysis.py`, `scientoPyNetwork.py`, `scientoPyThematicMap.py`) | Both suites (Stage 4 covers the network CLI outputs, Stage 6 the thematic map) |
+| World map and other graphs (`graphUtils.py`, `worldMap.py`, `worldMapData/`) | Both suites (Stage 5 covers `-g world_map`), then save the graph with `--savePlot` and look at it: the tests check that it is drawn, not how it looks |
+| Network map viewer (`networkViewer/`: HTML, CSS, JS) | Generate a map and open it in a browser: no automated browser test; check the console for errors and exercise the views, crawler and exports |
 | GUI code only (`ScientoPyGui.py`, splash screen, graph theming, dialogs) | Unit tests + **manual GUI smoke test** — there is no automated GUI test harness; launch the app and exercise the affected feature |
 | Bug fix | Both suites — and add a new test that fails without the fix, then passes with it. Add unit-level if the bug was in a pure function, behavioral if it surfaced in the pipeline |
 | New feature | Both suites — and add behavioral checks for the new user-visible behavior, even if the implementation is unit-testable. Update `doc/behavioral_test_spec.md` if the expected output table changes |

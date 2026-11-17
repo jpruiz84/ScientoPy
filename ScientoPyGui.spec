@@ -19,6 +19,8 @@ a = Analysis(
     binaries=[],
     datas=[
         ('wordcloudFiles', 'wordcloud'),
+        ('networkViewer', 'networkViewer'),
+        ('worldMapData/countries.json', 'worldMapData'),
         ('Manual/ScientoPyGui_user_manual.pdf', 'Manual'),
         ('Manual/ScientoPy_user_manual.pdf', 'Manual'),
         ('Manual/example_paper.pdf', 'Manual'),
@@ -29,6 +31,11 @@ a = Analysis(
         ('scientopy_logo.png', '.'),
         # CLI scripts for advanced users
         ('scientoPy.py', '.'),
+        ('scientoPyNetwork.py', '.'),
+        ('scientoPyThematicMap.py', '.'),
+        ('topCitedPapers.py', '.'),
+        ('networkAnalysis.py', '.'),
+        ('worldMap.py', '.'),
         ('preProcess.py', '.'),
         ('generateBibtex.py', '.'),
         ('ScientoPyClass.py', '.'),
@@ -40,6 +47,11 @@ a = Analysis(
     ],
     hiddenimports=[
         'scipy.spatial.transform._rotation_groups',
+        'networkAnalysis',
+        'worldMap',
+        'topCitedPapers',
+        'scipy.sparse',
+        'scipy.stats',
     ],
     hookspath=[],
     runtime_hooks=[],

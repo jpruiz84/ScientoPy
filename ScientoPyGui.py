@@ -70,7 +70,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QTabWidget,
     QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QLineEdit, QPushButton, QCheckBox,
-    QComboBox, QSpinBox, QPlainTextEdit, QSplitter,
+    QComboBox, QSpinBox, QDoubleSpinBox, QPlainTextEdit, QSplitter,
     QDialog, QProgressBar, QFileDialog, QMessageBox,
     QMenuBar, QSizePolicy, QSpacerItem,
     QTableWidget, QTableWidgetItem, QHeaderView,
@@ -114,6 +114,26 @@ HEADER_TOOLTIPS = {
     "Source": "Database source (WoS or Scopus)",
     # Extended results headers
     "Cited by": "Number of citations received by the document",
+    "Cited by per year": "Citations divided by the years since the document was\n"
+                         "published (the publication year counts as the first one)",
+    "Source title": "Journal or conference where the document was published",
+    "DOI": "Digital Object Identifier of the document",
+    # Thematic map headers
+    "Cluster": "Cluster number, the same as in the network map",
+    "Label": "Item with more documents in the cluster",
+    "Items": "Number of items in the cluster",
+    "Occurrences": "Sum of the documents of every item in the cluster",
+    "Documents": "Documents with at least one item of the cluster",
+    "Avg. pub. year": "Average publication year of the cluster documents",
+    "Callon centrality": "Relevance of the theme: strength of the links between the\n"
+                         "cluster items and the items of the other clusters",
+    "Callon density": "Development of the theme: strength of the links between\n"
+                      "the items of the cluster, per item",
+    "Centrality rank": "Position by centrality, 1 is the lowest (x axis of the map)",
+    "Density rank": "Position by density, 1 is the lowest (y axis of the map)",
+    "Theme": "Motor (central and developed), niche (developed, not central),\n"
+             "basic (central, not developed) or emerging or declining theme",
+    "Item labels": "Every item of the cluster, the ones with more documents first",
     "EID": "Document unique identifier (from WoS or Scopus)",
     "EID2": "Secondary document identifier",
     "Year": "Publication year of the document",
@@ -315,6 +335,7 @@ class ScientoPyGui(QMainWindow):
         self.status_bar.showMessage("ScientoPy loading...")
         self._create_ext_results_tab()
         self._create_export_tab()
+        self._create_network_tab()
 
         # Keyboard shortcuts
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.select_dataset)
@@ -324,6 +345,7 @@ class ScientoPyGui(QMainWindow):
         QShortcut(QKeySequence("Ctrl+3"), self, activated=lambda: self.tabs.setCurrentIndex(2))
         QShortcut(QKeySequence("Ctrl+4"), self, activated=lambda: self.tabs.setCurrentIndex(3))
         QShortcut(QKeySequence("Ctrl+5"), self, activated=lambda: self.tabs.setCurrentIndex(4))
+        QShortcut(QKeySequence("Ctrl+6"), self, activated=lambda: self.tabs.setCurrentIndex(5))
 
         # Apply saved appearance
         self._apply_appearance(self.config.get("appearance_mode", "System"))
@@ -527,7 +549,9 @@ class ScientoPyGui(QMainWindow):
             "bar - Horizontal bars with total documents\n"
             "time_line - Documents per year line plot\n"
             "evolution - Accumulative documents + AGR vs PDLY scatter\n"
-            "word_cloud - Word cloud sized by document count")
+            "word_cloud - Word cloud sized by document count\n"
+            "world_map - World map shaded by documents per country\n"
+            "            (criterion country)")
         form.addRow("Graph type:", self.combo_graph_type)
 
         self.spin_start_year = QSpinBox()
@@ -603,7 +627,19 @@ class ScientoPyGui(QMainWindow):
         right_layout.addWidget(QLabel("Custom topics:"))
 
         self.custom_topics = QPlainTextEdit()
-        right_layout.addWidget(self.custom_topics, stretch=1)
+        right_layout.addWidget(self.custom_topics, stretch=3)
+
+        synonyms_label = QLabel(
+            "Synonyms: one group per line, separated by commas (the first one names the group):")
+        right_layout.addWidget(synonyms_label)
+        self.analysis_synonyms = QPlainTextEdit()
+        self.analysis_synonyms.setPlaceholderText("internet of things, iot\nbluetooth low energy, ble")
+        self.analysis_synonyms.setPlainText(self.config.get("synonyms", ""))
+        self.analysis_synonyms.setToolTip(
+            "Names of the same topic are counted as one when finding the top\n"
+            "topics, in any criterion: keyword variants and abbreviations,\n"
+            "author names, institution names.")
+        right_layout.addWidget(self.analysis_synonyms, stretch=1)
 
         splitter.addWidget(left_widget)
         splitter.addWidget(right_widget)
@@ -627,6 +663,15 @@ class ScientoPyGui(QMainWindow):
             "The .bib file is created next to the input file.")
         bibtex_btn.clicked.connect(self.generate_bibtex)
         btn_row.addWidget(bibtex_btn)
+
+        top_cited_btn = QPushButton("Most cited documents")
+        top_cited_btn.setToolTip(
+            "List the most cited documents between Start Year and End Year.\n"
+            "Topics length sets how many. With Use previous results, only\n"
+            "the documents found by the last analysis are ranked.\n"
+            "The table is saved as results/%s." % globalVar.TOP_CITED_FILE)
+        top_cited_btn.clicked.connect(self.top_cited_run)
+        btn_row.addWidget(top_cited_btn)
 
         clear_topics_btn = QPushButton("Clear topics")
         clear_topics_btn.setToolTip("Clear the Custom topics text area.")
@@ -995,6 +1040,336 @@ class ScientoPyGui(QMainWindow):
         self._src_group.buttonClicked.connect(self._update_export_enabled)
         self._update_export_enabled()
 
+    # ── Network Map Tab ────────────────────────────────────────
+
+    def _create_network_tab(self):
+        import networkAnalysis as na
+        page = QWidget()
+        self.tabs.addTab(page, "6. Network Map")
+        page_layout = QVBoxLayout(page)
+
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        form = QFormLayout()
+
+        self.net_criterion = QComboBox()
+        self.net_criterion.addItems(globalVar.validNetworkCriterion)
+        saved = self.config.get("net_criterion", "authorKeywords")
+        if saved in globalVar.validNetworkCriterion:
+            self.net_criterion.setCurrentIndex(globalVar.validNetworkCriterion.index(saved))
+        self.net_criterion.setToolTip(
+            "Items linked when they appear in the same document:\n"
+            "authorKeywords, indexKeywords, bothKeywords - keyword co-occurrence\n"
+            "author - co-authorship\n"
+            "country, institution, institutionWithCountry - collaboration\n"
+            "subject - subject area co-occurrence (WoS)")
+        form.addRow("Criterion:", self.net_criterion)
+
+        self.net_start_year = QSpinBox()
+        self.net_start_year.setRange(1900, 2100)
+        self.net_start_year.setValue(self.config.get("net_start_year", self.config.get("start_year", globalVar.DEFAULT_START_YEAR)))
+        form.addRow("Start Year:", self.net_start_year)
+
+        self.net_end_year = QSpinBox()
+        self.net_end_year.setRange(1900, 2100)
+        self.net_end_year.setValue(self.config.get("net_end_year", self.config.get("end_year", globalVar.DEFAULT_END_YEAR)))
+        form.addRow("End Year:", self.net_end_year)
+
+        self.net_length = QSpinBox()
+        self.net_length.setRange(1, na.MAX_LENGTH)
+        self.net_length.setValue(self.config.get("net_length", na.DEFAULT_LENGTH))
+        self.net_length.setToolTip("Maximum number of items in the map, the top ones by occurrences.")
+        form.addRow("Max items:", self.net_length)
+
+        self.net_min_occ = QSpinBox()
+        self.net_min_occ.setRange(1, 100000)
+        self.net_min_occ.setValue(self.config.get("net_min_occurrences", na.DEFAULT_MIN_OCCURRENCES))
+        self.net_min_occ.setToolTip("Minimum number of documents an item must appear in.")
+        form.addRow("Min occurrences:", self.net_min_occ)
+
+        self.net_skip_first = QSpinBox()
+        self.net_skip_first.setRange(0, 1000)
+        self.net_skip_first.setValue(self.config.get("net_skip_first", 0))
+        self.net_skip_first.setToolTip(
+            "Leave out the first N top items, for example the search\n"
+            "terms that co-occur with everything.")
+        form.addRow("Skip first:", self.net_skip_first)
+
+        self.net_counting = QComboBox()
+        self.net_counting.addItems(na.COUNTING_METHODS)
+        self.net_counting.setCurrentText(self.config.get("net_counting", na.DEFAULT_COUNTING))
+        self.net_counting.setToolTip(
+            "full - every co-occurrence counts 1\n"
+            "fractional - a document with n items gives each link 1/(n-1),\n"
+            "so documents with many authors or keywords weigh less")
+        form.addRow("Counting:", self.net_counting)
+
+        self.net_resolution = QDoubleSpinBox()
+        self.net_resolution.setRange(0.05, 20.0)
+        self.net_resolution.setSingleStep(0.1)
+        self.net_resolution.setDecimals(2)
+        self.net_resolution.setValue(self.config.get("net_resolution", na.DEFAULT_RESOLUTION))
+        self.net_resolution.setToolTip("Clustering resolution: higher values give more and smaller clusters.")
+        form.addRow("Resolution:", self.net_resolution)
+
+        self.net_min_cluster = QSpinBox()
+        self.net_min_cluster.setRange(1, 1000)
+        self.net_min_cluster.setValue(self.config.get("net_min_cluster_size", na.DEFAULT_MIN_CLUSTER_SIZE))
+        self.net_min_cluster.setToolTip("Clusters with fewer items are merged into their most connected cluster.")
+        form.addRow("Min cluster size:", self.net_min_cluster)
+
+        left_layout.addLayout(form)
+
+        self.net_previous = QCheckBox("Use previous results")
+        self.net_previous.setChecked(self.config.get("net_previous_results", False))
+        self.net_previous.setToolTip("Map only the documents found by the last analysis run.")
+        left_layout.addWidget(self.net_previous)
+        left_layout.addStretch(1)
+        left_widget.setMinimumWidth(250)
+        left_widget.setMaximumWidth(350)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.addWidget(QLabel(
+            "Synonyms: one group per line, separated by commas (the first one names the group):"))
+        self.net_synonyms = QPlainTextEdit()
+        self.net_synonyms.setPlaceholderText("internet of things, iot\nbluetooth low energy, ble")
+        self.net_synonyms.setPlainText(self.config.get("net_synonyms", ""))
+        right_layout.addWidget(self.net_synonyms, stretch=3)
+        right_layout.addWidget(QLabel("Exclude: one item per line:"))
+        self.net_exclude = QPlainTextEdit()
+        self.net_exclude.setPlainText(self.config.get("net_exclude", ""))
+        right_layout.addWidget(self.net_exclude, stretch=1)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setSizes([280, 600])
+        page_layout.addWidget(splitter, stretch=1)
+
+        btn_row = QHBoxLayout()
+        thesaurus_btn = QPushButton("Load VOSviewer thesaurus\u2026")
+        thesaurus_btn.setToolTip(
+            "Add the synonyms of a VOSviewer thesaurus file (tab separated:\n"
+            "label, replace by). Items with an empty 'replace by' are excluded.")
+        thesaurus_btn.clicked.connect(self._load_thesaurus)
+        btn_row.addWidget(thesaurus_btn)
+
+        reset_btn = QPushButton("Reset defaults")
+        reset_btn.clicked.connect(self._reset_network_defaults)
+        btn_row.addWidget(reset_btn)
+        btn_row.addStretch(1)
+
+        open_btn = QPushButton("Open last map")
+        open_btn.setToolTip("Open graphs/<Criterion>_network.html in the web browser.")
+        open_btn.clicked.connect(self._open_network_map)
+        btn_row.addWidget(open_btn)
+
+        thematic_btn = QPushButton("Thematic map")
+        thematic_btn.setToolTip(
+            "Plot the thematic map (strategic diagram) of the same clusters:\n"
+            "each cluster is a theme, placed by its centrality (relevance) and\n"
+            "density (development) as a motor, niche, basic, or emerging or\n"
+            "declining theme. The table is shown in the Results tab.")
+        thematic_btn.clicked.connect(self.thematic_run)
+        btn_row.addWidget(thematic_btn)
+
+        run_btn = QPushButton("Generate map")
+        run_btn.setToolTip(
+            "Build the co-occurrence network (VOSviewer style) and open the\n"
+            "interactive 3D map in the web browser. Works offline.")
+        run_btn.clicked.connect(self.network_run)
+        btn_row.addWidget(run_btn)
+        page_layout.addLayout(btn_row)
+
+    def _reset_network_defaults(self):
+        import networkAnalysis as na
+        self.net_criterion.setCurrentText("authorKeywords")
+        self.net_start_year.setValue(globalVar.DEFAULT_START_YEAR)
+        self.net_end_year.setValue(globalVar.DEFAULT_END_YEAR)
+        self.net_length.setValue(na.DEFAULT_LENGTH)
+        self.net_min_occ.setValue(na.DEFAULT_MIN_OCCURRENCES)
+        self.net_skip_first.setValue(0)
+        self.net_counting.setCurrentText(na.DEFAULT_COUNTING)
+        self.net_resolution.setValue(na.DEFAULT_RESOLUTION)
+        self.net_min_cluster.setValue(na.DEFAULT_MIN_CLUSTER_SIZE)
+        self.net_previous.setChecked(False)
+
+    def _load_thesaurus(self):
+        import networkAnalysis as na
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select a VOSviewer thesaurus file", "./",
+            "Thesaurus files (*.txt *.tsv);;All files (*.*)")
+        if not path:
+            return
+        groups = {}
+        excluded = []
+        for variant, canonical in na.parse_synonyms(path).items():
+            if canonical:
+                groups.setdefault(canonical, []).append(variant)
+            else:
+                excluded.append(variant)
+        lines = [", ".join([c] + [v for v in vs if v != c.upper()]) for c, vs in groups.items()]
+        if lines:
+            self.net_synonyms.appendPlainText("\n".join(lines))
+        if excluded:
+            self.net_exclude.appendPlainText("\n".join(excluded))
+        self.status_bar.showMessage("Thesaurus loaded: %d groups, %d excluded items" % (len(lines), len(excluded)))
+
+    def _network_html_path(self):
+        criterion = self.net_criterion.currentText()
+        return os.path.join(globalVar.GRAPHS_OUT_FOLDER, criterion[0].upper() + criterion[1:] + "_network.html")
+
+    def _open_network_map(self):
+        path = self._network_html_path()
+        if os.path.exists(path):
+            import pathlib
+            webbrowser.open(pathlib.Path(os.path.abspath(path)).as_uri())
+        else:
+            QMessageBox.information(self, "Network map",
+                                    "No map yet for %s. Click Generate map first." % self.net_criterion.currentText())
+
+    def _network_params(self):
+        """Parameters of the Network Map tab that select items, links and clusters."""
+        synonyms = ";".join(line.strip() for line in self.net_synonyms.toPlainText().splitlines() if line.strip())
+        return dict(
+            criterion=self.net_criterion.currentText(),
+            start_year=self.net_start_year.value(),
+            end_year=self.net_end_year.value(),
+            length=self.net_length.value(),
+            min_occurrences=self.net_min_occ.value(),
+            skip_first=self.net_skip_first.value(),
+            exclude=self.net_exclude.toPlainText().splitlines(),
+            synonyms=synonyms,
+            counting=self.net_counting.currentText(),
+            resolution=self.net_resolution.value(),
+            min_cluster_size=self.net_min_cluster.value(),
+            previous_results=self.net_previous.isChecked(),
+        )
+
+    def _run_with_progress(self, task, what):
+        """Run task() in a thread behind the progress dialog.
+
+        Returns its result, or None when it was canceled or failed (the
+        error is already shown). what names the task in the messages.
+        """
+        import networkAnalysis as na
+
+        globalVar.cancelProcess = False
+        globalVar.progressPer = 0
+        self._thread_error = None
+        result = []
+
+        def run():
+            try:
+                result.append(task())
+            except na.NetworkCanceled:
+                pass
+            except na.NetworkError as e:
+                self._thread_error = str(e)
+            except Exception as e:
+                self._thread_error = "Unexpected error: %s" % e
+            finally:
+                globalVar.progressPer = 101  # closes the progress dialog
+
+        t1 = threading.Thread(target=run)
+        t1.start()
+        ProgressDialog(self).exec()
+        t1.join()
+
+        if globalVar.cancelProcess:
+            self.status_bar.showMessage("%s canceled" % what)
+            return None
+        if self._thread_error:
+            self.status_bar.showMessage("%s failed" % what)
+            QMessageBox.critical(self, "Error", self._thread_error)
+            return None
+        return result[0] if result else None
+
+    def network_run(self):
+        import pathlib
+        import networkAnalysis as na
+
+        if not self.net_previous.isChecked() and not os.path.exists(self.scientoPy.preprocessDatasetFile):
+            QMessageBox.critical(self, "Error",
+                                 "No preprocess input dataset, please run the preprocess first")
+            return
+
+        params = self._network_params()
+        self.status_bar.showMessage("Building network map...")
+        result = self._run_with_progress(lambda: na.generate_network_map(**params), "Network map")
+        if result is None:
+            return
+
+        data, files = result
+        self.status_bar.showMessage(
+            "Network map \u2014 %d items, %d links, %d clusters \u2014 saved to %s"
+            % (len(data["nodes"]), len(data["links"]), len(data["clusters"]), files["html"]))
+        webbrowser.open(pathlib.Path(os.path.abspath(files["html"])).as_uri())
+
+    def thematic_run(self):
+        import types
+        import matplotlib.pyplot as plt
+        import graphUtils
+        import networkAnalysis as na
+
+        if not self.net_previous.isChecked() and not os.path.exists(self.scientoPy.preprocessDatasetFile):
+            QMessageBox.critical(self, "Error",
+                                 "No preprocess input dataset, please run the preprocess first")
+            return
+
+        params = self._network_params()
+        self.status_bar.showMessage("Building thematic map...")
+        result = self._run_with_progress(lambda: na.generate_thematic_map(**params), "Thematic map")
+        if result is None:
+            return
+
+        data, themes, files = result
+        self.status_bar.showMessage(
+            "Thematic map \u2014 %d themes from %d items \u2014 saved to %s"
+            % (len(themes), len(data["nodes"]), files["themes"]))
+
+        apply_matplotlib_theme(QApplication.instance(), self.config.get("graph_appearance", "Same as UI"))
+        self.scientoPy.closePlot()
+        args = types.SimpleNamespace(
+            criterion=params["criterion"], labels=na.DEFAULT_THEME_LABELS, axes="rank",
+            graphTitle="", savePlot="",
+            plotWidth=globalVar.DEFAULT_PLOT_WIDTH, plotHeight=globalVar.DEFAULT_PLOT_HEIGHT)
+        graphUtils.show_thematic_map(plt, themes, args, fromGui=True)
+        QApplication.instance().processEvents()
+
+        self._load_results_table(files["themes"])
+        self.tabs.setCurrentIndex(2)  # Switch to Results tab
+
+    def top_cited_run(self):
+        import topCitedPapers
+
+        previous = self.chk_previous_results.isChecked()
+        if not previous and not os.path.exists(self.scientoPy.preprocessDatasetFile):
+            QMessageBox.critical(self, "Error",
+                                 "No preprocess input dataset, please run the preprocess first")
+            return
+
+        length = max(1, self.spin_topics_length.value())
+        start_year = self.spin_start_year.value()
+        end_year = self.spin_end_year.value()
+        globalVar.progressText = "Finding the most cited documents"
+        self.status_bar.showMessage("Finding the most cited documents...")
+        result = self._run_with_progress(
+            lambda: topCitedPapers.topCited(length, start_year, end_year, previous),
+            "Most cited documents")
+        if result is None:
+            return
+
+        headers, rows, path = result
+        self._populate_ext_results(headers, rows, source_label="the most cited documents (%s)" % path)
+        self.status_bar.showMessage(
+            "Most cited documents \u2014 %d documents \u2014 saved to %s" % (len(rows), path))
+        self.tabs.setCurrentIndex(3)  # Switch to Extended Results tab
+
     def _default_export_path(self):
         if self.rb_src_preprocessed.isChecked():
             return os.path.join("export", globalVar.OUTPUT_FILE_NAME)
@@ -1225,6 +1600,8 @@ class ScientoPyGui(QMainWindow):
             self.run_preprocess()
         elif idx == 1:
             self.scientoPyRun()
+        elif idx == 5:
+            self.network_run()
 
     # ── Actions ───────────────────────────────────────────────
 
@@ -1346,6 +1723,9 @@ class ScientoPyGui(QMainWindow):
         else:
             self.scientoPy.topics = ''
 
+        self.scientoPy.synonyms = ";".join(
+            line.strip() for line in self.analysis_synonyms.toPlainText().splitlines() if line.strip())
+
         self._thread_error = None
         self.status_bar.showMessage("Running analysis...")
 
@@ -1354,6 +1734,9 @@ class ScientoPyGui(QMainWindow):
                 self.scientoPy.scientoPy()
             except ScientoPyError as e:
                 self._thread_error = str(e)
+            finally:
+                # Closes the progress dialog, also when the analysis stops early
+                globalVar.progressPer = 101
 
         t1 = threading.Thread(target=run_analysis)
         t1.start()
@@ -1373,6 +1756,12 @@ class ScientoPyGui(QMainWindow):
             return
 
         topic_count = len(self.scientoPy.topicResults)
+        if topic_count == 0:
+            self.status_bar.showMessage("Analysis finished \u2014 no results found")
+            QMessageBox.information(
+                self, "Analysis",
+                "No results found. Check the year range and the criterion.")
+            return
         self.status_bar.showMessage(
             "Analysis complete \u2014 %d topics found" % topic_count)
 
@@ -1474,6 +1863,20 @@ class ScientoPyGui(QMainWindow):
         self.config["window_width"] = self.spin_window_width.value()
         self.config["previous_results"] = self.chk_previous_results.isChecked()
         self.config["trend_analysis"] = self.chk_trend_analysis.isChecked()
+        self.config["synonyms"] = self.analysis_synonyms.toPlainText()
+        # Save network map parameters
+        self.config["net_criterion"] = self.net_criterion.currentText()
+        self.config["net_start_year"] = self.net_start_year.value()
+        self.config["net_end_year"] = self.net_end_year.value()
+        self.config["net_length"] = self.net_length.value()
+        self.config["net_min_occurrences"] = self.net_min_occ.value()
+        self.config["net_skip_first"] = self.net_skip_first.value()
+        self.config["net_counting"] = self.net_counting.currentText()
+        self.config["net_resolution"] = self.net_resolution.value()
+        self.config["net_min_cluster_size"] = self.net_min_cluster.value()
+        self.config["net_previous_results"] = self.net_previous.isChecked()
+        self.config["net_synonyms"] = self.net_synonyms.toPlainText()
+        self.config["net_exclude"] = self.net_exclude.toPlainText()
         save_config(self.config)
         event.accept()
 

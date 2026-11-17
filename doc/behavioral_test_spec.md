@@ -251,6 +251,142 @@ Assertions on second run (`results/AuthorKeywords.csv`):
 
 ---
 
+### 3.9 Stage 4: `scientoPyNetwork.py` co-occurrence maps
+
+Run sequence (all with `--noOpen`):
+```
+python3 scientoPyNetwork.py -c bothKeywords
+python3 scientoPyNetwork.py -c country
+python3 scientoPyNetwork.py -c bothKeywords --synonyms "Alpha, Alpha index"
+python3 scientoPyNetwork.py -c authorKeywords --startYear 2021 --endYear 2023 --minOccurrences 1
+python3 scientoPyNetwork.py -c authorKeywords --minOccurrences 999      (must fail)
+```
+
+**Output files:** `graphs/BothKeywords_network.html`, `results/BothKeywords_network_nodes.csv`,
+`results/BothKeywords_network_links.csv`, `results/BothKeywords_vosviewer_map.txt`,
+`results/BothKeywords_vosviewer_network.txt`, `results/BothKeywords_network.gexf`
+(and the same for `Country` and `AuthorKeywords`).
+
+`bothKeywords` network (default `--minOccurrences 2`):
+
+| Item | Occurrences | Cluster |
+|---|---|---|
+| ALPHA | 10 | same as ALPHA INDEX |
+| ALPHA INDEX | 10 | same as ALPHA |
+| BETA | 8 | different from ALPHA |
+| BETA INDEX | 8 | same as BETA |
+| GAMMA | 6 | (no links) |
+| DELTA | 2 | (no links) |
+
+`EXTRA KEYWORD` (1 occurrence) is left out.
+
+| Link | Weight |
+|---|---|
+| ALPHA – ALPHA INDEX | 10 |
+| BETA – BETA INDEX | 8 |
+
+Other assertions:
+- The HTML is self-contained: no `<script src>` or `<link>`, data embedded.
+- VOSviewer map file: header + 6 rows; network file: 2 rows; GEXF: 6 nodes.
+- `country` network: UNITED STATES – BRAZIL weight 1 (the multi-country Gamma 2021 paper).
+- `--synonyms "Alpha, Alpha index"`: ALPHA keeps 10 occurrences, ALPHA INDEX is gone,
+  only the BETA – BETA INDEX link remains.
+- `authorKeywords` 2021–2023: ALPHA == 4, BETA == 6 (same as T10).
+- No items above `--minOccurrences 999`: exit code != 0 and an `ERROR` message.
+- `results/BothKeywords_network_clusters.csv`: 4 rows (one per cluster); the ALPHA
+  cluster has `Item labels == "Alpha; Alpha index"`.
+
+---
+
+### 3.10 Stage 5: world map graph
+
+```
+python3 scientoPy.py -c country -g world_map --savePlot world_map.png
+python3 scientoPy.py -c authorKeywords -g world_map --noPlot      (must fail)
+```
+
+Both plot commands of the suite run with `MPLBACKEND=Agg`, so no window system is needed.
+
+Assertions:
+- `graphs/world_map.png` is written.
+- No `WARNING` in the output: the four countries of the dataset (United States, Germany,
+  Brazil, France) are found on the map.
+- `results/Country_world_map.csv`: `United States` total == `11` (same as 3.3).
+- A criterion other than `country`: exit code != 0 and an `ERROR` message.
+
+---
+
+### 3.11 Stage 5: synonyms and documents counted once per topic
+
+Every Alpha paper has the author keyword `Alpha` and the index keyword `Alpha index`, so
+its `bothKeywords` is `Alpha;Alpha index`.
+
+```
+python3 scientoPy.py -c bothKeywords --synonyms "Alpha, Alpha index" --noPlot
+python3 scientoPy.py -c bothKeywords --synonyms thesaurus.txt --noPlot
+python3 scientoPy.py -c bothKeywords -t "Alpha, Alpha index" --noPlot
+```
+
+`thesaurus.txt` (VOSviewer format, tab separated):
+
+```
+label	replace by
+Alpha index	Alpha
+Gamma
+```
+
+**Output file:** `results/BothKeywords.csv`
+
+| Command | Assertion |
+|---|---|
+| `--synonyms "Alpha, Alpha index"` | ALPHA total == 10 (not 20: each document once), no ALPHA INDEX row, BETA total == 8 |
+| `--synonyms thesaurus.txt` | ALPHA total == 10, no ALPHA INDEX row, no GAMMA row (empty `replace by`) |
+| `-t "Alpha, Alpha index"` | ALPHA total == 10 and hIndex == 10: a document with two names of the group counts once |
+
+---
+
+### 3.12 Stage 6: `scientoPyThematicMap.py`
+
+```
+python3 scientoPyThematicMap.py -c bothKeywords --savePlot thematic_map.png
+python3 scientoPyThematicMap.py -c authorKeywords --noPlot        (must fail)
+```
+
+**Output files:** `graphs/thematic_map.png`, `results/BothKeywords_thematic_map.csv`
+
+The clusters are the ones of 3.9. A theme needs at least two items, so GAMMA and DELTA
+(no links) are left out. With the equivalence index `e = c_ij² / (c_i · c_j)`:
+
+| Theme | Items | e (internal) | Callon density = 100 · Σe / items | Callon centrality |
+|---|---|---|---|---|
+| ALPHA | Alpha, Alpha index | 10² / (10 · 10) = 1 | 50 | 0 |
+| BETA | Beta, Beta index | 8² / (8 · 8) = 1 | 50 | 0 |
+
+`authorKeywords` has one keyword per document, so no items appear together: exit
+code != 0 and an `ERROR` message.
+
+---
+
+### 3.13 Stage 7: `topCitedPapers.py`
+
+```
+python3 topCitedPapers.py -l 4
+python3 topCitedPapers.py -l 100 --startYear 2023 --endYear 2023
+```
+
+**Output file:** `results/TopCitedPapers.csv`
+
+Columns: `Pos., Cited by, Cited by per year, Year, Title, Authors, Source title, Document type, DOI, EID`
+
+Assertions:
+- `-l 4`: 4 rows.
+- Rows 1 and 2 are `Delta Duplicate Paper 2022` and `Delta Duplicate Paper 2023` (same
+  citations, the oldest first), with more citations than row 3.
+- Row 3 is an `Alpha Paper 2018` with 10 citations.
+- Year range 2023: 5 rows (2 Beta, 2 Gamma, 1 Delta), all with `Year == 2023`.
+
+---
+
 ## 4. Validation of `dataPre/papersPreprocessed.csv`
 
 This section specifies how to verify that `preProcess.py` correctly merged the two source files into a single output. The merged file is read with `csv.DictReader` using the Scopus output fields (see `paperSave.py`).
@@ -609,6 +745,32 @@ Each test run should use a **temporary working directory** (e.g., `tempfile.mkdt
 | T-M14 | Valid document types | `preProcess.py` | `dataPre/papersPreprocessed.csv` | All 28 rows have included doc type |
 | T-M15 | Source distribution | `preProcess.py` | `dataPre/papersPreprocessed.csv` | Scopus=15, WoS=13 |
 | T-M16 | OA normalization | `preProcess.py` | `dataPre/papersPreprocessed.csv` | WoS OA tags normalized to Scopus format |
+| T-G01 | Network map HTML | `scientoPyNetwork.py -c bothKeywords` | `graphs/BothKeywords_network.html` | written, self-contained |
+| T-G02 | Network occurrences | `scientoPyNetwork.py -c bothKeywords` | `results/BothKeywords_network_nodes.csv` | ALPHA=10, BETA=8, GAMMA=6, DELTA=2, no EXTRA KEYWORD |
+| T-G03 | Network links | `scientoPyNetwork.py -c bothKeywords` | `results/BothKeywords_network_links.csv` | ALPHA–ALPHA INDEX=10, BETA–BETA INDEX=8, 2 links |
+| T-G04 | Network clusters | `scientoPyNetwork.py -c bothKeywords` | `results/BothKeywords_network_nodes.csv` | ALPHA with ALPHA INDEX, BETA apart |
+| T-G05 | VOSviewer files | `scientoPyNetwork.py -c bothKeywords` | `results/BothKeywords_vosviewer_*.txt` | 6 items, 2 links |
+| T-G06 | GEXF file | `scientoPyNetwork.py -c bothKeywords` | `results/BothKeywords_network.gexf` | parses, 6 nodes |
+| T-G07 | Country collaboration | `scientoPyNetwork.py -c country` | `results/Country_network_links.csv` | UNITED STATES–BRAZIL=1 |
+| T-G08 | Synonyms | `--synonyms "Alpha, Alpha index"` | `results/BothKeywords_network_nodes.csv` | ALPHA=10, no ALPHA INDEX |
+| T-G09 | Network year range | `--startYear 2021 --endYear 2023` | `results/AuthorKeywords_network_nodes.csv` | ALPHA=4, BETA=6 |
+| T-G10 | No items error | `--minOccurrences 999` | exit code | non-zero, `ERROR` |
+| T-G11 | Network clusters table | `scientoPyNetwork.py -c bothKeywords` | `results/BothKeywords_network_clusters.csv` | 4 rows, ALPHA cluster items `Alpha; Alpha index` |
+| T-W01 | World map plot | `scientoPy.py -c country -g world_map --savePlot world_map.png` | `graphs/world_map.png` | written |
+| T-W02 | Countries found on the map | same | console output | no `WARNING` |
+| T-W03 | World map results table | same | `results/Country_world_map.csv` | United States=11 |
+| T-W04 | World map criterion error | `scientoPy.py -c authorKeywords -g world_map` | exit code | non-zero, `ERROR` |
+| T-S01 | Synonyms | `scientoPy.py -c bothKeywords --synonyms "Alpha, Alpha index"` | `results/BothKeywords.csv` | ALPHA=10, no ALPHA INDEX, BETA=8 |
+| T-S02 | Thesaurus file | `--synonyms thesaurus.txt` | `results/BothKeywords.csv` | ALPHA=10, no ALPHA INDEX, no GAMMA |
+| T-S03 | Document counted once per grouped topic | `scientoPy.py -c bothKeywords -t "Alpha, Alpha index"` | `results/BothKeywords.csv` | Total=10, hIndex=10 |
+| T-H01 | Thematic map plot | `scientoPyThematicMap.py -c bothKeywords --savePlot thematic_map.png` | `graphs/thematic_map.png` | written |
+| T-H02 | Themes | same | `results/BothKeywords_thematic_map.csv` | ALPHA and BETA only |
+| T-H03 | Callon values | same | `results/BothKeywords_thematic_map.csv` | density=50, centrality=0, 2 items |
+| T-H04 | No themes error | `scientoPyThematicMap.py -c authorKeywords` | exit code | non-zero, `ERROR` |
+| T-C01 | Top cited length | `topCitedPapers.py -l 4` | `results/TopCitedPapers.csv` | 4 rows |
+| T-C02 | Top cited order | same | `results/TopCitedPapers.csv` | Delta 2022, Delta 2023 first |
+| T-C03 | Top cited third row | same | `results/TopCitedPapers.csv` | Alpha Paper 2018, 10 citations |
+| T-C04 | Top cited year range | `--startYear 2023 --endYear 2023` | `results/TopCitedPapers.csv` | 5 rows, all 2023 |
 
 ---
 

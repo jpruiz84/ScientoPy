@@ -35,6 +35,7 @@ PREPROCESS_LOG_FILE = "PreprocessedBrief.csv"
 OUTPUT_FILE_NAME = "papersPreprocessed.csv"         # legacy CSV (explicit export only)
 OUTPUT_FILE_PARQUET = "papersPreprocessed.parquet"  # canonical preprocessed store
 LAST_ANALYSIS_FILE = "lastAnalysis.parquet"         # internal, for --previousResults
+TOP_CITED_FILE = "TopCitedPapers.csv"               # written by topCitedPapers.py
 OUTPUT_FILE_BIB = "bibliography.bib"
 DATA_OUT_FOLDER = "dataPre"
 GRAPHS_OUT_FOLDER = "graphs"
@@ -97,7 +98,11 @@ decPlaces = 1
 validCriterion = ["author", "sourceTitle",  "subject", "authorKeywords", "indexKeywords", "abstract",
                   "bothKeywords", "documentType", "dataBase", "country", "institution", "institutionWithCountry"]
 
-validGrapTypes = ["bar_trends", "bar", "time_line", "evolution", "word_cloud"]
+validGrapTypes = ["bar_trends", "bar", "time_line", "evolution", "word_cloud", "world_map"]
+
+# Criteria with several items per document, usable for co-occurrence network maps
+validNetworkCriterion = ["authorKeywords", "indexKeywords", "bothKeywords", "author",
+                         "country", "institution", "institutionWithCountry", "subject"]
 
 
 SCIENTOPY_VERSION = "3.1.2"
