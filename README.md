@@ -21,7 +21,7 @@ It has the following main characteristics:
 - Interactive co-occurrence network maps (VOSviewer style) for keywords, co-authorship, and country or institution collaboration: 3D/2D views, clustering, overlay and density visualizations, an animated crawler tour, and PNG/SVG/video/VOSviewer/Gephi exports
 - Automatic BibTeX bibliography generation from LaTeX documents using paper EIDs as cite keys
 - On-demand CSV export (Scopus or WoS field style) via `exportPapers.py` or the GUI Export tab
-- Graphical user interface with six tabs (Pre-processing, Analysis, Results, Extended Results, Export, Network Map)
+- Graphical user interface with six tabs (Pre-processing, Analysis, Results, Documents, Network & Thematic Maps, Export)
 
 
 Download Pre-built Releases
@@ -83,6 +83,28 @@ Running the ScientoPy Graphical User Interface GUI
 To run ScientoPy operations from the GUI, execute the following command:
 
     python3 ScientoPyGui.py
+
+The tabs follow the order of the work:
+
+1.  **Pre-processing:** choose the dataset folder and run the preprocess.
+    The tab shows the documents and the publication years of the
+    preprocessed dataset.
+2.  **Analysis:** choose the criterion, the graph and the year range, and
+    run the analysis. Write your own topics in *Custom topics*, and the
+    names that mean the same in *Synonyms*. *More options* has the graph
+    title and size, the logarithmic scale and the other options of the
+    scripts.
+3.  **Results:** table of the last analysis, the preprocess report or the
+    thematic map themes.
+4.  **Documents:** documents of each topic of the last analysis, or the
+    most cited documents.
+5.  **Network & Thematic Maps:** network map and thematic map. The
+    synonyms are the same list as in the Analysis tab.
+6.  **Export:** save the dataset or the results as CSV.
+
+The lists show readable names ("Author keywords"). Hover an option to
+see its name in the scripts (`authorKeywords`). The **Help** menu opens
+the manuals and lists the keyboard shortcuts.
 
 
 Running the ScientoPy from console scripts
@@ -334,7 +356,7 @@ returns the countries that most commonly co-publish with Canada.
 -   In previous versions this file was a CSV named
     `results/papersPreprocessed.csv`, re-written on every analysis. It
     is now replaced by the Parquet file; analyses no longer write any
-    CSV automatically. Use `exportPapers.py` (or the **5. Export** GUI
+    CSV automatically. Use `exportPapers.py` (or the **6. Export** GUI
     tab) to re-materialize a CSV on demand.
 
 Exporting to CSV
@@ -371,9 +393,9 @@ either pass `--saveExtended` on the CLI:
     python3 scientoPy.py -c authorKeywords --saveExtended
 
 or pick **Extended results (last analysis, per-document)** in the GUI
-**5. Export** tab after running an analysis.
+**6. Export** tab after running an analysis.
 
-All export options are also available from the GUI in the **5. Export**
+All export options are also available from the GUI in the **6. Export**
 tab.
 
 Network maps (VOSviewer style)
@@ -452,7 +474,8 @@ with WebGL2 (Chrome, Edge, Firefox, Safari). It includes:
 The map makes no network requests. DOI links in the item details open
 only when clicked.
 
-In the GUI, the same options are in the **6. Network Map** tab.
+In the GUI, the same options are in the **5. Network & Thematic Maps**
+tab.
 
 Thematic map
 ------------
@@ -513,8 +536,8 @@ that select the items and the clusters (`-c`, `-l`, `--minOccurrences`,
 The themes, with their centrality, density, quadrant and every item, are
 saved to `results/<Criterion>_thematic_map.csv`.
 
-In the GUI, use the **Thematic map** button of the **6. Network Map**
-tab.
+In the GUI, use the **Thematic map** button of the
+**5. Network & Thematic Maps** tab.
 
 Most cited documents
 --------------------
@@ -539,7 +562,7 @@ the dataset was downloaded.
 
 In the GUI, use the **Most cited documents** button of the
 **2. Analysis** tab. It uses the year range and the topics length of
-that tab, and shows the table in the **4. Extended Results** tab.
+that tab, and shows the table in the **4. Documents** tab.
 
 Output files and directories
 ----------------------------

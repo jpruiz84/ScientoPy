@@ -76,9 +76,13 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView,
     QStatusBar,
     QRadioButton, QButtonGroup, QGroupBox,
+    QScrollArea, QToolButton, QFrame,
 )
-from PySide6.QtGui import QPixmap, QIcon, QAction, QActionGroup, QPalette, QColor, QKeySequence, QShortcut
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import (
+    QPixmap, QIcon, QAction, QActionGroup, QPalette, QColor, QKeySequence, QShortcut,
+    QDesktopServices,
+)
+from PySide6.QtCore import Qt, QTimer, QUrl
 
 import globalVar
 
@@ -175,6 +179,146 @@ HEADER_TOOLTIPS = {
                               "authors affiliations",
 }
 
+PROJECT_URL = "https://github.com/jpruiz84/ScientoPy"
+CITATION = (
+    "Ruiz-Rosero, J., Ramirez-Gonzalez, G., & Viveros-Delgado, J. (2019). "
+    "Software survey: ScientoPy, a scientometric tool for topics trend analysis "
+    "in scientific publications. Scientometrics, 121(2), 1165–1188. "
+    "https://doi.org/10.1007/s11192-019-03213-w"
+)
+
+# Names shown in the lists. The values behind them are the names the
+# scripts use (-c authorKeywords, -g bar_trends), also saved in the config.
+CRITERION_LABELS = {
+    "author": "Authors",
+    "sourceTitle": "Sources (journals and conferences)",
+    "subject": "Subject areas (WoS)",
+    "authorKeywords": "Author keywords",
+    "indexKeywords": "Index keywords",
+    "abstract": "Abstract (custom topics)",
+    "bothKeywords": "Author and index keywords",
+    "documentType": "Document types",
+    "dataBase": "Databases (Scopus, WoS)",
+    "country": "Countries",
+    "institution": "Institutions",
+    "institutionWithCountry": "Institutions with country",
+}
+
+GRAPH_TYPE_LABELS = {
+    "bar_trends": "Bars with trends",
+    "bar": "Bars",
+    "time_line": "Time line",
+    "evolution": "Evolution",
+    "word_cloud": "Word cloud",
+    "world_map": "World map (countries)",
+}
+
+GRAPH_TYPE_TIPS = {
+    "bar_trends": "Horizontal bars with the percentage of documents in the last years",
+    "bar": "Horizontal bars with the total documents",
+    "time_line": "Documents per year, one line per topic",
+    "evolution": "Accumulative documents, and documents per year\n"
+                 "against the percentage in the last years",
+    "word_cloud": "Word cloud sized by the number of documents",
+    "world_map": "World map shaded by the documents of each country",
+}
+
+COUNTING_LABELS = {"full": "Full", "fractional": "Fractional"}
+COUNTING_TIPS = {
+    "full": "Every co-occurrence counts 1",
+    "fractional": "A document with n items gives each link 1/(n-1), so documents\n"
+                  "with many authors or keywords weigh less",
+}
+
+THEME_AXES_LABELS = {"rank": "By rank", "value": "By value"}
+THEME_AXES_TIPS = {
+    "rank": "Place the themes by their centrality and density ranks,\n"
+            "which spreads them evenly",
+    "value": "Place the themes by their centrality and density values",
+}
+
+SYNONYMS_PLACEHOLDER = (
+    "Names of the same topic, separated by commas. The first one names the group:\n"
+    "internet of things, iot\n"
+    "bluetooth low energy, ble"
+)
+SYNONYMS_TOOLTIP = (
+    "Names of the same topic are counted as one, in any criterion: keyword\n"
+    "variants and abbreviations, author names, institution names.\n"
+    "One group per line, the names separated by commas. The first name of\n"
+    "the group is the one shown in the results.\n"
+    "The list is shared by the analysis, the network map and the thematic map."
+)
+
+
+def fill_combo(combo, values, labels, tips, current):
+    """Fill a combo box with readable names; each item keeps its script name
+    as data (combo.currentData())."""
+    for value in values:
+        combo.addItem(labels.get(value, value), value)
+        tip = tips.get(value, "")
+        tip = (tip + "\n" if tip else "") + "Name in the scripts: %s" % value
+        combo.setItemData(combo.count() - 1, tip, Qt.ToolTipRole)
+    set_combo(combo, current)
+
+
+def set_combo(combo, value):
+    index = combo.findData(value)
+    if index >= 0:
+        combo.setCurrentIndex(index)
+
+
+def scrollable(widget, sections=()):
+    """Put a panel in a scroll area, so a short window scrolls it instead of
+    cutting it. sections are the collapsible sections inside the panel: the
+    area is wide enough for them when they are open."""
+    area = QScrollArea()
+    area.setWidgetResizable(True)
+    area.setFrameShape(QFrame.Shape.NoFrame)
+    area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    area.setWidget(widget)
+    # Same background as the tab, not the one of a list
+    widget.setAutoFillBackground(False)
+    area.viewport().setAutoFillBackground(False)
+    width = max([widget.minimumSizeHint().width()]
+                + [section.body.minimumSizeHint().width() for section in sections])
+    width += area.verticalScrollBar().sizeHint().width() + 12
+    area.setMinimumWidth(width)
+    area.setMaximumWidth(width + 110)
+    return area
+
+
+class CollapsibleSection(QWidget):
+    """A titled group of options that the user opens or closes."""
+
+    def __init__(self, title, expanded=False, parent=None):
+        super().__init__(parent)
+        self.toggle = QToolButton()
+        self.toggle.setText(title)
+        self.toggle.setCheckable(True)
+        self.toggle.setChecked(expanded)
+        self.toggle.setAutoRaise(True)
+        self.toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toggle.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
+        self.toggle.toggled.connect(self._on_toggled)
+
+        self.body = QWidget()
+        self.body.setVisible(expanded)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        layout.addWidget(self.toggle)
+        layout.addWidget(self.body)
+
+    def _on_toggled(self, expanded):
+        self.toggle.setArrowType(Qt.DownArrow if expanded else Qt.RightArrow)
+        self.body.setVisible(expanded)
+
+    def isExpanded(self):
+        return self.toggle.isChecked()
+
+
 DARK_MATPLOTLIB_STYLE = {
     'figure.facecolor': '#2b2b2b',
     'axes.facecolor': '#2b2b2b',
@@ -193,7 +337,7 @@ def load_config():
         "graph_appearance": "Light",
         "last_dataset_folder": "",
         "window_geometry": "1000x600",
-        "splitter_sizes": [280, 600],
+        "splitter_sizes": [300, 600],
         "criterion": "authorKeywords",
         "graph_type": "bar_trends",
         "start_year": globalVar.DEFAULT_START_YEAR,
@@ -297,6 +441,18 @@ class ScientoPyGui(QMainWindow):
         self.config = load_config()
         self._scientoPy = None   # lazy-initialized on first use
         self._preprocess = None  # lazy-initialized on first use
+        self._data_years = None  # (first, last) publication year of the dataset
+        # Year ranges set by ScientoPy, not by the user: these can be replaced
+        # when a dataset with other years is loaded
+        self._auto_year_ranges = {(globalVar.DEFAULT_START_YEAR, globalVar.DEFAULT_END_YEAR)}
+        saved_range = self.config.get("auto_year_range")
+        if isinstance(saved_range, list) and len(saved_range) == 2:
+            self._auto_year_ranges.add(tuple(saved_range))
+        self._results_file = ""
+        self._results_kind = ""
+        self._documents_file = ""
+        self._criterion_before_map = "country"
+        self._updating_controls = False
 
         self.setWindowTitle("ScientoPy")
         self.setMinimumSize(853, 480)
@@ -333,19 +489,17 @@ class ScientoPyGui(QMainWindow):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("ScientoPy loading...")
+        self.dataset_indicator = QLabel("")
+        self.status_bar.addPermanentWidget(self.dataset_indicator)
         self._create_ext_results_tab()
-        self._create_export_tab()
         self._create_network_tab()
+        self._create_export_tab()
 
-        # Keyboard shortcuts
-        QShortcut(QKeySequence("Ctrl+O"), self, activated=self.select_dataset)
-        QShortcut(QKeySequence("Ctrl+R"), self, activated=self._run_current_tab)
-        QShortcut(QKeySequence("Ctrl+1"), self, activated=lambda: self.tabs.setCurrentIndex(0))
-        QShortcut(QKeySequence("Ctrl+2"), self, activated=lambda: self.tabs.setCurrentIndex(1))
-        QShortcut(QKeySequence("Ctrl+3"), self, activated=lambda: self.tabs.setCurrentIndex(2))
-        QShortcut(QKeySequence("Ctrl+4"), self, activated=lambda: self.tabs.setCurrentIndex(3))
-        QShortcut(QKeySequence("Ctrl+5"), self, activated=lambda: self.tabs.setCurrentIndex(4))
-        QShortcut(QKeySequence("Ctrl+6"), self, activated=lambda: self.tabs.setCurrentIndex(5))
+        # Keyboard shortcuts: Ctrl+1 .. Ctrl+6 open the tabs. Ctrl+O, Ctrl+R
+        # and Ctrl+Q belong to the File menu actions.
+        for number in range(1, self.tabs.count() + 1):
+            QShortcut(QKeySequence("Ctrl+%d" % number), self,
+                      activated=lambda n=number: self.tabs.setCurrentIndex(n - 1))
 
         # Apply saved appearance
         self._apply_appearance(self.config.get("appearance_mode", "System"))
@@ -371,6 +525,35 @@ class ScientoPyGui(QMainWindow):
     def _create_menu_bar(self):
         menu_bar = self.menuBar()
 
+        file_menu = menu_bar.addMenu("File")
+
+        open_action = QAction("Select dataset folder…", self)
+        open_action.setShortcut(QKeySequence("Ctrl+O"))
+        open_action.triggered.connect(lambda: self.select_dataset())
+        file_menu.addAction(open_action)
+
+        run_action = QAction("Run the current tab", self)
+        run_action.setShortcut(QKeySequence("Ctrl+R"))
+        run_action.triggered.connect(lambda: self._run_current_tab())
+        file_menu.addAction(run_action)
+
+        file_menu.addSeparator()
+
+        results_action = QAction("Open results folder", self)
+        results_action.triggered.connect(lambda: self._open_path(globalVar.RESULTS_FOLDER))
+        file_menu.addAction(results_action)
+
+        graphs_action = QAction("Open graphs folder", self)
+        graphs_action.triggered.connect(lambda: self._open_path(globalVar.GRAPHS_OUT_FOLDER))
+        file_menu.addAction(graphs_action)
+
+        file_menu.addSeparator()
+
+        quit_action = QAction("Quit", self)
+        quit_action.setShortcut(QKeySequence("Ctrl+Q"))
+        quit_action.triggered.connect(lambda: self.close())
+        file_menu.addAction(quit_action)
+
         view_menu = menu_bar.addMenu("View")
 
         appearance_menu = view_menu.addMenu("Appearance")
@@ -394,6 +577,82 @@ class ScientoPyGui(QMainWindow):
             action.triggered.connect(lambda checked, m=mode: self._apply_graph_appearance(m))
             self.graph_appearance_group.addAction(action)
             graph_appearance_menu.addAction(action)
+
+        help_menu = menu_bar.addMenu("Help")
+        for title, filename in (
+            ("User manual (graphical interface)", "ScientoPyGui_user_manual.pdf"),
+            ("User manual (scripts)", "ScientoPy_user_manual.pdf"),
+            ("Example paper", "example_paper.pdf"),
+        ):
+            action = QAction(title, self)
+            action.triggered.connect(
+                lambda checked=False, f=filename: self._open_path(asset_path(os.path.join("Manual", f))))
+            help_menu.addAction(action)
+
+        help_menu.addSeparator()
+
+        shortcuts_action = QAction("Keyboard shortcuts", self)
+        shortcuts_action.triggered.connect(lambda: self._show_shortcuts())
+        help_menu.addAction(shortcuts_action)
+
+        cite_action = QAction("How to cite ScientoPy", self)
+        cite_action.triggered.connect(lambda: self._show_citation())
+        help_menu.addAction(cite_action)
+
+        website_action = QAction("ScientoPy website", self)
+        website_action.triggered.connect(lambda: QDesktopServices.openUrl(QUrl(PROJECT_URL)))
+        help_menu.addAction(website_action)
+
+        help_menu.addSeparator()
+
+        about_action = QAction("About ScientoPy", self)
+        about_action.triggered.connect(lambda: self._show_about())
+        help_menu.addAction(about_action)
+
+    def _open_path(self, path):
+        """Open a file or a folder with the application the system uses for it."""
+        if not path or not os.path.exists(path):
+            QMessageBox.information(self, "Not found", "%s does not exist yet." % path)
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(path)))
+
+    def _show_shortcuts(self):
+        rows = [
+            ("Ctrl+O", "Select the dataset folder"),
+            ("Ctrl+R", "Run the current tab: preprocess, analysis, network map or export"),
+            ("Ctrl+1 … Ctrl+%d" % self.tabs.count(), "Open a tab"),
+            ("Ctrl+C", "Copy the selected cells of a table"),
+            ("Ctrl+Q", "Quit"),
+        ]
+        html = "<table cellpadding='4'>" + "".join(
+            "<tr><td><b>%s</b></td><td>%s</td></tr>" % row for row in rows) + "</table>"
+        box = QMessageBox(self)
+        box.setWindowTitle("Keyboard shortcuts")
+        box.setTextFormat(Qt.TextFormat.RichText)
+        box.setText(html)
+        box.exec()
+
+    def _show_citation(self):
+        box = QMessageBox(self)
+        box.setWindowTitle("How to cite ScientoPy")
+        box.setText("If you use ScientoPy in a paper, book or report, please cite:")
+        box.setInformativeText(CITATION)
+        box.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        copy_btn = box.addButton("Copy", QMessageBox.ButtonRole.ActionRole)
+        box.addButton(QMessageBox.StandardButton.Close)
+        box.exec()
+        if box.clickedButton() == copy_btn:
+            QApplication.clipboard().setText(CITATION)
+            self.status_bar.showMessage("Citation copied")
+
+    def _show_about(self):
+        QMessageBox.about(
+            self, "About ScientoPy",
+            "<h3>ScientoPy %s</h3>"
+            "<p>Scientometric analysis of Scopus and Web of Science datasets: "
+            "topic trends, maps and networks.</p>"
+            "<p>Universidad del Cauca, Popayán, Colombia<br>MIT License</p>"
+            "<p><a href='%s'>%s</a></p>" % (globalVar.SCIENTOPY_VERSION, PROJECT_URL, PROJECT_URL))
 
     def _apply_appearance(self, mode):
         app = QApplication.instance()
@@ -423,6 +682,10 @@ class ScientoPyGui(QMainWindow):
             palette.setColor(CR.Highlight, QColor(42, 130, 218))
             palette.setColor(CR.HighlightedText, QColor(0, 0, 0))
             palette.setColor(CR.PlaceholderText, QColor(130, 130, 130))
+            # Options that do not apply are shown dimmed
+            disabled = QPalette.ColorGroup.Disabled
+            for role in (CR.WindowText, CR.Text, CR.ButtonText):
+                palette.setColor(disabled, role, QColor(115, 115, 115))
             app.setPalette(palette)
 
         # Update matplotlib theme
@@ -452,6 +715,7 @@ class ScientoPyGui(QMainWindow):
 
     def _create_preprocess_tab(self):
         page = QWidget()
+        self.page_preprocess = page
         self.tabs.addTab(page, "1. Pre-processing")
         layout = QVBoxLayout(page)
 
@@ -479,16 +743,28 @@ class ScientoPyGui(QMainWindow):
 
         layout.addLayout(logo_container, stretch=1)
 
+        # What the other tabs will work on
+        self.dataset_status_label = QLabel("")
+        self.dataset_status_label.setAlignment(Qt.AlignCenter)
+        self.dataset_status_label.setWordWrap(True)
+        layout.addWidget(self.dataset_status_label)
+
         # Dataset folder row
         dataset_row = QHBoxLayout()
         dataset_row.addWidget(QLabel("Dataset folder:"))
 
+        dataset_tip = (
+            "Folder with the files downloaded from Scopus (.csv) and\n"
+            "Web of Science (.txt). Sub-folders are read too.")
         self.dataset_entry = QLineEdit()
+        self.dataset_entry.setPlaceholderText("Folder with the Scopus (.csv) and WoS (.txt) files")
+        self.dataset_entry.setToolTip(dataset_tip)
         if self.config.get("last_dataset_folder"):
             self.dataset_entry.setText(self.config["last_dataset_folder"])
         dataset_row.addWidget(self.dataset_entry, stretch=1)
 
-        browse_btn = QPushButton("Browse")
+        browse_btn = QPushButton("Browse…")
+        browse_btn.setToolTip(dataset_tip + "\nShortcut: Ctrl+O")
         browse_btn.clicked.connect(self.select_dataset)
         dataset_row.addWidget(browse_btn)
 
@@ -498,21 +774,108 @@ class ScientoPyGui(QMainWindow):
         bottom_row = QHBoxLayout()
 
         self.chk_remove_dupl = QCheckBox("Remove duplicated documents")
-        self.chk_remove_dupl.setChecked(True)
+        self.chk_remove_dupl.setChecked(self.config.get("remove_duplicates", True))
+        self.chk_remove_dupl.setToolTip(
+            "Keep one copy of the documents found in both Scopus and WoS\n"
+            "(same DOI, or same title and first author).")
         bottom_row.addWidget(self.chk_remove_dupl)
 
         bottom_row.addStretch(1)
 
         run_preprocess_btn = QPushButton("Run preprocess")
+        run_preprocess_btn.setDefault(True)
+        run_preprocess_btn.setToolTip(
+            "Read the dataset folder, remove the duplicated documents and\n"
+            "save the dataset that the other tabs use.\nShortcut: Ctrl+R")
         run_preprocess_btn.clicked.connect(self.run_preprocess)
         bottom_row.addWidget(run_preprocess_btn)
 
         layout.addLayout(bottom_row)
 
+    def _refresh_dataset_status(self):
+        """Show the documents and the years of the preprocessed dataset."""
+        path = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_PARQUET)
+        legacy = os.path.join(globalVar.DATA_OUT_FOLDER, globalVar.OUTPUT_FILE_NAME)
+        self._data_years = None
+        short = ""
+        if os.path.isfile(path):
+            try:
+                import polars as pl
+                column = pl.read_parquet(path, columns=["year"])["year"].to_list()
+                years = [int(y) for y in column if y is not None and str(y).isdigit()]
+                short = "{:,} documents".format(len(column))
+                if years:
+                    self._data_years = (min(years), max(years))
+                    short += ", %d–%d" % self._data_years
+                text = "Preprocessed dataset: %s (publication years)" % short if years \
+                    else "Preprocessed dataset: %s" % short
+            except Exception:
+                text = "Preprocessed dataset found in %s" % path
+        elif os.path.isfile(legacy):
+            text = "Preprocessed dataset found in %s" % legacy
+        else:
+            text = ("No preprocessed dataset yet. Select the folder with your Scopus (.csv) "
+                    "and WoS (.txt) files and click Run preprocess.")
+        self.dataset_status_label.setText(text)
+        self.dataset_indicator.setText(short)
+        self.dataset_indicator.setToolTip("Preprocessed dataset: documents and publication years")
+
+    def _default_year_range(self):
+        """Year range for a new analysis: the default one, cut to the dataset years."""
+        start, end = globalVar.DEFAULT_START_YEAR, globalVar.DEFAULT_END_YEAR
+        if self._data_years:
+            first, last = self._data_years
+            if max(start, first) <= min(end, last):
+                start, end = max(start, first), min(end, last)
+        return start, end
+
+    def _apply_year_defaults(self):
+        """Fit the year ranges of the Analysis and Maps tabs to the dataset,
+        unless the user chose a range that the dataset covers."""
+        start, end = self._default_year_range()
+        for spin_start, spin_end in ((self.spin_start_year, self.spin_end_year),
+                                     (self.net_start_year, self.net_end_year)):
+            current = (spin_start.value(), spin_end.value())
+            outside = bool(self._data_years) and (
+                current[1] < self._data_years[0] or current[0] > self._data_years[1])
+            if current in self._auto_year_ranges or outside:
+                spin_end.setValue(end)
+                spin_start.setValue(start)
+        self._auto_year_ranges.add((start, end))
+        self.config["auto_year_range"] = [start, end]
+
+    @staticmethod
+    def _link_year_range(spin_start, spin_end):
+        """Keep start year <= end year: moving one past the other drags it along."""
+        for spin in (spin_start, spin_end):
+            spin.setKeyboardTracking(False)
+        spin_start.valueChanged.connect(
+            lambda value: spin_end.setValue(value) if value > spin_end.value() else None)
+        spin_end.valueChanged.connect(
+            lambda value: spin_start.setValue(value) if value < spin_start.value() else None)
+
+    def _update_previous_results_enabled(self):
+        """Use previous results needs the documents of a previous analysis."""
+        available = os.path.isfile(os.path.join(globalVar.RESULTS_FOLDER, globalVar.LAST_ANALYSIS_FILE))
+        for checkbox, tip in (
+            (self.chk_previous_results,
+             "Analyze only the documents found by the last analysis.\n"
+             "For example, first extract the documents of a country, then\n"
+             "use previous results to find the top keywords of that country."),
+            (self.net_previous,
+             "Map only the documents found by the last analysis."),
+        ):
+            checkbox.setEnabled(available)
+            if not available:
+                checkbox.setChecked(False)
+                tip += "\nNot available yet: run an analysis first."
+            checkbox.setToolTip(tip)
+
     # ── Analysis Tab ──────────────────────────────────────────
 
     def _create_analysis_tab(self):
         page = QWidget()
+        self.page_analysis = page
         self.tabs.addTab(page, "2. Analysis")
         page_layout = QVBoxLayout(page)
 
@@ -523,35 +886,25 @@ class ScientoPyGui(QMainWindow):
         # Left panel: form
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setContentsMargins(0, 0, 6, 0)
 
         form = QFormLayout()
 
+        criterion_tips = {name: HEADER_TOOLTIPS.get(name, "") for name in globalVar.validCriterion}
         self.combo_criterion = QComboBox()
-        self.combo_criterion.addItems(globalVar.validCriterion)
-        saved_criterion = self.config.get("criterion", "authorKeywords")
-        idx = globalVar.validCriterion.index(saved_criterion) if saved_criterion in globalVar.validCriterion else 3
-        self.combo_criterion.setCurrentIndex(idx)
+        fill_combo(self.combo_criterion, globalVar.validCriterion, CRITERION_LABELS,
+                   criterion_tips, self.config.get("criterion", "authorKeywords"))
         self.combo_criterion.setToolTip(
-            "Field to analyze: author, sourceTitle, authorKeywords,\n"
-            "indexKeywords, bothKeywords, abstract, documentType,\n"
-            "dataBase, country, institution, institutionWithCountry")
+            "Field of the documents to analyze.\n"
+            "Hover an option of the list to see what it is.")
         form.addRow("Criterion:", self.combo_criterion)
 
         self.combo_graph_type = QComboBox()
-        self.combo_graph_type.addItems(globalVar.validGrapTypes)
-        saved_graph = self.config.get("graph_type", "bar_trends")
-        gidx = globalVar.validGrapTypes.index(saved_graph) if saved_graph in globalVar.validGrapTypes else 0
-        self.combo_graph_type.setCurrentIndex(gidx)
+        fill_combo(self.combo_graph_type, globalVar.validGrapTypes, GRAPH_TYPE_LABELS,
+                   GRAPH_TYPE_TIPS, self.config.get("graph_type", "bar_trends"))
         self.combo_graph_type.setToolTip(
-            "Visualization type:\n"
-            "bar_trends - Horizontal bars with percentage in last years\n"
-            "bar - Horizontal bars with total documents\n"
-            "time_line - Documents per year line plot\n"
-            "evolution - Accumulative documents + AGR vs PDLY scatter\n"
-            "word_cloud - Word cloud sized by document count\n"
-            "world_map - World map shaded by documents per country\n"
-            "            (criterion country)")
+            "Graph drawn with the results.\n"
+            "Hover an option of the list to see what it is.")
         form.addRow("Graph type:", self.combo_graph_type)
 
         self.spin_start_year = QSpinBox()
@@ -569,6 +922,7 @@ class ScientoPyGui(QMainWindow):
             "End year for the analysis range.\n"
             "Papers published after this year are excluded.")
         form.addRow("End Year:", self.spin_end_year)
+        self._link_year_range(self.spin_start_year, self.spin_end_year)
 
         self.spin_topics_length = QSpinBox()
         self.spin_topics_length.setRange(0, 1000)
@@ -600,10 +954,6 @@ class ScientoPyGui(QMainWindow):
 
         self.chk_previous_results = QCheckBox("Use previous results")
         self.chk_previous_results.setChecked(self.config.get("previous_results", False))
-        self.chk_previous_results.setToolTip(
-            "Analyze based on the output documents from the last run.\n"
-            "For example, first extract papers from a country, then\n"
-            "use previous results to find top keywords within that subset.")
         left_layout.addWidget(self.chk_previous_results)
 
         self.chk_trend_analysis = QCheckBox("Trend analysis")
@@ -614,42 +964,133 @@ class ScientoPyGui(QMainWindow):
             "and sorts them from highest to lowest AGR.")
         left_layout.addWidget(self.chk_trend_analysis)
 
+        # Options used less often
+        self.analysis_more = CollapsibleSection(
+            "More options", expanded=self.config.get("more_options_open", False))
+        more_form = QFormLayout(self.analysis_more.body)
+        more_form.setContentsMargins(0, 0, 0, 0)
+
+        self.edit_graph_title = QLineEdit(self.config.get("graph_title", ""))
+        self.edit_graph_title.setPlaceholderText("No title")
+        self.edit_graph_title.setToolTip("Title written above the graph.")
+        more_form.addRow("Graph title:", self.edit_graph_title)
+
+        size_row = QHBoxLayout()
+        self.spin_plot_width = QDoubleSpinBox()
+        self.spin_plot_height = QDoubleSpinBox()
+        for spin, key, default in ((self.spin_plot_width, "plot_width", globalVar.DEFAULT_PLOT_WIDTH),
+                                   (self.spin_plot_height, "plot_height", globalVar.DEFAULT_PLOT_HEIGHT)):
+            spin.setRange(2.0, 40.0)
+            spin.setDecimals(1)
+            spin.setSingleStep(0.5)
+            spin.setSuffix(" in")
+            spin.setValue(self.config.get(key, default))
+            spin.setToolTip(
+                "Width and height of the graph in inches.\n"
+                "For the bars, time line and world map graphs.")
+        size_row.addWidget(self.spin_plot_width)
+        size_row.addWidget(QLabel("×"))
+        size_row.addWidget(self.spin_plot_height)
+        more_form.addRow("Graph size:", size_row)
+
+        self.chk_y_log = QCheckBox("Logarithmic scale")
+        self.chk_y_log.setChecked(self.config.get("y_log", False))
+        self.chk_y_log.setToolTip(
+            "Logarithmic documents axis in the time line and evolution graphs,\n"
+            "and logarithmic color scale in the world map, to see the topics\n"
+            "or countries with few documents.")
+        more_form.addRow(self.chk_y_log)
+
+        self.chk_p_year = QCheckBox("Percentage per year")
+        self.chk_p_year.setChecked(self.config.get("p_year", False))
+        self.chk_p_year.setToolTip(
+            "Time line graph: show each topic as a percentage of the\n"
+            "documents published that year, instead of the number of documents.")
+        more_form.addRow(self.chk_p_year)
+
+        self.chk_agr_for_graph = QCheckBox("Growth rate (AGR) in evolution")
+        self.chk_agr_for_graph.setChecked(self.config.get("agr_for_graph", False))
+        self.chk_agr_for_graph.setToolTip(
+            "Evolution graph: plot the Average Growth Rate (AGR) instead of\n"
+            "the Average Documents per Year (ADY).")
+        more_form.addRow(self.chk_agr_for_graph)
+
+        self.chk_only_first = QCheckBox("Only the first author or country")
+        self.chk_only_first.setChecked(self.config.get("only_first", False))
+        self.chk_only_first.setToolTip(
+            "Count only the first one of each document: the first author, or\n"
+            "the country or the institution of the first author.\n"
+            "For the authors, countries and institutions criteria.")
+        more_form.addRow(self.chk_only_first)
+
+        self.edit_filter = QLineEdit(self.config.get("filter", ""))
+        self.edit_filter.setPlaceholderText("All countries")
+        self.edit_filter.setToolTip(
+            "Keep only the institutions of this country, for example Colombia.\n"
+            "For the Institutions with country criterion.")
+        more_form.addRow("Institutions of:", self.edit_filter)
+
+        mask_row = QHBoxLayout()
+        self.edit_word_cloud_mask = QLineEdit(self.config.get("word_cloud_mask", ""))
+        self.edit_word_cloud_mask.setPlaceholderText("No mask")
+        mask_tip = ("PNG image that gives its shape to the word cloud:\n"
+                    "the words fill the areas that are not white.")
+        self.edit_word_cloud_mask.setToolTip(mask_tip)
+        mask_row.addWidget(self.edit_word_cloud_mask, stretch=1)
+        self.btn_word_cloud_mask = QPushButton("Browse…")
+        self.btn_word_cloud_mask.setToolTip(mask_tip)
+        self.btn_word_cloud_mask.clicked.connect(self._browse_word_cloud_mask)
+        mask_row.addWidget(self.btn_word_cloud_mask)
+        more_form.addRow("Word cloud mask:", mask_row)
+
+        left_layout.addWidget(self.analysis_more)
         left_layout.addStretch(1)
 
-        left_widget.setMinimumWidth(250)
-        left_widget.setMaximumWidth(350)
-
-        # Right panel: custom topics
+        # Right panel: custom topics and synonyms
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
 
-        right_layout.addWidget(QLabel("Custom topics:"))
+        topics_tip = (
+            "Leave it empty to find the top topics of the criterion.\n"
+            "To analyze your own topics, write one per line:\n"
+            "  - commas group the names of one topic: internet of things, iot\n"
+            "  - an asterisk matches any ending or beginning: smart*")
+        topics_label = QLabel("Custom topics (leave empty to find the top topics):")
+        topics_label.setToolTip(topics_tip)
+        right_layout.addWidget(topics_label)
 
         self.custom_topics = QPlainTextEdit()
+        self.custom_topics.setPlaceholderText(
+            "One topic per line. Commas group the names of one topic, * is a wildcard:\n"
+            "internet of things, iot\n"
+            "indoor positioning, indoor localization\n"
+            "smart*")
+        self.custom_topics.setToolTip(topics_tip)
         right_layout.addWidget(self.custom_topics, stretch=3)
 
-        synonyms_label = QLabel(
-            "Synonyms: one group per line, separated by commas (the first one names the group):")
-        right_layout.addWidget(synonyms_label)
         self.analysis_synonyms = QPlainTextEdit()
-        self.analysis_synonyms.setPlaceholderText("internet of things, iot\nbluetooth low energy, ble")
-        self.analysis_synonyms.setPlainText(self.config.get("synonyms", ""))
-        self.analysis_synonyms.setToolTip(
-            "Names of the same topic are counted as one when finding the top\n"
-            "topics, in any criterion: keyword variants and abbreviations,\n"
-            "author names, institution names.")
+        self.analysis_synonyms.setPlaceholderText(SYNONYMS_PLACEHOLDER)
+        self.analysis_synonyms.setToolTip(SYNONYMS_TOOLTIP)
+        # One list for the analysis and the maps. Older configurations kept two.
+        saved = [self.config.get("synonyms", ""), self.config.get("net_synonyms", "")]
+        lines = []
+        for line in "\n".join(saved).splitlines():
+            if line.strip() and line.strip() not in lines:
+                lines.append(line.strip())
+        self.analysis_synonyms.setPlainText("\n".join(lines))
+        right_layout.addLayout(self._synonyms_header())
         right_layout.addWidget(self.analysis_synonyms, stretch=1)
 
-        splitter.addWidget(left_widget)
+        splitter.addWidget(scrollable(left_widget, [self.analysis_more]))
         splitter.addWidget(right_widget)
 
         # Restore splitter sizes
         try:
-            sizes = self.config.get("splitter_sizes", [280, 600])
+            sizes = self.config.get("splitter_sizes", [300, 600])
             splitter.setSizes(sizes)
         except Exception:
-            splitter.setSizes([280, 600])
+            splitter.setSizes([300, 600])
 
         page_layout.addWidget(splitter, stretch=1)
 
@@ -679,22 +1120,87 @@ class ScientoPyGui(QMainWindow):
         btn_row.addWidget(clear_topics_btn)
 
         reset_btn = QPushButton("Reset defaults")
-        reset_btn.setToolTip("Reset all analysis parameters to their default values.")
+        reset_btn.setToolTip(
+            "Reset the analysis parameters to their default values.\n"
+            "The synonyms are kept.")
         reset_btn.clicked.connect(self._reset_analysis_defaults)
         btn_row.addWidget(reset_btn)
 
         btn_row.addStretch(1)
 
         run_btn = QPushButton("Run")
+        run_btn.setDefault(True)
+        run_btn.setToolTip("Run the analysis and draw the graph.\nShortcut: Ctrl+R")
         run_btn.clicked.connect(self.scientoPyRun)
         btn_row.addWidget(run_btn)
 
         page_layout.addLayout(btn_row)
 
+        self.combo_criterion.currentIndexChanged.connect(self._update_analysis_controls)
+        self.combo_graph_type.currentIndexChanged.connect(self._update_analysis_controls)
+        self._update_analysis_controls()
+
+    def _synonyms_header(self):
+        """Label of a synonyms box with the button to load a thesaurus file."""
+        row = QHBoxLayout()
+        label = QLabel("Synonyms (one group per line):")
+        label.setToolTip(SYNONYMS_TOOLTIP)
+        row.addWidget(label, stretch=1)
+        thesaurus_btn = QPushButton("Load thesaurus…")
+        thesaurus_btn.setToolTip(
+            "Add the synonyms of a VOSviewer thesaurus file (tab separated:\n"
+            "label, replace by). Items with an empty 'replace by' go to the\n"
+            "Exclude list of the maps tab.")
+        thesaurus_btn.clicked.connect(self._load_thesaurus)
+        row.addWidget(thesaurus_btn)
+        return row
+
+    def _browse_word_cloud_mask(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select the word cloud mask image",
+            self.edit_word_cloud_mask.text() or "./",
+            "PNG images (*.png);;All files (*.*)")
+        if path:
+            self.edit_word_cloud_mask.setText(path)
+
+    def _update_analysis_controls(self, *_):
+        """Enable the options that apply to the chosen criterion and graph."""
+        if self._updating_controls:
+            return
+        self._updating_controls = True
+        try:
+            graph = self.combo_graph_type.currentData()
+
+            # The world map only places countries
+            if graph == "world_map":
+                if self.combo_criterion.isEnabled():
+                    self._criterion_before_map = self.combo_criterion.currentData()
+                    self.combo_criterion.setEnabled(False)
+                set_combo(self.combo_criterion, "country")
+            elif not self.combo_criterion.isEnabled():
+                self.combo_criterion.setEnabled(True)
+                set_combo(self.combo_criterion, self._criterion_before_map)
+            criterion = self.combo_criterion.currentData()
+
+            self.chk_y_log.setEnabled(graph in ("time_line", "evolution", "world_map"))
+            self.chk_p_year.setEnabled(graph == "time_line")
+            self.chk_agr_for_graph.setEnabled(graph == "evolution")
+            sized = graph in ("bar", "bar_trends", "time_line", "world_map")
+            self.spin_plot_width.setEnabled(sized)
+            self.spin_plot_height.setEnabled(sized)
+            self.edit_word_cloud_mask.setEnabled(graph == "word_cloud")
+            self.btn_word_cloud_mask.setEnabled(graph == "word_cloud")
+            self.chk_only_first.setEnabled(
+                criterion in ("author", "country", "institution", "institutionWithCountry"))
+            self.edit_filter.setEnabled(criterion == "institutionWithCountry")
+        finally:
+            self._updating_controls = False
+
     # ── Results Tab ────────────────────────────────────────────
 
     def _create_results_tab(self):
         page = QWidget()
+        self.page_results = page
         self.tabs.addTab(page, "3. Results")
         layout = QVBoxLayout(page)
 
@@ -709,26 +1215,34 @@ class ScientoPyGui(QMainWindow):
         copy_shortcut = QShortcut(QKeySequence.StandardKey.Copy, self.results_table)
         copy_shortcut.activated.connect(self._copy_selected_cells)
 
-        # Bottom bar: status label + copy buttons
+        # Bottom bar: status label + buttons
         bottom_row = QHBoxLayout()
 
         self.results_status_label = QLabel("No results yet. Run preprocessing first.")
+        self.results_status_label.setWordWrap(True)
         bottom_row.addWidget(self.results_status_label, stretch=1)
 
+        self.results_open_btn = QPushButton("Open CSV")
+        self.results_open_btn.setToolTip(
+            "Open the file of this table with your spreadsheet application.")
+        self.results_open_btn.setEnabled(False)
+        self.results_open_btn.clicked.connect(lambda: self._open_path(self._results_file))
+        bottom_row.addWidget(self.results_open_btn)
+
         copy_sel_btn = QPushButton("Copy Selection")
+        copy_sel_btn.setToolTip("Copy the selected cells, with their headers.\nShortcut: Ctrl+C")
         copy_sel_btn.clicked.connect(self._copy_selected_cells)
         bottom_row.addWidget(copy_sel_btn)
 
         copy_all_btn = QPushButton("Copy All")
+        copy_all_btn.setToolTip("Copy the whole table, to paste it in a spreadsheet or a document.")
         copy_all_btn.clicked.connect(self._copy_all_cells)
         bottom_row.addWidget(copy_all_btn)
 
-        analyze_sel_btn = QPushButton("Analyze selection")
-        analyze_sel_btn.setToolTip(
-            "Copy the topic names from selected rows to the\n"
-            "Custom topics field in the Analysis tab.")
-        analyze_sel_btn.clicked.connect(self._analyze_selection)
-        bottom_row.addWidget(analyze_sel_btn)
+        self.analyze_sel_btn = QPushButton("Analyze selection")
+        self.analyze_sel_btn.setEnabled(False)
+        self.analyze_sel_btn.clicked.connect(self._analyze_selection)
+        bottom_row.addWidget(self.analyze_sel_btn)
 
         layout.addLayout(bottom_row)
 
@@ -738,9 +1252,14 @@ class ScientoPyGui(QMainWindow):
     def _post_show_init(self):
         if os.path.exists(self.scientoPy.preprocessBriefFileName):
             self._load_results_table()
+        self._refresh_dataset_status()
+        self._apply_year_defaults()
+        self._update_previous_results_enabled()
         self.status_bar.showMessage("Ready")
 
-    def _load_results_table(self, filepath=None):
+    def _load_results_table(self, filepath=None, kind="brief"):
+        """Show a results CSV. kind is "brief" (preprocess report), "analysis"
+        (topics of an analysis) or "themes" (thematic map)."""
         if filepath is None:
             filepath = self.scientoPy.preprocessBriefFileName
         if not os.path.exists(filepath):
@@ -755,8 +1274,24 @@ class ScientoPyGui(QMainWindow):
 
         headers = rows[0]
         data = rows[1:]
+        note = ""
+
+        if kind == "analysis":
+            # The years before the first document only hold zeros
+            year_cols = [c for c, h in enumerate(headers) if len(h) == 4 and h.isdigit()]
+            empty = []
+            for c in year_cols[:-1]:
+                if any(c < len(row) and row[c].strip() not in ("", "0", "0.0") for row in data):
+                    break
+                empty.append(c)
+            if empty:
+                drop = set(empty)
+                note = ", from %s (the first year with documents)" % headers[empty[-1] + 1]
+                headers = [h for c, h in enumerate(headers) if c not in drop]
+                data = [[cell for c, cell in enumerate(row) if c not in drop] for row in data]
 
         self.results_table.setSortingEnabled(False)
+        self.results_table.clearContents()
 
         self.results_table.setColumnCount(len(headers))
         self.results_table.setRowCount(len(data))
@@ -771,14 +1306,19 @@ class ScientoPyGui(QMainWindow):
             for c, cell in enumerate(row):
                 text = cell.strip()
                 try:
-                    float(text)
+                    value = float(text)
+                    # 36.66666666666667 -> 36.67 (the file keeps every decimal)
+                    if "." in text and len(text.split(".")[1]) > 2 and "e" not in text.lower():
+                        text = "%.2f" % value
                     item = NumericTableWidgetItem(text)
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
                 except ValueError:
                     item = QTableWidgetItem(text)
                 self.results_table.setItem(r, c, item)
 
-        self.results_table.setSortingEnabled(True)
+        # The preprocess brief is a report with its own row order
+        self.results_table.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.results_table.setSortingEnabled(kind != "brief")
 
         for col in range(len(headers)):
             self.results_table.horizontalHeader().setSectionResizeMode(
@@ -786,24 +1326,31 @@ class ScientoPyGui(QMainWindow):
             )
 
         self.results_table.resizeRowsToContents()
-        self.results_status_label.setText(
-            "Showing results from: %s" % os.path.basename(filepath)
-        )
+
+        self._results_file = filepath
+        self._results_kind = kind
+        self.results_open_btn.setEnabled(True)
+        self.analyze_sel_btn.setEnabled(kind == "analysis")
+        self.analyze_sel_btn.setToolTip(
+            "Copy the topic names from selected rows to the\n"
+            "Custom topics field in the Analysis tab."
+            if kind == "analysis" else
+            "Available when the table shows the topics of an analysis.")
+        title = {"brief": "Preprocess report", "analysis": "Analysis results",
+                 "themes": "Thematic map themes"}.get(kind, "Results")
+        self.results_status_label.setText("%s: %s%s" % (title, filepath, note))
+        self.results_status_label.setToolTip(os.path.abspath(filepath))
 
     def _analyze_selection(self):
         """Copy topic names from selected rows to the Custom topics field."""
+        if self._results_kind != "analysis":
+            return
         selected_rows = sorted(set(idx.row() for idx in self.results_table.selectedIndexes()))
         if not selected_rows:
             self.status_bar.showMessage("No rows selected")
             return
 
         # The topic name is in column 1 (column 0 is "Pos.")
-        # But if the table is showing preprocess brief, column 1 may not be topics.
-        # Detect: if header of col 1 matches a criterion name, it's analysis results.
-        header_item = self.results_table.horizontalHeaderItem(1)
-        if not header_item:
-            return
-
         topics = []
         for row in selected_rows:
             cell = self.results_table.item(row, 1)
@@ -815,7 +1362,7 @@ class ScientoPyGui(QMainWindow):
             return
 
         self.custom_topics.setPlainText("\n".join(topics))
-        self.tabs.setCurrentIndex(1)  # Switch to Analysis tab
+        self.tabs.setCurrentWidget(self.page_analysis)
         self.status_bar.showMessage(
             "%d topic(s) copied to Custom topics" % len(topics))
 
@@ -833,7 +1380,8 @@ class ScientoPyGui(QMainWindow):
 
     def _create_ext_results_tab(self):
         page = QWidget()
-        self.tabs.addTab(page, "4. Extended Results")
+        self.page_documents = page
+        self.tabs.addTab(page, "4. Documents")
         layout = QVBoxLayout(page)
 
         self.ext_results_table = QTableWidget()
@@ -848,21 +1396,31 @@ class ScientoPyGui(QMainWindow):
 
         bottom_row = QHBoxLayout()
 
-        self.ext_results_status_label = QLabel("No extended results yet. Run analysis first.")
+        self.ext_results_status_label = QLabel(
+            "No documents yet. Run an analysis to list the documents of each topic, "
+            "or use Most cited documents in the Analysis tab.")
+        self.ext_results_status_label.setWordWrap(True)
         bottom_row.addWidget(self.ext_results_status_label, stretch=1)
 
+        self.documents_open_btn = QPushButton("Open CSV")
+        self.documents_open_btn.setEnabled(False)
+        self.documents_open_btn.clicked.connect(lambda: self._open_path(self._documents_file))
+        bottom_row.addWidget(self.documents_open_btn)
+
         copy_sel_btn = QPushButton("Copy Selection")
+        copy_sel_btn.setToolTip("Copy the selected cells, with their headers.\nShortcut: Ctrl+C")
         copy_sel_btn.clicked.connect(self._copy_selected_ext_cells)
         bottom_row.addWidget(copy_sel_btn)
 
         copy_all_btn = QPushButton("Copy All")
+        copy_all_btn.setToolTip("Copy the whole table, to paste it in a spreadsheet or a document.")
         copy_all_btn.clicked.connect(self._copy_all_ext_cells)
         bottom_row.addWidget(copy_all_btn)
 
         layout.addLayout(bottom_row)
 
     def _load_ext_results_table(self, filepath):
-        """Load an Extended Results CSV from disk (only used when the user
+        """Load a documents CSV from disk (only used when the user
         exports or when -- in legacy flows -- such a file already exists)."""
         if not os.path.exists(filepath):
             return
@@ -872,20 +1430,31 @@ class ScientoPyGui(QMainWindow):
         if not rows:
             return
         self._populate_ext_results(
-            rows[0], rows[1:], source_label=os.path.basename(filepath)
+            rows[0], rows[1:], description=os.path.basename(filepath), file_path=filepath
         )
 
     def _populate_ext_results_from_topics(self, topicResults, criterion):
-        """Populate the Extended Results tab directly from the in-memory
+        """Populate the Documents tab directly from the in-memory
         topicResults produced by the last analysis — no CSV round-trip."""
         import paperSave
         headers, data = paperSave.extendedResultsRows(topicResults, criterion)
         self._populate_ext_results(
-            headers, data, source_label="last analysis (in memory)"
+            headers, data,
+            description="documents of each topic of the last analysis "
+                        "(not saved: use Extended results in the Export tab)"
         )
 
-    def _populate_ext_results(self, headers, data, source_label=""):
+    def _populate_ext_results(self, headers, data, description="", file_path=None):
+        """Show a table of documents. description says what the rows are and
+        file_path is the CSV they were saved to, when there is one."""
         total = len(data)
+        self._documents_file = file_path or ""
+        self.documents_open_btn.setEnabled(bool(file_path))
+        self.documents_open_btn.setToolTip(
+            "Open the file of this table with your spreadsheet application."
+            if file_path else
+            "This table is not saved to a file. To save it, use\n"
+            "Extended results in the Export tab.")
 
         self.ext_results_table.setSortingEnabled(False)
         self.ext_results_table.clearContents()
@@ -931,7 +1500,7 @@ class ScientoPyGui(QMainWindow):
                     # next batch.
                     self.ext_results_table.setUpdatesEnabled(True)
                     self.ext_results_status_label.setText(
-                        "Loading extended results… %d / %d  (%d%%)"
+                        "Loading documents… %d / %d  (%d%%)"
                         % (r, total, int(100 * r / total))
                     )
                     app.processEvents()
@@ -948,7 +1517,7 @@ class ScientoPyGui(QMainWindow):
                 )
             self.ext_results_table.resizeRowsToContents()
             self.ext_results_status_label.setText(
-                "Showing %d extended results from %s" % (total, source_label)
+                "%d rows: %s" % (total, description)
             )
         else:
             # Sensible interactive defaults without paying for content
@@ -958,17 +1527,18 @@ class ScientoPyGui(QMainWindow):
                     col, QHeaderView.ResizeMode.Interactive
                 )
             self.ext_results_status_label.setText(
-                "Showing %d extended results from %s  "
+                "%d rows: %s  "
                 "(column auto-resize skipped for large tables — drag the "
                 "header dividers to widen a column)"
-                % (total, source_label)
+                % (total, description)
             )
 
     # ── Export Tab ────────────────────────────────────────────
 
     def _create_export_tab(self):
         page = QWidget()
-        self.tabs.addTab(page, "5. Export")
+        self.page_export = page
+        self.tabs.addTab(page, "6. Export")
         layout = QVBoxLayout(page)
 
         # Source
@@ -1030,6 +1600,7 @@ class ScientoPyGui(QMainWindow):
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
         self.export_btn = QPushButton("Export")
+        self.export_btn.setDefault(True)
         self.export_btn.clicked.connect(self._run_export)
         btn_row.addWidget(self.export_btn)
         layout.addLayout(btn_row)
@@ -1040,32 +1611,38 @@ class ScientoPyGui(QMainWindow):
         self._src_group.buttonClicked.connect(self._update_export_enabled)
         self._update_export_enabled()
 
-    # ── Network Map Tab ────────────────────────────────────────
+    # ── Network and Thematic Maps Tab ──────────────────────────
 
     def _create_network_tab(self):
         import networkAnalysis as na
         page = QWidget()
-        self.tabs.addTab(page, "6. Network Map")
+        self.page_maps = page
+        self.tabs.addTab(page, "5. Network && Thematic Maps")
         page_layout = QVBoxLayout(page)
 
         splitter = QSplitter(Qt.Horizontal)
 
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setContentsMargins(0, 0, 6, 0)
         form = QFormLayout()
 
+        criterion_tips = {
+            "authorKeywords": "Keyword co-occurrence",
+            "indexKeywords": "Keyword co-occurrence",
+            "bothKeywords": "Keyword co-occurrence",
+            "author": "Co-authorship",
+            "country": "Collaboration between countries",
+            "institution": "Collaboration between institutions",
+            "institutionWithCountry": "Collaboration between institutions",
+            "subject": "Subject area co-occurrence (WoS)",
+        }
         self.net_criterion = QComboBox()
-        self.net_criterion.addItems(globalVar.validNetworkCriterion)
-        saved = self.config.get("net_criterion", "authorKeywords")
-        if saved in globalVar.validNetworkCriterion:
-            self.net_criterion.setCurrentIndex(globalVar.validNetworkCriterion.index(saved))
+        fill_combo(self.net_criterion, globalVar.validNetworkCriterion, CRITERION_LABELS,
+                   criterion_tips, self.config.get("net_criterion", "authorKeywords"))
         self.net_criterion.setToolTip(
-            "Items linked when they appear in the same document:\n"
-            "authorKeywords, indexKeywords, bothKeywords - keyword co-occurrence\n"
-            "author - co-authorship\n"
-            "country, institution, institutionWithCountry - collaboration\n"
-            "subject - subject area co-occurrence (WoS)")
+            "Items of the maps. Two items are linked when they appear\n"
+            "in the same document.")
         form.addRow("Criterion:", self.net_criterion)
 
         self.net_start_year = QSpinBox()
@@ -1077,6 +1654,7 @@ class ScientoPyGui(QMainWindow):
         self.net_end_year.setRange(1900, 2100)
         self.net_end_year.setValue(self.config.get("net_end_year", self.config.get("end_year", globalVar.DEFAULT_END_YEAR)))
         form.addRow("End Year:", self.net_end_year)
+        self._link_year_range(self.net_start_year, self.net_end_year)
 
         self.net_length = QSpinBox()
         self.net_length.setRange(1, na.MAX_LENGTH)
@@ -1099,12 +1677,11 @@ class ScientoPyGui(QMainWindow):
         form.addRow("Skip first:", self.net_skip_first)
 
         self.net_counting = QComboBox()
-        self.net_counting.addItems(na.COUNTING_METHODS)
-        self.net_counting.setCurrentText(self.config.get("net_counting", na.DEFAULT_COUNTING))
+        fill_combo(self.net_counting, na.COUNTING_METHODS, COUNTING_LABELS, COUNTING_TIPS,
+                   self.config.get("net_counting", na.DEFAULT_COUNTING))
         self.net_counting.setToolTip(
-            "full - every co-occurrence counts 1\n"
-            "fractional - a document with n items gives each link 1/(n-1),\n"
-            "so documents with many authors or keywords weigh less")
+            "How a document counts for the links between its items.\n"
+            "Hover an option of the list to see what it is.")
         form.addRow("Counting:", self.net_counting)
 
         self.net_resolution = QDoubleSpinBox()
@@ -1125,46 +1702,94 @@ class ScientoPyGui(QMainWindow):
 
         self.net_previous = QCheckBox("Use previous results")
         self.net_previous.setChecked(self.config.get("net_previous_results", False))
-        self.net_previous.setToolTip("Map only the documents found by the last analysis run.")
         left_layout.addWidget(self.net_previous)
+
+        # Options used less often
+        self.net_more = CollapsibleSection(
+            "More options", expanded=self.config.get("net_more_options_open", False))
+        more_form = QFormLayout(self.net_more.body)
+        more_form.setContentsMargins(0, 0, 0, 0)
+
+        self.net_title = QLineEdit(self.config.get("net_title", ""))
+        self.net_title.setPlaceholderText("No title")
+        self.net_title.setToolTip("Title shown in the network map and above the thematic map.")
+        more_form.addRow("Title:", self.net_title)
+
+        self.net_min_link = QDoubleSpinBox()
+        self.net_min_link.setRange(0.0, 100000.0)
+        self.net_min_link.setDecimals(2)
+        self.net_min_link.setSingleStep(1.0)
+        self.net_min_link.setValue(self.config.get("net_min_link_strength", na.DEFAULT_MIN_LINK_STRENGTH))
+        self.net_min_link.setToolTip(
+            "Leave out the links weaker than this value, for example 2 to keep\n"
+            "the pairs of items that appear together in at least 2 documents.\n"
+            "0 keeps every link.")
+        more_form.addRow("Min link strength:", self.net_min_link)
+
+        self.net_cohesion = QDoubleSpinBox()
+        self.net_cohesion.setRange(0.0, 5.0)
+        self.net_cohesion.setDecimals(2)
+        self.net_cohesion.setSingleStep(0.1)
+        self.net_cohesion.setValue(self.config.get("net_cohesion", na.DEFAULT_COHESION))
+        self.net_cohesion.setToolTip(
+            "Network map: extra attraction between the items of a cluster, so\n"
+            "each cluster reads as its own region. 0 is the plain VOS layout.")
+        more_form.addRow("Cluster cohesion:", self.net_cohesion)
+
+        self.theme_labels = QSpinBox()
+        self.theme_labels.setRange(1, 10)
+        self.theme_labels.setValue(self.config.get("theme_labels", na.DEFAULT_THEME_LABELS))
+        self.theme_labels.setToolTip(
+            "Thematic map: number of items written on each theme,\n"
+            "the ones with more documents.")
+        more_form.addRow("Labels per theme:", self.theme_labels)
+
+        self.theme_axes = QComboBox()
+        fill_combo(self.theme_axes, na.THEMATIC_AXES, THEME_AXES_LABELS, THEME_AXES_TIPS,
+                   self.config.get("theme_axes", "rank"))
+        self.theme_axes.setToolTip(
+            "Thematic map: how the themes are placed.\n"
+            "Hover an option of the list to see what it is.")
+        more_form.addRow("Theme positions:", self.theme_axes)
+
+        left_layout.addWidget(self.net_more)
         left_layout.addStretch(1)
-        left_widget.setMinimumWidth(250)
-        left_widget.setMaximumWidth(350)
 
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.addWidget(QLabel(
-            "Synonyms: one group per line, separated by commas (the first one names the group):"))
         self.net_synonyms = QPlainTextEdit()
-        self.net_synonyms.setPlaceholderText("internet of things, iot\nbluetooth low energy, ble")
-        self.net_synonyms.setPlainText(self.config.get("net_synonyms", ""))
+        # The same list as in the Analysis tab: both boxes edit one text
+        self.net_synonyms.setDocument(self.analysis_synonyms.document())
+        self.net_synonyms.setPlaceholderText(SYNONYMS_PLACEHOLDER)
+        self.net_synonyms.setToolTip(SYNONYMS_TOOLTIP)
+        right_layout.addLayout(self._synonyms_header())
         right_layout.addWidget(self.net_synonyms, stretch=3)
-        right_layout.addWidget(QLabel("Exclude: one item per line:"))
+        exclude_label = QLabel("Exclude: one item per line:")
+        exclude_tip = "Items left out of the maps, for example the terms used to search the dataset."
+        exclude_label.setToolTip(exclude_tip)
+        right_layout.addWidget(exclude_label)
         self.net_exclude = QPlainTextEdit()
+        self.net_exclude.setToolTip(exclude_tip)
         self.net_exclude.setPlainText(self.config.get("net_exclude", ""))
         right_layout.addWidget(self.net_exclude, stretch=1)
 
-        splitter.addWidget(left_widget)
+        splitter.addWidget(scrollable(left_widget, [self.net_more]))
         splitter.addWidget(right_widget)
-        splitter.setSizes([280, 600])
+        splitter.setSizes([300, 600])
         page_layout.addWidget(splitter, stretch=1)
 
         btn_row = QHBoxLayout()
-        thesaurus_btn = QPushButton("Load VOSviewer thesaurus\u2026")
-        thesaurus_btn.setToolTip(
-            "Add the synonyms of a VOSviewer thesaurus file (tab separated:\n"
-            "label, replace by). Items with an empty 'replace by' are excluded.")
-        thesaurus_btn.clicked.connect(self._load_thesaurus)
-        btn_row.addWidget(thesaurus_btn)
-
         reset_btn = QPushButton("Reset defaults")
+        reset_btn.setToolTip(
+            "Reset the map parameters to their default values.\n"
+            "The synonyms and the exclude list are kept.")
         reset_btn.clicked.connect(self._reset_network_defaults)
         btn_row.addWidget(reset_btn)
         btn_row.addStretch(1)
 
-        open_btn = QPushButton("Open last map")
-        open_btn.setToolTip("Open graphs/<Criterion>_network.html in the web browser.")
+        open_btn = QPushButton("Open last network map")
+        open_btn.setToolTip("Open the last network map of this criterion in the web browser.")
         open_btn.clicked.connect(self._open_network_map)
         btn_row.addWidget(open_btn)
 
@@ -1177,26 +1802,34 @@ class ScientoPyGui(QMainWindow):
         thematic_btn.clicked.connect(self.thematic_run)
         btn_row.addWidget(thematic_btn)
 
-        run_btn = QPushButton("Generate map")
+        run_btn = QPushButton("Network map")
+        run_btn.setDefault(True)
         run_btn.setToolTip(
             "Build the co-occurrence network (VOSviewer style) and open the\n"
-            "interactive 3D map in the web browser. Works offline.")
+            "interactive 3D map in the web browser. Works offline.\nShortcut: Ctrl+R")
         run_btn.clicked.connect(self.network_run)
         btn_row.addWidget(run_btn)
         page_layout.addLayout(btn_row)
 
     def _reset_network_defaults(self):
         import networkAnalysis as na
-        self.net_criterion.setCurrentText("authorKeywords")
-        self.net_start_year.setValue(globalVar.DEFAULT_START_YEAR)
-        self.net_end_year.setValue(globalVar.DEFAULT_END_YEAR)
+        start, end = self._default_year_range()
+        set_combo(self.net_criterion, "authorKeywords")
+        self.net_end_year.setValue(end)
+        self.net_start_year.setValue(start)
         self.net_length.setValue(na.DEFAULT_LENGTH)
         self.net_min_occ.setValue(na.DEFAULT_MIN_OCCURRENCES)
         self.net_skip_first.setValue(0)
-        self.net_counting.setCurrentText(na.DEFAULT_COUNTING)
+        set_combo(self.net_counting, na.DEFAULT_COUNTING)
         self.net_resolution.setValue(na.DEFAULT_RESOLUTION)
         self.net_min_cluster.setValue(na.DEFAULT_MIN_CLUSTER_SIZE)
         self.net_previous.setChecked(False)
+        self.net_title.clear()
+        self.net_min_link.setValue(na.DEFAULT_MIN_LINK_STRENGTH)
+        self.net_cohesion.setValue(na.DEFAULT_COHESION)
+        self.theme_labels.setValue(na.DEFAULT_THEME_LABELS)
+        set_combo(self.theme_axes, "rank")
+        self.status_bar.showMessage("Map parameters reset to defaults")
 
     def _load_thesaurus(self):
         import networkAnalysis as na
@@ -1217,10 +1850,13 @@ class ScientoPyGui(QMainWindow):
             self.net_synonyms.appendPlainText("\n".join(lines))
         if excluded:
             self.net_exclude.appendPlainText("\n".join(excluded))
-        self.status_bar.showMessage("Thesaurus loaded: %d groups, %d excluded items" % (len(lines), len(excluded)))
+        message = "Thesaurus loaded: %d synonym groups" % len(lines)
+        if excluded:
+            message += ", %d items added to the Exclude list of the maps tab" % len(excluded)
+        self.status_bar.showMessage(message)
 
     def _network_html_path(self):
-        criterion = self.net_criterion.currentText()
+        criterion = self.net_criterion.currentData()
         return os.path.join(globalVar.GRAPHS_OUT_FOLDER, criterion[0].upper() + criterion[1:] + "_network.html")
 
     def _open_network_map(self):
@@ -1229,14 +1865,16 @@ class ScientoPyGui(QMainWindow):
             import pathlib
             webbrowser.open(pathlib.Path(os.path.abspath(path)).as_uri())
         else:
-            QMessageBox.information(self, "Network map",
-                                    "No map yet for %s. Click Generate map first." % self.net_criterion.currentText())
+            QMessageBox.information(
+                self, "Network map",
+                "No network map yet for %s. Click Network map first."
+                % self.net_criterion.currentText().lower())
 
     def _network_params(self):
-        """Parameters of the Network Map tab that select items, links and clusters."""
+        """Parameters of the maps tab that select items, links and clusters."""
         synonyms = ";".join(line.strip() for line in self.net_synonyms.toPlainText().splitlines() if line.strip())
         return dict(
-            criterion=self.net_criterion.currentText(),
+            criterion=self.net_criterion.currentData(),
             start_year=self.net_start_year.value(),
             end_year=self.net_end_year.value(),
             length=self.net_length.value(),
@@ -1244,10 +1882,12 @@ class ScientoPyGui(QMainWindow):
             skip_first=self.net_skip_first.value(),
             exclude=self.net_exclude.toPlainText().splitlines(),
             synonyms=synonyms,
-            counting=self.net_counting.currentText(),
+            counting=self.net_counting.currentData(),
+            min_link_strength=self.net_min_link.value(),
             resolution=self.net_resolution.value(),
             min_cluster_size=self.net_min_cluster.value(),
             previous_results=self.net_previous.isChecked(),
+            title=self.net_title.text().strip(),
         )
 
     def _run_with_progress(self, task, what):
@@ -1299,6 +1939,7 @@ class ScientoPyGui(QMainWindow):
             return
 
         params = self._network_params()
+        params["cohesion"] = self.net_cohesion.value()
         self.status_bar.showMessage("Building network map...")
         result = self._run_with_progress(lambda: na.generate_network_map(**params), "Network map")
         if result is None:
@@ -1335,14 +1976,15 @@ class ScientoPyGui(QMainWindow):
         apply_matplotlib_theme(QApplication.instance(), self.config.get("graph_appearance", "Same as UI"))
         self.scientoPy.closePlot()
         args = types.SimpleNamespace(
-            criterion=params["criterion"], labels=na.DEFAULT_THEME_LABELS, axes="rank",
-            graphTitle="", savePlot="",
+            criterion=params["criterion"], labels=self.theme_labels.value(),
+            axes=self.theme_axes.currentData(),
+            graphTitle=params["title"], savePlot="",
             plotWidth=globalVar.DEFAULT_PLOT_WIDTH, plotHeight=globalVar.DEFAULT_PLOT_HEIGHT)
         graphUtils.show_thematic_map(plt, themes, args, fromGui=True)
         QApplication.instance().processEvents()
 
-        self._load_results_table(files["themes"])
-        self.tabs.setCurrentIndex(2)  # Switch to Results tab
+        self._load_results_table(files["themes"], kind="themes")
+        self.tabs.setCurrentWidget(self.page_results)
 
     def top_cited_run(self):
         import topCitedPapers
@@ -1365,10 +2007,11 @@ class ScientoPyGui(QMainWindow):
             return
 
         headers, rows, path = result
-        self._populate_ext_results(headers, rows, source_label="the most cited documents (%s)" % path)
+        self._populate_ext_results(
+            headers, rows, description="most cited documents, saved to %s" % path, file_path=path)
         self.status_bar.showMessage(
             "Most cited documents \u2014 %d documents \u2014 saved to %s" % (len(rows), path))
-        self.tabs.setCurrentIndex(3)  # Switch to Extended Results tab
+        self.tabs.setCurrentWidget(self.page_documents)
 
     def _default_export_path(self):
         if self.rb_src_preprocessed.isChecked():
@@ -1423,10 +2066,13 @@ class ScientoPyGui(QMainWindow):
             tip = ("" if enabled else
                    "Run an analysis in this session before exporting extended results.")
         self.export_btn.setEnabled(enabled)
-        self.export_btn.setToolTip(tip)
+        self.export_btn.setToolTip(tip or "Shortcut: Ctrl+R")
 
-        if not self.export_path_entry.text():
-            self.export_path_entry.setText(self._default_export_path())
+        # The suggested destination follows the source, unless the user wrote one
+        current = self.export_path_entry.text()
+        if not current or current == getattr(self, "_export_auto_path", None):
+            self._export_auto_path = self._default_export_path()
+            self.export_path_entry.setText(self._export_auto_path)
 
     def _run_export(self):
         if self.rb_src_preprocessed.isChecked():
@@ -1579,29 +2225,39 @@ class ScientoPyGui(QMainWindow):
 
     def _reset_analysis_defaults(self):
         """Reset all analysis parameters to their default values."""
-        self.combo_criterion.setCurrentIndex(
-            globalVar.validCriterion.index("authorKeywords"))
-        self.combo_graph_type.setCurrentIndex(
-            globalVar.validGrapTypes.index("bar_trends"))
-        self.spin_start_year.setValue(globalVar.DEFAULT_START_YEAR)
-        self.spin_end_year.setValue(globalVar.DEFAULT_END_YEAR)
+        start, end = self._default_year_range()
+        set_combo(self.combo_graph_type, "bar_trends")
+        set_combo(self.combo_criterion, "authorKeywords")
+        self.spin_end_year.setValue(end)
+        self.spin_start_year.setValue(start)
         self.spin_topics_length.setValue(10)
         self.spin_skip_first.setValue(0)
         self.spin_window_width.setValue(2)
         self.chk_previous_results.setChecked(False)
         self.chk_trend_analysis.setChecked(False)
+        self.edit_graph_title.clear()
+        self.spin_plot_width.setValue(globalVar.DEFAULT_PLOT_WIDTH)
+        self.spin_plot_height.setValue(globalVar.DEFAULT_PLOT_HEIGHT)
+        self.chk_y_log.setChecked(False)
+        self.chk_p_year.setChecked(False)
+        self.chk_agr_for_graph.setChecked(False)
+        self.chk_only_first.setChecked(False)
+        self.edit_filter.clear()
+        self.edit_word_cloud_mask.clear()
         self.custom_topics.clear()
         self.status_bar.showMessage("Analysis parameters reset to defaults")
 
     def _run_current_tab(self):
-        """Ctrl+R handler: run preprocess or analysis depending on active tab."""
-        idx = self.tabs.currentIndex()
-        if idx == 0:
+        """Ctrl+R handler: run the main action of the active tab."""
+        page = self.tabs.currentWidget()
+        if page is self.page_preprocess:
             self.run_preprocess()
-        elif idx == 1:
+        elif page is self.page_analysis:
             self.scientoPyRun()
-        elif idx == 5:
+        elif page is self.page_maps:
             self.network_run()
+        elif page is self.page_export and self.export_btn.isEnabled():
+            self._run_export()
 
     # ── Actions ───────────────────────────────────────────────
 
@@ -1610,24 +2266,6 @@ class ScientoPyGui(QMainWindow):
         if dir_name:
             self.dataset_entry.setText(dir_name)
             self.config["last_dataset_folder"] = dir_name
-
-    def open_results(self):
-        if os.path.exists(self.scientoPy.resultsFileName):
-            webbrowser.open(self.scientoPy.resultsFileName)
-        else:
-            QMessageBox.critical(self, "Error", "No results found, please run the analysis first")
-
-    def open_ext_results(self):
-        if os.path.exists(self.scientoPy.extResultsFileName):
-            webbrowser.open(self.scientoPy.extResultsFileName)
-        else:
-            QMessageBox.critical(self, "Error", "No extended results found, please run the analysis first")
-
-    def open_preprocess_brief(self):
-        if os.path.exists(self.scientoPy.preprocessBriefFileName):
-            webbrowser.open(self.scientoPy.preprocessBriefFileName)
-        else:
-            QMessageBox.critical(self, "Error", "No preprocess brief found, please run the preprocess first")
 
     def run_preprocess(self):
         dataset_path = self.dataset_entry.text()
@@ -1671,7 +2309,6 @@ class ScientoPyGui(QMainWindow):
 
             if globalVar.cancelProcess:
                 self.status_bar.showMessage("Preprocessing canceled")
-                QMessageBox.critical(self, "Error", "Preprocessing canceled")
             elif globalVar.totalPapers > 0:
                 self.status_bar.showMessage(
                     "Preprocessing complete \u2014 %d papers" % globalVar.totalPapers)
@@ -1679,7 +2316,9 @@ class ScientoPyGui(QMainWindow):
                 self.preprocess.graphBrief()
                 self._load_results_table()
                 self._update_export_enabled()
-                self.tabs.setCurrentIndex(2)  # Switch to Results tab
+                self._refresh_dataset_status()
+                self._apply_year_defaults()
+                self.tabs.setCurrentWidget(self.page_results)
             elif globalVar.totalPapers == 0:
                 self.status_bar.showMessage("Preprocessing failed: no valid files")
                 QMessageBox.critical(self, "Error",
@@ -1705,10 +2344,40 @@ class ScientoPyGui(QMainWindow):
                                  "No preprocess input dataset, please run the preprocess first")
             return
 
+        criterion = self.combo_criterion.currentData()
+        topics_text = self.custom_topics.toPlainText().strip()
+        if criterion == "abstract" and not topics_text:
+            QMessageBox.information(
+                self, "Analysis",
+                "The abstract criterion looks for your topics inside the abstracts, "
+                "so it needs custom topics.\n\nWrite them in the Custom topics box, "
+                "one per line, for example:\n    machine learning, deep learning\n    sensor*")
+            self.custom_topics.setFocus()
+            return
+
+        mask = self.edit_word_cloud_mask.text().strip() if self.edit_word_cloud_mask.isEnabled() else ""
+        if mask and not os.path.isfile(mask):
+            QMessageBox.critical(self, "Error", "Word cloud mask image not found: %s" % mask)
+            return
+
         self.scientoPy.closePlot()
 
-        self.scientoPy.criterion = self.combo_criterion.currentText()
-        self.scientoPy.graphType = self.combo_graph_type.currentText()
+        self.scientoPy.criterion = criterion
+        self.scientoPy.graphType = self.combo_graph_type.currentData()
+        # An option that does not apply to this criterion or graph is not used
+        self.scientoPy.graphTitle = self.edit_graph_title.text().strip()
+        self.scientoPy.yLog = self.chk_y_log.isEnabled() and self.chk_y_log.isChecked()
+        self.scientoPy.pYear = self.chk_p_year.isEnabled() and self.chk_p_year.isChecked()
+        self.scientoPy.agrForGraph = self.chk_agr_for_graph.isEnabled() and self.chk_agr_for_graph.isChecked()
+        self.scientoPy.onlyFirst = self.chk_only_first.isEnabled() and self.chk_only_first.isChecked()
+        self.scientoPy.filter = self.edit_filter.text().strip() if self.edit_filter.isEnabled() else ""
+        self.scientoPy.wordCloudMask = mask
+        if self.spin_plot_width.isEnabled():
+            self.scientoPy.plotWidth = self.spin_plot_width.value()
+            self.scientoPy.plotHeight = self.spin_plot_height.value()
+        else:
+            self.scientoPy.plotWidth = globalVar.DEFAULT_PLOT_WIDTH
+            self.scientoPy.plotHeight = globalVar.DEFAULT_PLOT_HEIGHT
         self.scientoPy.startYear = self.spin_start_year.value()
         self.scientoPy.endYear = self.spin_end_year.value()
         self.scientoPy.length = self.spin_topics_length.value()
@@ -1717,7 +2386,6 @@ class ScientoPyGui(QMainWindow):
         self.scientoPy.previousResults = self.chk_previous_results.isChecked()
         self.scientoPy.trend = self.chk_trend_analysis.isChecked()
 
-        topics_text = self.custom_topics.toPlainText().strip()
         if topics_text:
             self.scientoPy.topics = topics_text.replace("\n", ";")
         else:
@@ -1763,7 +2431,7 @@ class ScientoPyGui(QMainWindow):
                 "No results found. Check the year range and the criterion.")
             return
         self.status_bar.showMessage(
-            "Analysis complete \u2014 %d topics found" % topic_count)
+            "Analysis complete \u2014 %d %s found" % (topic_count, "topic" if topic_count == 1 else "topics"))
 
         apply_matplotlib_theme(QApplication.instance(), self.config.get("graph_appearance", "Same as UI"))
 
@@ -1795,10 +2463,11 @@ class ScientoPyGui(QMainWindow):
 
         # Results table is small (<= 200 rows); load it now.
         if self.scientoPy.resultsFileName:
-            self._load_results_table(self.scientoPy.resultsFileName)
+            self._load_results_table(self.scientoPy.resultsFileName, kind="analysis")
         self._update_export_enabled()
+        self._update_previous_results_enabled()
         if self.scientoPy.resultsFileName:
-            self.tabs.setCurrentIndex(2)  # Switch to Results tab
+            self.tabs.setCurrentWidget(self.page_results)
         app.processEvents()
 
         # Extended results can be very large — defer so the plot paints
@@ -1854,8 +2523,12 @@ class ScientoPyGui(QMainWindow):
         if hasattr(self, 'analysis_splitter'):
             self.config["splitter_sizes"] = self.analysis_splitter.sizes()
         # Save analysis parameters
-        self.config["criterion"] = self.combo_criterion.currentText()
-        self.config["graph_type"] = self.combo_graph_type.currentText()
+        self.config["last_dataset_folder"] = self.dataset_entry.text().strip()
+        self.config["remove_duplicates"] = self.chk_remove_dupl.isChecked()
+        # With the world map the criterion list is locked on countries
+        self.config["criterion"] = (self.combo_criterion.currentData() if self.combo_criterion.isEnabled()
+                                    else self._criterion_before_map)
+        self.config["graph_type"] = self.combo_graph_type.currentData()
         self.config["start_year"] = self.spin_start_year.value()
         self.config["end_year"] = self.spin_end_year.value()
         self.config["topics_length"] = self.spin_topics_length.value()
@@ -1864,19 +2537,35 @@ class ScientoPyGui(QMainWindow):
         self.config["previous_results"] = self.chk_previous_results.isChecked()
         self.config["trend_analysis"] = self.chk_trend_analysis.isChecked()
         self.config["synonyms"] = self.analysis_synonyms.toPlainText()
+        self.config.pop("net_synonyms", None)   # one shared list now
+        self.config["more_options_open"] = self.analysis_more.isExpanded()
+        self.config["graph_title"] = self.edit_graph_title.text()
+        self.config["plot_width"] = self.spin_plot_width.value()
+        self.config["plot_height"] = self.spin_plot_height.value()
+        self.config["y_log"] = self.chk_y_log.isChecked()
+        self.config["p_year"] = self.chk_p_year.isChecked()
+        self.config["agr_for_graph"] = self.chk_agr_for_graph.isChecked()
+        self.config["only_first"] = self.chk_only_first.isChecked()
+        self.config["filter"] = self.edit_filter.text()
+        self.config["word_cloud_mask"] = self.edit_word_cloud_mask.text()
         # Save network map parameters
-        self.config["net_criterion"] = self.net_criterion.currentText()
+        self.config["net_criterion"] = self.net_criterion.currentData()
         self.config["net_start_year"] = self.net_start_year.value()
         self.config["net_end_year"] = self.net_end_year.value()
         self.config["net_length"] = self.net_length.value()
         self.config["net_min_occurrences"] = self.net_min_occ.value()
         self.config["net_skip_first"] = self.net_skip_first.value()
-        self.config["net_counting"] = self.net_counting.currentText()
+        self.config["net_counting"] = self.net_counting.currentData()
         self.config["net_resolution"] = self.net_resolution.value()
         self.config["net_min_cluster_size"] = self.net_min_cluster.value()
         self.config["net_previous_results"] = self.net_previous.isChecked()
-        self.config["net_synonyms"] = self.net_synonyms.toPlainText()
         self.config["net_exclude"] = self.net_exclude.toPlainText()
+        self.config["net_more_options_open"] = self.net_more.isExpanded()
+        self.config["net_title"] = self.net_title.text()
+        self.config["net_min_link_strength"] = self.net_min_link.value()
+        self.config["net_cohesion"] = self.net_cohesion.value()
+        self.config["theme_labels"] = self.theme_labels.value()
+        self.config["theme_axes"] = self.theme_axes.currentData()
         save_config(self.config)
         event.accept()
 
