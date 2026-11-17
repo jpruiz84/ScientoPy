@@ -75,7 +75,7 @@
 
 \begin{center}
 \includegraphics[scale=0.5]{./figures/scientopy_logo.eps}\\
-{\LARGE \textbf{ScientoPy v 3.0.1, User Manual\\}}
+{\LARGE \textbf{ScientoPy v 3.2.0, User Manual\\}}
 \vspace*{0.5cm}
 \includegraphics[scale=0.2]{./figures/escudoUnicacuaSolo.eps}\\
 \vspace*{0.5cm}
@@ -99,7 +99,7 @@ Juan Pablo Ruiz Rosero\\
 \item \textbf{macOS:} Download \verb|ScientoPy-macos-arm64.zip|, unzip and run \verb|./ScientoPyGui|
 \end{itemize}
 
-\textbf{Note (Windows):} On first run, Windows SmartScreen may show a warning. Click ``More info'' then ``Run anyway''. This occurs because the application is not code-signed.
+\textbf{Note (Windows):} The Windows executable is digitally signed. On first run of a new release, Windows SmartScreen may still show a warning: click ``More info'' and then ``Run anyway''.
 
 \subsection{From source}
 
@@ -119,38 +119,45 @@ pip install -r requirements.txt
 
 \section{Interface overview}
 
-ScientoPy uses a PySide6 (Qt 6) graphical interface with five tabs, a menu bar, and a status bar. The window is resizable with a minimum size of 853$\times$480 pixels. The five tabs are:
+ScientoPy uses a PySide6 (Qt 6) graphical interface with six tabs, a menu bar, and a status bar. The window is resizable with a minimum size of 853$\times$480 pixels. The tabs follow the order of the work:
 
 \begin{enumerate}
-\item \textbf{1. Pre-processing} -- select the dataset folder and run the parallel Polars-based preprocessing pipeline.
-\item \textbf{2. Analysis} -- configure and run a scientometric analysis.
-\item \textbf{3. Results} -- browse the top-topic table from the last analysis (or the preprocessing brief right after a preprocess run).
-\item \textbf{4. Extended Results} -- per-document table with the papers that contributed to each top topic.
-\item \textbf{5. Export} -- on-demand CSV export of the preprocessed corpus or the analysis results (Scopus- or WoS-style fields).
+\item \textbf{1. Pre-processing} -- select the dataset folder and run the preprocess. The tab shows the documents and the publication years of the preprocessed dataset.
+\item \textbf{2. Analysis} -- configure and run a scientometric analysis, and list the most cited documents.
+\item \textbf{3. Results} -- table of the last analysis, the preprocess report, or the themes of the thematic map.
+\item \textbf{4. Documents} -- documents of each topic of the last analysis, or the most cited documents.
+\item \textbf{5. Network \& Thematic Maps} -- network map and thematic map of the topics that appear together.
+\item \textbf{6. Export} -- on-demand CSV export of the preprocessed dataset or the analysis results (Scopus- or WoS-style fields).
 \end{enumerate}
 
 \begin{center}
 	\includegraphics[width=0.85\textwidth]{./figures/gui_preprocess_tab.png}
 \end{center}
 
+The lists show readable names, for example \emph{Author keywords} or \emph{Bars with trends}. Hover an option of a list to see what it is and its name in the scripts (\verb|authorKeywords|, \verb|bar_trends|). Most of the controls have a tooltip that explains them.
+
 \subsection{Menu bar}
 \begin{itemize}
-\item \textbf{View $\rightarrow$ Appearance:} Switch between Light, Dark, and System theme modes. The selected mode is saved and restored on next launch.
+\item \textbf{File:} select the dataset folder, run the current tab, open the \verb|results| or the \verb|graphs| folder, and quit.
+\item \textbf{View $\rightarrow$ Appearance:} switch between Light, Dark, and System theme modes.
+\item \textbf{View $\rightarrow$ Graph appearance:} choose the theme of the graphs (Light, Dark, or the same as the interface).
+\item \textbf{Help:} open this manual, the manual of the scripts and the example paper, see the keyboard shortcuts, how to cite ScientoPy, the website, and the version.
 \end{itemize}
 
 \subsection{Keyboard shortcuts}
 \begin{itemize}
-\item \textbf{Ctrl+O} -- Browse and select a dataset folder
-\item \textbf{Ctrl+R} -- Run (preprocess on Tab 1, analysis on Tab 2)
-\item \textbf{Ctrl+1/2/3/4/5} -- Switch to the corresponding tab
-\item \textbf{Ctrl+C} -- Copy selected cells in the Results or Extended Results tables
+\item \textbf{Ctrl+O} -- Select the dataset folder
+\item \textbf{Ctrl+R} -- Run the current tab: preprocess (Tab 1), analysis (Tab 2), network map (Tab 5), or export (Tab 6)
+\item \textbf{Ctrl+1 \ldots{} Ctrl+6} -- Open the corresponding tab
+\item \textbf{Ctrl+C} -- Copy the selected cells of the Results or Documents tables
+\item \textbf{Ctrl+Q} -- Quit
 \end{itemize}
 
 \subsection{Status bar}
-The status bar at the bottom of the window shows feedback messages such as ``Preprocessing complete -- 5,548 papers'', ``Analysis complete -- 10 topics found'', or error information.
+The status bar at the bottom of the window shows feedback messages such as ``Preprocessing complete -- 5,548 papers'' or ``Analysis complete -- 10 topics found''. Its right side always shows the documents and the publication years of the preprocessed dataset, for example ``5,524 documents, 2006--2026''.
 
 \subsection{Configuration persistence}
-ScientoPy saves the following settings to \verb|scientopy_config.json| and restores them on next launch: window size and position, splitter proportions, appearance mode, last dataset folder, and all analysis parameters (criterion, graph type, year range, topics length, skip first, window width, and checkbox states).
+ScientoPy saves the following settings to \verb|scientopy_config.json| and restores them on next launch: window size, splitter proportions, appearance modes, dataset folder, the analysis parameters and options, the synonyms, and the parameters of the maps.
 
 
 \section{Download the bibliometric dataset}
@@ -199,15 +206,17 @@ First we need to preprocess the downloaded dataset. This preprocess merges all t
 \end{center}
 
 \begin{enumerate}
-\item Click the \verb|Browse| button, and select the folder that contains the downloaded dataset. The folder is scanned \textbf{recursively}, so Scopus and WoS exports can be placed in sub-directories. For the example dataset, select the folder \verb|dataInExample| inside the ScientoPy directory. Alternatively, use the keyboard shortcut \textbf{Ctrl+O}.
+\item Click the \verb|Browse...| button, and select the folder that contains the downloaded dataset. The folder is scanned \textbf{recursively}, so Scopus and WoS exports can be placed in sub-directories. For the example dataset, select the folder \verb|dataInExample| inside the ScientoPy directory. Alternatively, use the keyboard shortcut \textbf{Ctrl+O}.
 \item Ensure the \verb|Remove duplicated documents| checkbox is checked (default).
 \item Click the \verb|Run preprocess| button (or press \textbf{Ctrl+R}). A progress dialog appears and shows each stage of the pipeline: \verb|[1/4] Loading papers|, \verb|[2/4] Disambiguating Scopus author names|, \verb|[3/4] Removing duplicates|, and \verb|[4/4] Saving preprocessed corpus|, with a progress bar per stage.
 \item After preprocessing completes, the preprocess brief graph will appear and the application will automatically switch to the \textbf{3. Results} tab showing the preprocess brief table.
 \end{enumerate}
 
+Above the dataset folder, the tab shows the preprocessed dataset that the other tabs will use, for example ``Preprocessed dataset: 5,524 documents, 2006--2026 (publication years)''. The year range of the Analysis and Maps tabs is set to the years of the dataset, unless you already chose a range that the dataset covers.
+
 As result, inside the folder \verb|ScientoPy/dataPre| you will find the following files:
 \begin{itemize}
-\item \textbf{papersPreprocessed.parquet:} canonical preprocessed corpus (Apache Parquet, Zstd-compressed). This is the input used by every subsequent analysis. To get a Scopus- or WoS-style CSV copy, use the \textbf{5. Export} tab (Section~\ref{sec_export_tab}).
+\item \textbf{papersPreprocessed.parquet:} canonical preprocessed corpus (Apache Parquet, Zstd-compressed). This is the input used by every subsequent analysis. To get a Scopus- or WoS-style CSV copy, use the \textbf{6. Export} tab (Section~\ref{sec_export_tab}).
 \item \textbf{PreprocessedBrief.csv:} this file briefs the pre-process statistics results, such as duplicated papers removed, types of documents, and others.
 \end{itemize}
 
@@ -223,35 +232,56 @@ The analysis tab lets you perform scientometric analysis operations. Click on th
 \subsection{Analysis parameters (left panel)}
 
 \begin{itemize}
-\item \textbf{Criterion:} the search criterion to analyze, such as author keywords, author names, countries, etc. See Table~\ref{table_criterion} for the full list.
+\item \textbf{Criterion:} the field to analyze, such as author keywords, authors, or countries. See Table~\ref{table_criterion} for the full list.
 \item \textbf{Graph type:} the type of output graph. See Section~\ref{sec_graph_types} for details.
-\item \textbf{Start year:} limit the start year for the analysis and graphs.
-\item \textbf{End year:} limit the end year for the analysis and graphs.
+\item \textbf{Start year} and \textbf{End year:} year range of the analysis and the graphs. The start year cannot be after the end year: moving one past the other drags it along.
 \item \textbf{Topics length:} number of top topics to find in the selected criterion.
 \item \textbf{Skip first:} number of first top topics to skip during the analysis.
 \item \textbf{Window (years):} window width in years for growth indicators (AGR, ADY).
-\item \textbf{Use previous results:} run the analysis based on the output documents from the previous run.
+\item \textbf{Use previous results:} run the analysis on the documents found by the previous analysis. It is available after the first analysis.
 \item \textbf{Trend analysis:} find the top trending topics with the highest average growth rate.
 \end{itemize}
 
-\subsection{Custom topics (right panel)}
+\subsection{More options}
 
-The right panel contains a text area for entering custom topics. Enter one topic per line. Topics can be grouped with commas and separated by line breaks. The asterisk (*) wildcard is supported. See Section~\ref{sec_custom_topics} for details.
+Click \verb|More options| to see the options that are used less often. Each one is enabled only for the criterion or graph it applies to.
+
+\begin{center}
+	\includegraphics[width=0.85\textwidth]{./figures/gui_analysis_more_options.png}
+\end{center}
+
+\begin{itemize}
+\item \textbf{Graph title:} title written above the graph.
+\item \textbf{Graph size:} width and height of the graph in inches, for the bars, time line and world map graphs.
+\item \textbf{Logarithmic scale:} logarithmic documents axis in the time line and evolution graphs, and logarithmic color scale in the world map.
+\item \textbf{Percentage per year:} in the time line graph, show each topic as a percentage of the documents published that year.
+\item \textbf{Growth rate (AGR) in evolution:} in the evolution graph, plot the AGR instead of the average documents per year (ADY).
+\item \textbf{Only the first author or country:} count only the first author, or the country or institution of the first author of each document.
+\item \textbf{Institutions of:} with the \emph{Institutions with country} criterion, keep only the institutions of one country, for example Colombia.
+\item \textbf{Word cloud mask:} PNG image that gives its shape to the word cloud.
+\end{itemize}
+
+\subsection{Custom topics and synonyms (right panel)}
+
+The \verb|Custom topics| box is empty by default, and ScientoPy finds the top topics of the criterion. To analyze your own topics, write one topic per line. Commas group the names of one topic, and the asterisk (*) is a wildcard. See Section~\ref{sec_custom_topics} for details.
+
+The \verb|Synonyms| box lists the names that mean the same, one group per line, separated by commas. The first name of each group is the one shown in the results. See Section~\ref{sec_synonyms} for details.
 
 \subsection{Action buttons (bottom bar)}
 
 \begin{itemize}
 \item \textbf{Generate BibTeX:} generate a BibTeX bibliography file from a LaTeX document (see Section~\ref{sec_bibtex}).
+\item \textbf{Most cited documents:} list the most cited documents (see Section~\ref{sec_most_cited}).
 \item \textbf{Clear topics:} clear the Custom topics text area.
-\item \textbf{Reset defaults:} reset all analysis parameters to their default values (criterion: authorKeywords, graph type: bar\_trends, years: 1990 to last year, topics length: 10, skip first: 0, window: 2, checkboxes unchecked, custom topics cleared).
+\item \textbf{Reset defaults:} reset the analysis parameters to their default values (criterion: Author keywords, graph type: Bars with trends, years: the years of the dataset, topics length: 10, skip first: 0, window: 2, options unchecked, custom topics cleared). The synonyms are kept.
 \item \textbf{Run:} execute the analysis with the current parameters. Can also be triggered with \textbf{Ctrl+R}.
 \end{itemize}
 
-After the analysis completes, results are displayed in the \textbf{3. Results} and \textbf{4. Extended Results} tabs, and the output graph appears.
+After the analysis completes, results are displayed in the \textbf{3. Results} and \textbf{4. Documents} tabs, and the output graph appears.
 
 \subsection{Criterion descriptions}
 
-The ScientoPy criterion are described in Table~\ref{table_criterion}:
+The ScientoPy criterion are described in Table~\ref{table_criterion}, with the name shown in the list and the name used by the scripts:
 
 \begin{table}[h]
 	\centering
@@ -259,22 +289,22 @@ The ScientoPy criterion are described in Table~\ref{table_criterion}:
 	\label{table_criterion}
 
 	\renewcommand{\arraystretch}{1.5}
-	\begin{tabular}{p{3.5cm} p{10cm}}
+	\begin{tabular}{p{4.6cm} p{3.6cm} p{8cm}}
 	\hline\noalign{\smallskip}
-	Criterion       & Description                             \\
+	Criterion       & Name in the scripts & Description                             \\
 	\noalign{\smallskip}\hline\noalign{\smallskip}
-	\textbf{author}         & Authors last name and first name initial                                                                       \\
-	\textbf{sourceTitle}    & Publication or journal name                                                                                    \\
-	\textbf{subject}        & Research areas, only from WoS documents                                                                        \\
-	\textbf{authorKeywords} & Author keywords                                                                                                \\
-	\textbf{indexKeywords}  & Keywords generated by the index, from WoS \textit{Keyword Plus}, and from Scopus \textit{Indexed keywords} \\
-	\textbf{bothKeywords}   & AuthorKeywords and indexKeywords are used for this search                                                      \\
-	\textbf{abstract}       & Document abstract, for use with pre-defined topics and asterisk wildcard\\
-	\textbf{documentType}   & Type of document                                                                                               \\
-	\textbf{dataBase}       & Database where the document was extracted (WoS or Scopus)                                                      \\
-	\textbf{country}        & Country extracted from authors affiliations                                                                    \\
-	\textbf{institution}    & Institution extracted from authors affiliations                                                                \\
-	\textbf{institutionWithCountry}    & Institution with country extracted from authors affiliations                                        \\
+	\textbf{Authors}         & author & Authors last name and first name initial                                                                       \\
+	\textbf{Sources (journals and conferences)}    & sourceTitle & Publication or journal name                                                         \\
+	\textbf{Subject areas (WoS)}        & subject & Research areas, only from WoS documents                                                             \\
+	\textbf{Author keywords} & authorKeywords & Author keywords                                                                                        \\
+	\textbf{Index keywords}  & indexKeywords & Keywords generated by the index, from WoS \textit{Keyword Plus}, and from Scopus \textit{Indexed keywords} \\
+	\textbf{Author and index keywords}   & bothKeywords & Author keywords and index keywords together                                                \\
+	\textbf{Abstract (custom topics)}       & abstract & Document abstract, for use with custom topics and the asterisk wildcard\\
+	\textbf{Document types}   & documentType & Type of document                                                                                      \\
+	\textbf{Databases (Scopus, WoS)}       & dataBase & Database where the document was extracted (WoS or Scopus)                                    \\
+	\textbf{Countries}        & country & Country extracted from authors affiliations                                                                 \\
+	\textbf{Institutions}    & institution & Institution extracted from authors affiliations                                                          \\
+	\textbf{Institutions with country}    & institutionWithCountry & Institution with country extracted from authors affiliations                     \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 
@@ -282,7 +312,7 @@ The ScientoPy criterion are described in Table~\ref{table_criterion}:
 
 \subsection{Extract top topics}
 
-To find the top 10 author keywords, keep the default parameters in the analysis tab and click the \verb|Run| button. This will generate a list with the top 10 topics on the selected criterion (in this case authorKeywords), with the number of documents per topic. The bar trends graph will appear, and the quantitative results are saved in the folder \verb|ScientoPy/results| and displayed in the \textbf{3. Results} tab.
+To find the top 10 author keywords, keep the default parameters in the analysis tab and click the \verb|Run| button. This will generate a list with the top 10 topics on the selected criterion (in this case Author keywords), with the number of documents per topic. The bar trends graph will appear, and the quantitative results are saved in the folder \verb|ScientoPy/results| and displayed in the \textbf{3. Results} tab.
 
 \subsection{Analyze custom topics inside a criterion}
 \label{sec_custom_topics}
@@ -299,6 +329,8 @@ WSN, Wireless sensor network, Wireless sensor networks
 RFID, RADIO FREQUENCY IDENTIFICATION
 \end{verbatim}
 
+A document with several names of the same topic counts once for that topic. The \emph{Abstract} criterion looks for your topics inside the abstracts, so it always needs custom topics.
+
 \textbf{Tip:} You can also use the \verb|Analyze selection| button in the \textbf{3. Results} tab to copy selected topic names directly into the Custom topics field (see Section~\ref{sec_results_tab}).
 
 \subsection{Asterisk (*) wildcard}
@@ -307,9 +339,46 @@ You can use the asterisk wildcard to find phrases or words which start or end wi
 
 ScientoPy prints the topics found for the wildcard-based search in the console output. You can copy this information to analyze each specific topic found individually.
 
+\subsection{Synonyms}
+\label{sec_synonyms}
+
+The same topic is often written in several ways: abbreviations (``IoT'', ``Internet of Things''), singular and plural, an author with and without the middle initial, or an institution with two names. Write those names in the \verb|Synonyms| box, one group per line, separated by commas:
+\begin{verbatim}
+Internet of Things, IoT, Internet of Things (IoT)
+Bluetooth Low Energy, BLE, Bluetooth Low Energy (BLE)
+\end{verbatim}
+
+When ScientoPy finds the top topics, the names of a group are counted as one topic, named as the first name of the group. A document with several names of the group counts once. Synonyms work in any criterion, so they also merge the names of an author or an institution.
+
+The list is shared with the \textbf{5. Network \& Thematic Maps} tab: the tables, the network map and the thematic map use the same names. For long lists, click \verb|Load thesaurus...| to add the synonyms of a VOSviewer thesaurus file (a tab separated text file with the header \verb|label| and \verb|replace by|). The items of the file with an empty \verb|replace by| are added to the Exclude list of the maps tab.
+
+\subsection{World map}
+\label{sec_world_map}
+
+Select \verb|World map (countries)| as the Graph type to shade every country by its number of documents. The criterion is set to \emph{Countries} while this graph is selected. The map shows every country found in the dataset, while the Results table keeps the top ones set by \verb|Topics length|. Countries with no documents are gray, and countries too small to see at this scale, like Singapore, get a dot.
+
+\begin{itemize}
+\item Check \verb|Logarithmic scale| in \verb|More options| to see the differences between the countries with few documents.
+\item Use \verb|Skip first| to leave out the first countries, and compare the others.
+\item Write countries in \verb|Custom topics| to shade only those.
+\end{itemize}
+
+See an example in Section~\ref{sec_graph_types}. The map works offline: the country outlines (from Natural Earth, public domain) come with ScientoPy.
+
+\subsection{Most cited documents}
+\label{sec_most_cited}
+
+Click the \verb|Most cited documents| button to list the most cited documents published between the Start year and the End year. \verb|Topics length| sets how many. With \verb|Use previous results| checked, only the documents found by the last analysis are ranked, for example the documents of a topic or a country.
+
+\begin{center}
+	\includegraphics[width=0.85\textwidth]{./figures/gui_most_cited.png}
+\end{center}
+
+The table is shown in the \textbf{4. Documents} tab and saved to \verb|results/TopCitedPapers.csv|, with the citations, the citations per year (citations divided by the years since the document was published), year, title, authors, source, document type, DOI, and EID. The citations are the ones reported by Scopus or WoS when the dataset was downloaded.
+
 \subsection{Evolution plot}
 
-Select \verb|evolution| as the Graph type to see an evolution plot. This option plots the accumulative documents, average documents per year (ADY), and percentage of documents in the last years (PDLY).
+Select \verb|Evolution| as the Graph type to see an evolution plot. This option plots the accumulative documents, average documents per year (ADY), and percentage of documents in the last years (PDLY).
 
 \textbf{Note:} select the right start and end year limits that fit your plot lines best.
 
@@ -334,9 +403,9 @@ To find the top trending topics, check the \verb|Trend analysis| checkbox and cl
 
 \subsection{Analysis based on the previous results}
 
-ScientoPy generates a lightweight internal file with all the output documents from the last run so that subsequent analyses can chain off it. For example, if you run an analysis with criterion \verb|country| and custom topic \verb|Canada|, ScientoPy writes \verb|results/lastAnalysis.parquet| with every document whose authors are affiliated in Canada. In previous versions this file was a CSV called \verb|results/papersPreprocessed.csv|; analyses no longer write any CSV automatically. Use the \textbf{5. Export} tab (Section~\ref{sec_export_tab}) if you need a CSV copy.
+ScientoPy generates a lightweight internal file with all the output documents from the last run so that subsequent analyses can chain off it. For example, if you run an analysis with criterion \emph{Countries} and custom topic \verb|Canada|, ScientoPy writes \verb|results/lastAnalysis.parquet| with every document whose authors are affiliated in Canada. In previous versions this file was a CSV called \verb|results/papersPreprocessed.csv|; analyses no longer write any CSV automatically. Use the \textbf{6. Export} tab (Section~\ref{sec_export_tab}) if you need a CSV copy.
 
-This output file can be used as input for a subsequent analysis by checking the \verb|Use previous results| checkbox. For example, you could then select criterion \verb|authorKeywords| to find the top author keywords from Canadian papers, or select criterion \verb|country| to find which countries have the most co-authored documents with Canada.
+This output file can be used as input for a subsequent analysis by checking the \verb|Use previous results| checkbox. For example, you could then select criterion \emph{Author keywords} to find the top author keywords from Canadian papers, or select criterion \emph{Countries} to find which countries have the most co-authored documents with Canada.
 
 \textbf{Note:} the output documents file is only generated when \verb|Use previous results| is \textbf{not} checked. Running multiple analyses with this option checked will not overwrite the documents output file.
 
@@ -344,11 +413,13 @@ This output file can be used as input for a subsequent analysis by checking the 
 \section{Results tab (Tab 3)}
 \label{sec_results_tab}
 
-The Results tab displays the analysis output in a sortable table. After running a preprocess, it shows the preprocessing brief. After running an analysis, it shows the top topics with their statistics (Total, AGR, ADY, PDLY, h-index, and documents per year).
+The Results tab shows a table. After running a preprocess, it shows the preprocess report. After running an analysis, it shows the top topics with their statistics (Total, AGR, ADY, PDLY, h-index, and documents per year). After a thematic map, it shows the themes. The line below the table says which one is shown and the file it comes from.
 
 \begin{center}
 	\includegraphics[width=0.85\textwidth]{./figures/gui_results_tab.png}
 \end{center}
+
+The analysis results can be sorted by clicking a column header. The years before the first document of the listed topics only hold zeros and are not shown; the CSV file keeps every year of the range.
 
 \subsection{Column tooltips}
 Hover over column headers to see tooltips with definitions of abbreviations:
@@ -362,31 +433,107 @@ Hover over column headers to see tooltips with definitions of abbreviations:
 \subsection{Action buttons}
 
 \begin{itemize}
+\item \textbf{Open CSV:} open the file of the table with your spreadsheet application.
 \item \textbf{Copy Selection:} copy the selected cells to the clipboard (also available via Ctrl+C).
 \item \textbf{Copy All:} copy the entire table to the clipboard.
-\item \textbf{Analyze selection:} copy the topic names from the selected rows to the \verb|Custom topics| text area in the Analysis tab, and switch to the Analysis tab. This is useful for quickly selecting topics from the results for further analysis with a different graph type or criterion.
+\item \textbf{Analyze selection:} copy the topic names from the selected rows to the \verb|Custom topics| text area in the Analysis tab, and switch to the Analysis tab. This is useful for quickly selecting topics from the results for further analysis with a different graph type or criterion. It is available when the table shows the topics of an analysis.
 \end{itemize}
 
 
-\section{Extended Results tab (Tab 4)}
+\section{Documents tab (Tab 4)}
 
-The Extended Results tab shows the detailed per-document output after running an analysis. Each row represents a paper associated with one of the analyzed topics, including authors, title, year, source, citations, DOI, and other metadata.
+After running an analysis, the Documents tab lists the documents of each topic: one row per document with its citations, EID, year, title, abstract, document type, authors, keywords and countries. After \verb|Most cited documents|, it shows that table (Section~\ref{sec_most_cited}).
 
 \begin{center}
-	\includegraphics[width=0.85\textwidth]{./figures/gui_ext_results_tab.png}
+	\includegraphics[width=0.85\textwidth]{./figures/gui_documents_tab.png}
 \end{center}
 
-The table is sortable by clicking column headers and supports cell selection with Ctrl+C copy.
+The table is sortable by clicking column headers and supports cell selection with Ctrl+C copy. The line below the table says what the rows are.
 
 \subsection{Action buttons}
 
 \begin{itemize}
+\item \textbf{Open CSV:} open the file of the table, when it was saved to one. The documents of each topic are not saved automatically: use \emph{Extended results} in the \textbf{6. Export} tab.
 \item \textbf{Copy Selection:} copy the selected cells to the clipboard.
 \item \textbf{Copy All:} copy the entire table to the clipboard.
 \end{itemize}
 
 
-\section{Export tab (Tab 5)}
+\section{Network \& Thematic Maps tab (Tab 5)}
+\label{sec_maps_tab}
+
+This tab draws two maps of the topics that appear together in the documents. Both use the same items and the same clusters, so the network map and the thematic map agree.
+
+\begin{center}
+	\includegraphics[width=0.85\textwidth]{./figures/gui_maps_tab.png}
+\end{center}
+
+\subsection{Parameters (left panel)}
+
+\begin{itemize}
+\item \textbf{Criterion:} items of the maps. Two items are linked when they appear in the same document, so the same tab maps keyword co-occurrence (author, index, or both keywords), co-authorship (authors), collaboration between countries or institutions, and WoS subject areas.
+\item \textbf{Start year} and \textbf{End year:} year range of the documents.
+\item \textbf{Max items:} maximum number of items in the map, the top ones by occurrences.
+\item \textbf{Min occurrences:} minimum number of documents an item must appear in.
+\item \textbf{Skip first:} leave out the first top items, for example the search terms that appear with everything.
+\item \textbf{Counting:} with \emph{Full}, every co-occurrence counts 1. With \emph{Fractional}, a document with $n$ items gives each link $1/(n-1)$, so documents with many authors or keywords weigh less.
+\item \textbf{Resolution:} clustering resolution, higher values give more and smaller clusters.
+\item \textbf{Min cluster size:} clusters with fewer items are merged into their most connected cluster.
+\item \textbf{Use previous results:} map only the documents found by the last analysis.
+\item \textbf{More options:} title of the maps, minimum link strength to keep a link, cluster cohesion of the network map layout, number of labels per theme, and theme positions (by rank or by value) of the thematic map.
+\end{itemize}
+
+\subsection{Synonyms and exclude list (right panel)}
+
+The \verb|Synonyms| box is the same list as in the Analysis tab (Section~\ref{sec_synonyms}). The \verb|Exclude| box lists the items left out of the maps, one per line, for example the terms used to search the dataset.
+
+\subsection{Network map}
+
+Click \verb|Network map| (or press \textbf{Ctrl+R}) to build the co-occurrence network and open it in the web browser as an interactive map. The analysis follows VOSviewer: links are normalized with the association strength, items are clustered by optimizing the VOSviewer quality function, and the layout uses the VOS mapping technique, in 3D and 2D.
+
+\begin{center}
+	\includegraphics[width=0.95\textwidth]{./figures/network_map.png}
+\end{center}
+
+The map is a single HTML file saved in \verb|graphs/| (for example \verb|AuthorKeywords_network.html|). It works offline in any recent browser and includes:
+
+\begin{itemize}
+\item \textbf{Views:} network (clusters), overlay by average publication year or average citations, and density; 3D orbit or flat 2D.
+\item \textbf{Crawler tour:} a spider walks the map one cluster at a time, reads the items and flags the emerging and the highly cited ones, with a dashboard that follows it.
+\item \textbf{Exploration:} search, click an item for its statistics, documents per year, strongest links and most cited documents, and timeline playback of the map growth.
+\item \textbf{Exports:} PNG and SVG images (dark or light background), videos of the crawl tour, VOSviewer map and network files, GEXF for Gephi, CSV, and JSON.
+\end{itemize}
+
+The data of the map is also saved in \verb|results/|, including \verb|<Criterion>_network_clusters.csv| with the items of every cluster, ready for a table of keywords by cluster. \verb|Open last network map| opens the last map of the selected criterion again.
+
+\subsection{Thematic map}
+
+Click \verb|Thematic map| to plot the thematic map (strategic diagram). Every cluster is a theme, placed by two values from Callon's co-word analysis:
+
+\begin{itemize}
+\item \textbf{Centrality (relevance degree):} strength of the links between the items of the theme and the items of the other themes. A central theme is tied to the rest of the field.
+\item \textbf{Density (development degree):} strength of the links between the items of the theme. A dense theme is well developed.
+\end{itemize}
+
+The link strength between two items is the equivalence index $e_{ij} = c_{ij}^2 / (c_i \, c_j)$, where $c_{ij}$ is the number of documents with both items, and $c_i$ and $c_j$ the documents with each one. The centrality of a theme is 10 times the sum of $e_{ij}$ over its links to other themes, and its density is 100 times the sum of $e_{ij}$ over the links inside the theme, divided by its number of items.
+
+\begin{center}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_thematic_map.eps}
+\end{center}
+
+The dashed lines cross at the medians and split the map in four:
+
+\begin{itemize}
+\item \textbf{Motor themes} (top right): high centrality and high density. Developed and important for the field.
+\item \textbf{Niche themes} (top left): low centrality and high density. Developed, but isolated from the rest.
+\item \textbf{Emerging or declining themes} (bottom left): low centrality and low density. Weakly developed and marginal.
+\item \textbf{Basic themes} (bottom right): high centrality and low density. Important for the field, but not developed.
+\end{itemize}
+
+The bubble area is the number of occurrences of the items of the theme, and each bubble shows its top items. Items that never appear with another item are not part of any theme. The themes, with their centrality, density, quadrant and every item, are shown in the \textbf{3. Results} tab and saved to \verb|results/<Criterion>_thematic_map.csv|.
+
+
+\section{Export tab (Tab 6)}
 \label{sec_export_tab}
 
 The Export tab produces on-demand Scopus- or WoS-style CSV files from either the full preprocessed corpus or the most recent analysis results. Exports are opt-in: neither preprocessing nor analysis writes CSV by itself anymore (the canonical on-disk format is Parquet, which is much smaller and loads faster).
@@ -407,8 +554,8 @@ The Export tab produces on-demand Scopus- or WoS-style CSV files from either the
 	\item \textbf{Scopus fields} -- Scopus column-naming convention (\verb|Authors|, \verb|Title|, \verb|EID|, \ldots).
 	\item \textbf{WoS fields} -- Web of Science field tags (\verb|AU|, \verb|TI|, \verb|UT|, \ldots).
 	\end{itemize}
-\item \textbf{Destination.} A file path for Preprocessed corpus (default \verb|export/papersPreprocessed.csv|) or Extended results (default \verb|export/<Criterion>_extended.csv|), or a folder path for Last analysis results (default \verb|export/results/|). Use the \verb|Browse...| button to pick an alternative path.
-\item \textbf{Export.} Click the \verb|Export| button. A progress dialog appears and updates through the stages \verb|Reading preprocessed corpus...| and \verb|Writing CSV (scopus fields)| with a live 0\%--100\% bar during the write. On completion, a confirmation dialog offers an \verb|Open| button to reveal the output file or folder.
+\item \textbf{Destination.} A file path for Preprocessed corpus (default \verb|export/papersPreprocessed.csv|) or Extended results (default \verb|export/<Criterion>_extended.csv|), or a folder path for Last analysis results (default \verb|export/results/|). The suggested destination follows the selected source, unless you wrote another one. Use the \verb|Browse...| button to pick an alternative path.
+\item \textbf{Export.} Click the \verb|Export| button (or press \textbf{Ctrl+R}). A progress dialog appears and updates through the stages \verb|Reading preprocessed corpus...| and \verb|Writing CSV (scopus fields)| with a live 0\%--100\% bar during the write. On completion, a confirmation dialog offers an \verb|Open| button to reveal the output file or folder.
 \end{enumerate}
 
 The \verb|Export| button is automatically disabled when the chosen Source has nothing to export (e.g.\ no preprocessed corpus has been produced yet, or \verb|results/| is empty). The same export functionality is available from the command line via \verb|exportPapers.py| (run \verb|python3 exportPapers.py -h| for the full list of options).
@@ -421,7 +568,7 @@ With ScientoPy you can generate a \LaTeX{} BibTeX file for your references. Foll
 
 \begin{enumerate}
 \item Run an analysis to generate results.
-\item Open the Extended Results tab (Tab 4) and find the EID values of the papers you want to cite.
+\item Open the Documents tab (Tab 4) and find the EID values of the papers you want to cite.
 \item In your LaTeX document, use the paper EID values as citation keys inside \verb|\cite{}| commands, for example: \verb|\cite{2-s2.0-85012345678}|
 \item Save your LaTeX document.
 \item In the Analysis tab, click the \verb|Generate BibTeX| button and select the LaTeX document.
@@ -446,15 +593,19 @@ After running ScientoPy analysis you will find the following folder and files st
 	.1 ScientoPy.
 	.2 dataInExample.
 	.2 dataPre.
-	.3 papersPreprocessed.csv.
+	.3 papersPreprocessed.parquet.
 	.3 PreprocessedBrief.csv.
 	.2 graphs.
+	.3 AuthorKeywords\_network.html.
 	.2 latexExample.
 	.2 Manual.
 	.2 results.
 	.3 AuthorKeywords.csv.
-	.3 AuthorKeywords\_extended.csv.
-	.3 papersPreprocessed.csv.
+	.3 AuthorKeywords\_network\_clusters.csv.
+	.3 AuthorKeywords\_thematic\_map.csv.
+	.3 TopCitedPapers.csv.
+	.3 lastAnalysis.parquet.
+	.2 export.
 	.2 scientopy\_config.json.
 }
 
@@ -465,23 +616,31 @@ These folders and output files are described below:
 
 	\item \textbf{dataPre:} output folder for the preprocessing results, and input folder for the analysis.
 
-	\item \textbf{papersPreprocessed.csv:} preprocessed papers data with all input documents merged, filtered, and duplicates removed. This is the input file that the analysis uses.
+	\item \textbf{papersPreprocessed.parquet:} preprocessed dataset with all input documents merged, filtered, and duplicates removed (Apache Parquet). This is the input that every analysis uses.
 
 	\item \textbf{PreprocessedBrief.csv:} preprocessing brief table that shows the preprocessing results related to total papers found per database, the omitted papers, the duplicated papers count per database, and the total number of papers per paper type (Conference paper, article, review...).
 
 	\item \textbf{graphs:} graphs output folder for preprocessing and analysis.
 
+	\item \textbf{AuthorKeywords\_network.html:} interactive network map of the selected criterion (in this case author keywords). Open it in a web browser.
+
 	\item \textbf{latexExample:} folder with the LaTeX file article example to generate the BibTeX from the preprocessed dataset.
 
-	\item \textbf{Manual:} folder with the PDF manual.
+	\item \textbf{Manual:} folder with the PDF manuals.
 
 	\item \textbf{results:} output folder for analysis result files.
 
-	\item \textbf{AuthorKeywords.csv:} analysis output file for the selected criterion (in this case authorKeywords) that shows the top or custom topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the Percentage of Documents in Last Years (PDLY), the h-index, and the documents per each year.
+	\item \textbf{AuthorKeywords.csv:} analysis output file for the selected criterion (in this case author keywords) that shows the top or custom topics with the total number of documents, the Average Growth Rate (AGR), the Average Documents per Year (ADY), the Percentage of Documents in Last Years (PDLY), the h-index, and the documents per each year.
 
-	\item \textbf{AuthorKeywords\_extended.csv:} analysis output file for the selected criterion that shows the top or custom topics with the documents related to each one.
+	\item \textbf{AuthorKeywords\_network\_clusters.csv:} items of every cluster of the network map. The folder also holds the items, the links, and the VOSviewer and Gephi files of the map.
 
-	\item \textbf{papersPreprocessed.csv:} inside the results folder, this file contains the output papers from the last analysis run. This is used as input when the option \verb|Use previous results| is checked.
+	\item \textbf{AuthorKeywords\_thematic\_map.csv:} themes of the thematic map, with their centrality, density, quadrant, and items.
+
+	\item \textbf{TopCitedPapers.csv:} most cited documents.
+
+	\item \textbf{lastAnalysis.parquet:} documents found by the last analysis run. This is used as input when the option \verb|Use previous results| is checked.
+
+	\item \textbf{export:} CSV files written by the \textbf{6. Export} tab.
 
 	\item \textbf{scientopy\_config.json:} user configuration file storing window geometry, appearance mode, and analysis parameters. Automatically created and updated.
 \end{itemize}
@@ -490,7 +649,7 @@ These folders and output files are described below:
 \section{ScientoPy graph types}
 \label{sec_graph_types}
 
-ScientoPy has 5 different ways to graph the results described on Table~\ref{table_graph_types}.
+ScientoPy has 6 different ways to graph the results of an analysis, described on Table~\ref{table_graph_types}. The network map and the thematic map are described in Section~\ref{sec_maps_tab}.
 
 \begin{table}[!h]
 	\centering
@@ -500,13 +659,14 @@ ScientoPy has 5 different ways to graph the results described on Table~\ref{tabl
 	\renewcommand{\arraystretch}{1.5}
 	\begin{tabular}{ p{4cm} p{3cm} p{10cm}}
 	\hline\noalign{\smallskip}
-	Graph type     &  Abbreviation & Description                             \\
+	Graph type     &  Name in the scripts & Description                             \\
 	\noalign{\smallskip}\hline\noalign{\smallskip}
 	Time line      & \verb|time_line| & Graphs the number of documents of each topic vs the publication year \\
-	Horizontal bars  & \verb|bar| & Graphs the total number of documents of each topic in horizontal bars \\
-	Horizontal bars trends  & \verb|bar_trends| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of documents published in the last years \\
+	Bars  & \verb|bar| & Graphs the total number of documents of each topic in horizontal bars \\
+	Bars with trends  & \verb|bar_trends| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of documents published in the last years \\
 	Evolution     & \verb|evolution| & Graphs two plots, one with the accumulative number of documents vs the publication year, and another with the average papers per year vs the percentage of documents in the last years\\
 	Word cloud     & \verb|word_cloud| & Generate a word cloud based on the topic total number of publications \\
+	World map (countries)     & \verb|world_map| & Shades every country by its number of documents, for the Countries criterion \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 \end{table}
@@ -540,6 +700,12 @@ Below are some examples of these graph types.
 
 \begin{center}
 	\includegraphics[width=0.9\textwidth]{./figures/graph_word_cloud.eps}
+\end{center}
+
+\subsection{World map graph}
+
+\begin{center}
+	\includegraphics[width=0.9\textwidth]{./figures/graph_world_map.eps}
 \end{center}
 
 

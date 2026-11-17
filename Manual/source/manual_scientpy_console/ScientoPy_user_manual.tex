@@ -74,7 +74,7 @@
 
 
 \begin{center}
-{\LARGE \textbf{ScientoPy v 2.1.6, Installation and User Manual\\}}
+{\LARGE \textbf{ScientoPy v 3.2.0, Installation and User Manual\\}}
 \vspace*{0.5cm}
 \includegraphics[scale=0.2]{./figures/escudoUnicacuaSolo.eps}\\
 \vspace*{0.5cm}
@@ -287,6 +287,26 @@ python3 scientoPy.py -c authorKeywords -t \
 device to device;Device driver;Device management;Device Independence;Device Identification"
 \end{verbatim}
 
+\subsubsection{Merging synonyms}
+\label{sec_synonyms}
+
+The same topic is often written in several ways: abbreviations (``IoT'', ``Internet of Things''), singular and plural, an author with and without the middle initial, or an institution with two names. The \verb|--synonyms| option counts those names as one topic when ScientoPy finds the top topics, in any criterion:
+
+\begin{verbatim}
+python3 scientoPy.py -c authorKeywords \
+--synonyms "Internet of Things, IoT, Internet of Things (IoT); Bluetooth Low Energy, BLE"
+\end{verbatim}
+
+Divide the groups with \verb|;| and the names inside a group with \verb|,|. The first name of each group is the one shown in the results. A document with several names of the same group counts once. The same rule applies to the grouped topics of the \verb|-t| option.
+
+For long lists, \verb|--synonyms| also takes a VOSviewer thesaurus file: a tab separated text file with the header \verb|label| and \verb|replace by|. A name with an empty \verb|replace by| is left out of the results:
+
+\begin{verbatim}
+python3 scientoPy.py -c institution --synonyms thesaurus_institutions.txt
+\end{verbatim}
+
+The same option and file work in \verb|scientoPyNetwork.py| and \verb|scientoPyThematicMap.py|, so the tables, the network map and the thematic map use the same names.
+
 \subsubsection{Evolution plot}
 
 Also, you can see the results with an evolution plot (add \verb|-g evolution|). This option plots the accumulative documents, average documents per year (ADY), and percentage of documents in the last years, for example:
@@ -317,9 +337,35 @@ The \verb|scientoPy.py| script provides the following additional options:
 python3 scientoPy.py -c institutionWithCountry -f "United States"
 \end{verbatim}
 \item \verb|--pYear|: Present the results in percentage per year instead of documents per year.
-\item \verb|--yLog|: Plot Y axes in log scale.
+\item \verb|--yLog|: Plot Y axes in log scale. In the world map, use a logarithmic color scale.
 \item \verb|-s N| or \verb|--skipFirst N|: To filter the first top N elements from the results.
+\item \verb|--synonyms "groups"|: Merge the names of the same topic (see Section~\ref{sec_synonyms}).
 \end{itemize}
+
+\subsection{World map}
+\label{sec_world_map}
+
+The \verb|world_map| graph shades every country by its number of documents. It needs the \verb|country| criterion:
+
+\begin{verbatim}
+python3 scientoPy.py -c country -g world_map
+\end{verbatim}
+
+The map shows every country found in the dataset, while the results table (\verb|results/Country.csv|) keeps the top ones set by \verb|-l|. Some useful options:
+
+\begin{verbatim}
+# Logarithmic color scale, to see the countries with few documents
+python3 scientoPy.py -c country -g world_map --yLog
+
+# Leave out the first two countries, to compare the others
+python3 scientoPy.py -c country -g world_map -s 2
+
+# Only the countries that publish with Canada, saved for a paper
+python3 scientoPy.py -c country -t "Canada" --noPlot
+python3 scientoPy.py -c country -r -g world_map --savePlot "canada_collaboration.eps"
+\end{verbatim}
+
+Countries with no documents are gray. Countries too small to see at this scale, like Singapore, get a dot. Names in the country field that are not a country (errors in the affiliations of the dataset) are listed in the console. The map works offline: the country outlines (from Natural Earth, public domain) come with ScientoPy. See an example in Section~\ref{sec_graph_world_map}.
 
 \subsection{Topics growth indicators}
 
@@ -446,7 +492,149 @@ The detailed \verb|results/<Criterion>_extended.csv| file (one row per paper, wi
 python3 scientoPy.py -c authorKeywords --saveExtended
 \end{verbatim}
 
-or pick \textbf{Extended results (last analysis, per-document)} in the GUI \textbf{5. Export} tab after running an analysis.
+or pick \textbf{Extended results (last analysis, per-document)} in the GUI \textbf{6. Export} tab after running an analysis.
+
+\subsection{Network maps}
+\label{sec_network_map}
+
+The \verb|scientoPyNetwork.py| script builds a co-occurrence network of the top items of a criterion and saves it as an interactive map that opens in the web browser. Two items are linked when they appear in the same document, so the same command maps keyword co-occurrence (\verb|authorKeywords|, \verb|indexKeywords|, \verb|bothKeywords|), co-authorship (\verb|author|), country or institution collaboration (\verb|country|, \verb|institution|, \verb|institutionWithCountry|) and WoS subject areas (\verb|subject|).
+
+\begin{verbatim}
+# Top 300 author keywords, opens graphs/AuthorKeywords_network.html
+python3 scientoPyNetwork.py -c authorKeywords
+
+# Merge synonyms and leave out the search terms
+python3 scientoPyNetwork.py -c authorKeywords \
+--synonyms "internet of things, iot; bluetooth low energy, ble" \
+--exclude "bluetooth low energy"
+
+# Country collaboration with fractional counting
+python3 scientoPyNetwork.py -c country --counting fractional
+
+# Co-authorship inside the documents found by the previous analysis
+python3 scientoPy.py -c country -t "Colombia" --noPlot
+python3 scientoPyNetwork.py -c author -r
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.95\textwidth]{./figures/network_map.png}
+\end{center}
+
+The analysis follows VOSviewer: links are normalized with the association strength, items are clustered by optimizing the VOSviewer quality function (with a resolution parameter), and the map layout uses the VOS mapping technique, in both 3D and 2D. The options of the script are described in Table~\ref{table_network_options}.
+
+\begin{table}[!h]
+	\centering
+	\caption{Options of scientoPyNetwork.py}
+	\label{table_network_options}
+
+	\renewcommand{\arraystretch}{1.4}
+	\begin{tabular}{ p{4.6cm} p{12cm}}
+	\hline\noalign{\smallskip}
+	Option     &  Description                             \\
+	\noalign{\smallskip}\hline\noalign{\smallskip}
+	\verb|-c|, \verb|--criterion| & Criterion to map, default \verb|authorKeywords| \\
+	\verb|-l|, \verb|--length| & Maximum number of items, the top ones by occurrences, default 300 \\
+	\verb|--minOccurrences| & Minimum number of documents per item, default 2 \\
+	\verb|-s|, \verb|--skipFirst| & Leave out the first N top items \\
+	\verb|--exclude| & Items to leave out, separated by \verb|;| \\
+	\verb|--synonyms| & Synonym groups or a VOSviewer thesaurus file (see Section~\ref{sec_synonyms}) \\
+	\verb|--startYear|, \verb|--endYear| & Year range \\
+	\verb|--counting| & \verb|full| or \verb|fractional| counting of co-occurrences \\
+	\verb|--minLinkStrength| & Minimum link weight to keep a link \\
+	\verb|--resolution| & Clustering resolution, higher gives more and smaller clusters, default 1 \\
+	\verb|--minClusterSize| & Smaller clusters are merged into their most connected cluster, default 3 \\
+	\verb|--cohesion| & Extra attraction inside clusters in the layout, 0 for the plain VOS mapping, default 0.5 \\
+	\verb|-r|, \verb|--previousResults| & Map the documents found by the last \verb|scientoPy.py| run \\
+	\verb|--graphTitle| & Title shown in the map \\
+	\verb|--noOpen| & Do not open the web browser \\
+	\noalign{\smallskip}\hline
+	\end{tabular}
+\end{table}
+
+The map is a single HTML file that works offline in any recent browser with WebGL2 (Chrome, Edge, Firefox, Safari). It includes:
+
+\begin{itemize}
+\item \textbf{Views:} network (clusters), overlay by average publication year or average citations, and density; 3D orbit or flat 2D, with animated transitions.
+\item \textbf{Crawler tour:} a spider walks the map one cluster at a time. It reads the items, probes the strongest links, and flags emerging items (recent and growing) and highly cited ones. A dashboard follows it with a crawl log, cluster progress, coverage radar, year heat map, and a momentum gauge.
+\item \textbf{Exploration:} search, click an item for its statistics, documents per year, strongest links and most cited documents, timeline playback of the map growth, and the \verb|scientoPy.py| command to analyze it.
+\item \textbf{Exports:} PNG and SVG images (dark or light background), videos of the crawl tour, VOSviewer map and network files, GEXF for Gephi, CSV, and JSON.
+\end{itemize}
+
+Besides the map, the script writes its data to \verb|results/|: the items, the links, VOSviewer and Gephi files, and \verb|<Criterion>_network_clusters.csv| with the items of every cluster, ready for a table of keywords by cluster.
+
+\subsection{Thematic map}
+\label{sec_thematic_map}
+
+The \verb|scientoPyThematicMap.py| script draws the thematic map (strategic diagram) of a criterion. It groups the items that appear together in clusters, the same clusters as \verb|scientoPyNetwork.py| with the same options, and places every cluster (a theme) by two values from Callon's co-word analysis:
+
+\begin{itemize}
+\item \textbf{Centrality (relevance degree):} strength of the links between the items of the theme and the items of the other themes. A central theme is tied to the rest of the field.
+\item \textbf{Density (development degree):} strength of the links between the items of the theme. A dense theme is well developed.
+\end{itemize}
+
+The link strength between two items is the equivalence index:
+\begin{equation}
+e_{ij} = \frac{c_{ij}^2}{c_i \, c_j}
+\label{equation_equivalence}
+\end{equation}
+
+where $c_{ij}$ is the number of documents with both items, and $c_i$ and $c_j$ the documents with each one. The centrality of a theme is 10 times the sum of $e_{ij}$ over its links to other themes, and its density is 100 times the sum of $e_{ij}$ over the links inside the theme, divided by its number of items.
+
+\begin{verbatim}
+# Thematic map of the author keywords
+python3 scientoPyThematicMap.py -c authorKeywords
+
+# Merge synonyms, leave out the search terms and save the plot
+python3 scientoPyThematicMap.py -c authorKeywords \
+--synonyms "internet of things, iot; bluetooth low energy, ble" \
+-s 2 --savePlot "thematic_map.eps"
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.75\textwidth]{./figures/graph_thematic_map.eps}
+\end{center}
+
+The dashed lines cross at the medians and split the map in four:
+
+\begin{itemize}
+\item \textbf{Motor themes} (top right): high centrality and high density. Developed and important for the field.
+\item \textbf{Niche themes} (top left): low centrality and high density. Developed, but isolated from the rest.
+\item \textbf{Emerging or declining themes} (bottom left): low centrality and low density. Weakly developed and marginal.
+\item \textbf{Basic themes} (bottom right): high centrality and low density. Important for the field, but not developed.
+\end{itemize}
+
+The bubble area is the number of occurrences of the items of the theme, and each bubble shows its top items. Items that never appear with another item are not part of any theme.
+
+\verb|scientoPyThematicMap.py| takes the options of \verb|scientoPyNetwork.py| that select the items and the clusters (\verb|-c|, \verb|-l|, \verb|--minOccurrences|, \verb|-s|, \verb|--exclude|, \verb|--synonyms|, \verb|--startYear|, \verb|--endYear|, \verb|--counting|, \verb|--minLinkStrength|, \verb|--resolution|, \verb|--minClusterSize|, \verb|-r|, \verb|--graphTitle|), and these ones:
+
+\begin{itemize}
+\item \verb|--labels N|: Number of items written on each theme, default 3.
+\item \verb|--axes rank| or \verb|--axes value|: \verb|rank| places the themes by their centrality and density ranks, which spreads them evenly (default). \verb|value| places them by the values.
+\item \verb|--savePlot "file"|: Save the plot to a file in \verb|graphs/| (png, eps, pdf, svg).
+\item \verb|--noPlot|: Only save the table.
+\item \verb|--plotWidth N|, \verb|--plotHeight N|: Plot size in inches.
+\end{itemize}
+
+The themes, with their centrality, density, quadrant and every item, are saved to \verb|results/<Criterion>_thematic_map.csv|.
+
+\subsection{Most cited documents}
+\label{sec_most_cited}
+
+The \verb|topCitedPapers.py| script lists the most cited documents of the dataset:
+
+\begin{verbatim}
+# Top 10 most cited documents
+python3 topCitedPapers.py
+
+# Top 20, published from 2015 to 2024
+python3 topCitedPapers.py -l 20 --startYear 2015 --endYear 2024
+
+# Most cited documents about a topic
+python3 scientoPy.py -c authorKeywords -t "indoor positioning" --noPlot
+python3 topCitedPapers.py -r
+\end{verbatim}
+
+The table is saved to \verb|results/TopCitedPapers.csv| with the citations, the citations per year (citations divided by the years since the document was published), year, title, authors, source, document type, DOI, and EID. The citations are the ones reported by Scopus or WoS when the dataset was downloaded.
 
 \subsection{Output files and directories}
 
@@ -460,10 +648,14 @@ After run some ScientoPy commands or after run all the example commands by execu
 	.3 papersPreprocessed.parquet.
 	.3 PreprocessedBrief.csv.
 	.2 graphs.
+	.3 AuthorKeywords\_network.html.
 	.2 Manual.
 	.2 results.
 	.3 AuthorKeywords.csv.
 	.3 AuthorKeywords\_extended.csv.
+	.3 AuthorKeywords\_network\_clusters.csv.
+	.3 AuthorKeywords\_thematic\_map.csv.
+	.3 TopCitedPapers.csv.
 	.3 lastAnalysis.parquet.
 	.2 export.
 	.3 papersPreprocessed.csv.
@@ -481,6 +673,8 @@ These folders and output files are described bellow:
 	\item \textbf{PreprocessedBrief.csv: } preproceses brief table that shows the preprocess results related to total papers found per data base, the omitted papers, the duplicated papers count per data base, and the total number of papers per paper type (Conference paper, article, review...)
 	
 	\item \textbf{graphs: } graphs output folder for preprocess and scientoPy scripts
+
+	\item \textbf{AuthorKeywords\_network.html: } interactive network map written by \verb|scientoPyNetwork.py| (self-contained, open it in a web browser).
 	
 	\item \textbf{Manual: } folder with the pdf manual and example paper with scientoPy commands highlighted used for graph and tables generation. 
 	
@@ -500,6 +694,12 @@ These folders and output files are described bellow:
 
 	\item \textbf{AuthorKeywords\_extended.csv: } scientoPy output file for the selected criterion (in this case authorKeywords) that show the top or custom topics with the documents related to each one.
 
+	\item \textbf{AuthorKeywords\_network\_clusters.csv: } items of every cluster of the network map. \verb|scientoPyNetwork.py| also writes next to it the items (\verb|_network_nodes.csv|), the links (\verb|_network_links.csv|), a JSON file, a GEXF file for Gephi, and the VOSviewer map and network files.
+
+	\item \textbf{AuthorKeywords\_thematic\_map.csv: } themes of the thematic map written by \verb|scientoPyThematicMap.py|, with their centrality, density, quadrant, and items.
+
+	\item \textbf{TopCitedPapers.csv: } most cited documents written by \verb|topCitedPapers.py|.
+
 	\item \textbf{lastAnalysis.parquet: } inside the results folder, this file contains the output papers from the last scientoPy script. It is used as an input for scientoPy when the option \verb|-r| or \verb|--previousResults| is passed. Internal format; not intended for user consumption.
 
 	\item \textbf{export: } on-demand CSV exports produced by \verb|exportPapers.py|. Not created by preprocess or analysis; only populated when the user runs an export.
@@ -508,7 +708,7 @@ These folders and output files are described bellow:
 \newpage
 \section{ScientoPy graph types}
 
-ScientoPy has 5 different ways to graph the results described on Table \ref{table_graph_types}.
+ScientoPy has 6 different ways to graph the results of \verb|scientoPy.py|, described on Table \ref{table_graph_types}. The network map and the thematic map have their own scripts, described in Sections~\ref{sec_network_map} and~\ref{sec_thematic_map}.
 
 \begin{table}[!h]
 	\centering
@@ -525,6 +725,7 @@ ScientoPy has 5 different ways to graph the results described on Table \ref{tabl
 	Horizontal bars trends  & \verb|-g bar_trends| & Graphs the total number of documents of each topic in horizontal bars, with the percentage of document published in the last years \\
 	Evolution     & \verb|-g evolution| & Graphs two plots: on the left, the accumulative number of documents (logarithmic scale) vs. the publication year, where the beginning of each line shows when the topic research started and the final value represents the total number of documents; on the right, a scatter plot of the Average Growth Rate (AGR) on the Y-axis vs. the Percentage of Documents in Last Years (PDLY) on the X-axis, allowing comparison of absolute and relative growth for each topic \\
 	Word cloud     & \verb|-g word_cloud| & Generate a word cloud based on the topic total number of publications \\
+	World map     & \verb|-g world_map| & Shades every country by its number of documents, only for the \verb|country| criterion \\
 	\noalign{\smallskip}\hline
 	\end{tabular}
 \end{table}
@@ -586,6 +787,17 @@ python3 scientoPy.py -c authorKeywords --startYear 2015 --endYear 2025 -l 500 -g
 
 \begin{center}
 	\includegraphics[width=0.9\textwidth]{./figures/graph_word_cloud.png}
+\end{center}
+
+\subsection{World map graph}
+\label{sec_graph_world_map}
+Command:
+\begin{verbatim}
+python3 scientoPy.py -c country --startYear 2015 --endYear 2025 -g world_map
+\end{verbatim}
+
+\begin{center}
+	\includegraphics[width=0.9\textwidth]{./figures/graph_world_map.eps}
 \end{center}
 
 
