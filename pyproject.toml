@@ -33,7 +33,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-gui = ["PySide6>=6.6.0"]
+# PySide6 6.12.0 crashes the GUI on Python 3.11 and older (see requirements.txt)
+gui = [
+    "PySide6>=6.6.0,<6.12; python_version < '3.12'",
+    "PySide6>=6.6.0; python_version >= '3.12'",
+]
 dev = ["pytest>=7.0"]
 
 [project.scripts]

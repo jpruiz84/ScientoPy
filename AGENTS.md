@@ -71,7 +71,19 @@ The `v*` tag push triggers `.github/workflows/build-release.yml`, which:
 3. Submits the Windows artifact to SignPath for Authenticode signing (only on `v*` tags).
 4. Publishes a GitHub Release with all three platform artifacts.
 
-### 4. Verify the release
+The SignPath signing request needs a manual approval in the SignPath dashboard within 10 minutes, otherwise the `sign-windows` job times out and the release is not published. If that happens, re-run the failed job (`gh run rerun <run id> --failed`) and approve the new request.
+
+### 4. Add the release notes to the GitHub release
+
+The workflow publishes the release with only an automatic "Full Changelog" link. **In every release**, once the workflow has created it, put the release notes on the release page:
+
+```bash
+gh release edit vX.Y.Z --notes-file doc/release_notes/vX.Y.Z.md
+```
+
+Then open the release page and check that the notes are shown. A release is not finished until its page has the notes.
+
+### 5. Verify the release
 
 After the workflow finishes:
 
@@ -91,7 +103,7 @@ The project has two test suites — both run in CI on every PR and push (`.githu
 
 | Suite | File | Type | Coverage |
 |---|---|---|---|
-| **Unit tests** | `tests/test_unit.py` | pytest | Pure-function logic: `globalVar` constants, `paperUtils` dedup, source counting, open-access normalization, error classes, `networkAnalysis` counting / clustering / layout / writers / thematic map, synonyms, `worldMap` name matching and projection, world map and thematic map plots, most cited table |
+| **Unit tests** | `tests/test_unit.py` | pytest | Pure-function logic: `globalVar` constants, `paperUtils` dedup, source counting, open-access normalization, error classes, `networkAnalysis` counting / clustering / layout / writers / thematic map, synonyms, `worldMap` name matching and projection, world map and thematic map plots, most cited table, GUI toolkit (PySide6) reference count check |
 | **Behavioral tests** | `tests/run_behavioral_tests.py` | Custom runner | End-to-end pipeline: generates synthetic Scopus + WoS data via `tests/generate_test_data.py`, runs `preProcess.py`, `scientoPy.py`, `scientoPyNetwork.py`, `scientoPyThematicMap.py` and `topCitedPapers.py`, asserts outputs against the spec in `doc/behavioral_test_spec.md` |
 
 ### Running the tests locally
@@ -104,7 +116,7 @@ python -m pytest tests/test_unit.py -v
 python tests/run_behavioral_tests.py
 ```
 
-Expected counts: **45 unit tests** and **125 behavioral checks**. If counts differ unexpectedly, investigate before assuming tests are passing.
+Expected counts: **46 unit tests** and **125 behavioral checks**. If counts differ unexpectedly, investigate before assuming tests are passing.
 
 ### Which tests to run after a change
 
@@ -124,6 +136,7 @@ Match the change category to the suite — but **always run both before pushing 
 | New feature | Both suites — and add behavioral checks for the new user-visible behavior, even if the implementation is unit-testable. Update `doc/behavioral_test_spec.md` if the expected output table changes |
 | Version bump / release notes / CI workflow only | Unit tests are enough; CI re-runs everything on the tag push anyway |
 | Dependency bump in `requirements.txt` | **Both suites** — dependency changes can break pipeline output silently |
+| PySide6 version (`requirements.txt`, `pyproject.toml`) or the Python version of the build | Unit tests with that exact Python + PySide6 pair (`TestGuiToolkit`), then run the packaged app and do an analysis with thousands of documents: PySide6 6.12.0 on Python 3.11 aborted the GUI (`none_dealloc`) only after a large Documents table was filled |
 
 ### Adding new tests
 

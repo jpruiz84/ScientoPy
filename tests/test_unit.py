@@ -606,3 +606,36 @@ class TestTopCited:
         with open(path, encoding="utf-8") as f:
             saved = list(csv.DictReader(f))
         assert saved[0]["Title"] == "One, two" and saved[0]["Cited by per year"] == "7.00"
+
+
+class TestGuiToolkit:
+    """The installed PySide6 must be safe to fill large tables with."""
+
+    def test_table_fill_keeps_none_refcount(self):
+        # PySide6 6.12.0 on Python 3.11 and older takes one reference of None
+        # away in every setItem() and setTextAlignment() call. After enough
+        # cells the interpreter aborts with "Fatal Python error: none_dealloc",
+        # which closed the GUI after an analysis with many documents.
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QApplication, QTableWidget, QTableWidgetItem
+
+        app = QApplication.instance() or QApplication([])
+        rows = 500
+        table = QTableWidget()
+        table.setColumnCount(2)
+        table.setRowCount(rows)
+
+        before = sys.getrefcount(None)
+        for row in range(rows):
+            item = QTableWidgetItem(str(row))
+            item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            table.setItem(row, 0, item)
+            table.setItem(row, 1, QTableWidgetItem("text"))
+        lost = before - sys.getrefcount(None)
+
+        table.deleteLater()
+        app.processEvents()
+        assert lost < rows // 10, (
+            "PySide6 loses references of None (%d in %d rows): this version "
+            "crashes the GUI, use another one (see requirements.txt)" % (lost, rows))

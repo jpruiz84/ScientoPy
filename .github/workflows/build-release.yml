@@ -36,6 +36,18 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      # The unit tests create Qt widgets (offscreen) to check the GUI toolkit
+      - name: Install Linux Qt dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libegl1 \
+            libgl1 \
+            libxkbcommon0 \
+            libdbus-1-3 \
+            libfontconfig1
+
       - name: Run unit tests
         run: python -m pytest tests/test_unit.py -v
 
